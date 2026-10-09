@@ -154,7 +154,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4 px-4 py-3">
       <span className="shrink-0 text-sm text-muted">{label}</span>
-      <span className="text-right text-sm font-medium text-ink">{value}</span>
+      <span className="min-w-0 text-right text-sm font-medium text-ink">{value}</span>
     </div>
   )
 }

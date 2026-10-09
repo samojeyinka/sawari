@@ -135,7 +135,7 @@ export function PathPage() {
       </header>
 
       {/* stats */}
-      <div className="mb-8 grid grid-cols-2 gap-x-6 gap-y-5 border-y border-line py-5 sm:grid-cols-4">
+      <div className="mb-8 grid grid-cols-1 gap-y-5 border-y border-line py-5 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-4">
         <Stat label="Progress" value={`${percent}%`}>
           <ProgressBar value={percent} size="sm" className="mt-2" />
         </Stat>
@@ -236,7 +236,7 @@ export function PathPage() {
                       {section.description}
                     </p>
 
-                    <dl className="mt-4 grid grid-cols-2 gap-4">
+                    <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <Detail label="Estimated time" value={formatHours(section.minutes)} />
                       <Detail
                         label="Status"

@@ -101,7 +101,7 @@ export function AssessmentPage() {
       {phase === 'question' ? (
         <div className="animate-rise">
           <div className="mt-4 flex items-end justify-between gap-4">
-            <div>
+            <div className="min-w-0">
               <div className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
                 Check your understanding
               </div>
@@ -109,7 +109,9 @@ export function AssessmentPage() {
                 Question {index + 1} of {questions.length}
               </h1>
             </div>
-            <span className="text-sm text-muted">{answeredCount} answered</span>
+            <span className="shrink-0 whitespace-nowrap text-sm text-muted">
+              {answeredCount} answered
+            </span>
           </div>
 
           <ProgressBar

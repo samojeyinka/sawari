@@ -62,7 +62,18 @@ async function click(page, text, opts = {}) {
   )
   const el = handle.asElement()
   if (!el) throw new Error(`click: "${text}" not found`)
-  await el.click()
+  await el
+    .evaluate((n) => n.scrollIntoView({ block: 'nearest', inline: 'nearest' }))
+    .catch(() => {})
+  await sleep(100)
+  try {
+    await el.click()
+  } catch {
+    // Mobile emulation can stretch the layout viewport past the visual
+    // viewport (fixed elements land below the fold), so fall back to a
+    // programmatic click, which React handles identically.
+    await el.evaluate((n) => n.click())
+  }
   await sleep(160)
 }
 
@@ -279,6 +290,21 @@ const main = async () => {
   /* -------------------------------------------------- mobile */
   step = 'mobile'
   await page.setViewport({ width: 390, height: 844, isMobile: true })
+
+  // public pages at phone size
+  for (const [path, anchor] of [
+    ['/', 'No more fees,'],
+    ['/login', 'Pick up where you stopped.'],
+    ['/setup', 'Step 1 of 7'],
+  ]) {
+    await page.goto(`${BASE}${path}`, { waitUntil: 'networkidle0' })
+    assert(await waitForText(page, anchor), `mobile: ${path} renders`)
+    const noOverflowPublic = await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth + 2,
+    )
+    assert(noOverflowPublic, `mobile: no horizontal overflow on ${path}`)
+  }
+
   await page.goto(`${BASE}/login`, { waitUntil: 'networkidle0' })
   await page.type('#login-password', 'demo1234')
   await click(page, 'Sign in', { exact: true })
@@ -308,11 +334,30 @@ const main = async () => {
     await sleep(250)
   } else fail('mobile bell button not found')
 
-  await page.goto(`${BASE}/app/path`, { waitUntil: 'networkidle0' })
-  const noOverflowPath = await page.evaluate(
-    () => document.documentElement.scrollWidth <= window.innerWidth + 2,
+  // in-app navigation via bottom nav keeps the in-memory session alive
+  const realOverflow = () =>
+    page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 2)
+
+  await click(page, 'Path', { exact: true, scope: 'nav.fixed' })
+  assert(await waitForText(page, 'Estimated remaining time'), 'mobile: path renders')
+  assert(await realOverflow(), 'mobile: no horizontal overflow on path')
+
+  await click(page, 'Progress', { exact: true, scope: 'nav.fixed' })
+  assert(await waitForText(page, 'How far you have come'), 'mobile: progress renders')
+  assert(await realOverflow(), 'mobile: no horizontal overflow on progress')
+
+  await click(page, 'Projects', { exact: true, scope: 'nav.fixed' })
+  assert(await waitForText(page, 'Learn by doing'), 'mobile: projects renders')
+  assert(await realOverflow(), 'mobile: no horizontal overflow on projects')
+
+  await click(page, 'Today', { exact: true, scope: 'nav.fixed' })
+  assert(await waitForText(page, 'Start session'), 'mobile: back on today')
+  await click(page, 'Start session', { exact: true })
+  assert(
+    await waitForText(page, 'Read the room before you brief it'),
+    'mobile: session opens',
   )
-  assert(noOverflowPath, 'mobile: no horizontal overflow on path')
+  assert(await realOverflow(), 'mobile: no horizontal overflow on session')
 
   /* -------------------------------------------------- tablet */
   step = 'tablet'

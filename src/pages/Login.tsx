@@ -61,7 +61,7 @@ export function LoginPage() {
           <p className="font-mono text-sm uppercase tracking-wide text-accent-bright">
             Welcome back
           </p>
-          <h1 className="mt-3 text-[34px] font-normal leading-[1.08] tracking-[-0.04em] text-on-band sm:text-[40px]">
+          <h1 className="mt-3 text-[28px] font-normal leading-[1.08] tracking-[-0.04em] text-on-band sm:text-[40px]">
             Pick up where you stopped.
           </h1>
           <p className="mt-4 text-[15px] leading-relaxed text-on-band-muted">

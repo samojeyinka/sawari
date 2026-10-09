@@ -84,7 +84,7 @@ export function LandingPage() {
           <Link to="/" aria-label="Sawari home">
             <Logo tone="on-band" />
           </Link>
-          <nav className="flex items-center gap-4 sm:gap-7">
+          <nav className="flex items-center gap-3 sm:gap-7">
             <a
               href="#how"
               onClick={scrollToHow}
@@ -115,7 +115,7 @@ export function LandingPage() {
               <p className="font-mono text-sm uppercase tracking-wide text-accent-bright">
                 Free learning, one place
               </p>
-              <h1 className="mt-5 max-w-2xl text-[44px] font-normal leading-[1.02] tracking-[-0.05em] text-on-band sm:text-[72px]">
+              <h1 className="mt-5 max-w-2xl text-[34px] font-normal leading-[1.05] tracking-[-0.05em] text-on-band sm:text-[72px]">
                 No more fees,
                 <br />
                 your AI agent
@@ -218,7 +218,7 @@ export function LandingPage() {
       <section id="how" className="border-y border-on-band/10 bg-band-teal">
         <div className="mx-auto max-w-[1200px] px-5 py-20 sm:px-10 sm:py-28">
           <p className="font-mono text-sm uppercase tracking-wide text-accent-bright">Overview</p>
-          <h2 className="mt-3 max-w-2xl text-[32px] font-normal leading-[1.15] tracking-[-0.04em] text-on-band sm:text-[40px]">
+          <h2 className="mt-3 max-w-2xl text-[26px] font-normal leading-[1.15] tracking-[-0.04em] text-on-band sm:text-[40px]">
             From a goal to something you do today.
           </h2>
 
@@ -258,13 +258,13 @@ export function LandingPage() {
         />
         <div className="relative mx-auto max-w-[1200px]">
           <p className="font-mono text-sm uppercase tracking-wide text-accent-bright">Numbers</p>
-          <h2 className="mt-3 max-w-2xl text-[32px] font-normal leading-[1.15] tracking-[-0.04em] text-on-band sm:text-[40px]">
+          <h2 className="mt-3 max-w-2xl text-[26px] font-normal leading-[1.15] tracking-[-0.04em] text-on-band sm:text-[40px]">
             Small sessions. Real progress.
           </h2>
           <div className="mt-12 grid gap-px bg-on-band/10 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat) => (
               <div key={stat.label} className="bg-panel p-7">
-                <p className="font-display text-[52px] leading-none text-accent-bright">{stat.n}</p>
+                <p className="font-display text-[40px] leading-none text-accent-bright sm:text-[52px]">{stat.n}</p>
                 <p className="mt-4 text-sm font-semibold text-on-band">{stat.label}</p>
                 <p className="mt-1.5 text-sm leading-relaxed text-on-band-muted">{stat.note}</p>
               </div>
@@ -283,7 +283,7 @@ export function LandingPage() {
           backgroundColor: 'var(--color-band-deep)',
         }}
       >
-        <h2 className="mx-auto max-w-2xl text-[32px] font-normal leading-[1.15] tracking-[-0.04em] text-on-band sm:text-[40px]">
+        <h2 className="mx-auto max-w-2xl text-[26px] font-normal leading-[1.15] tracking-[-0.04em] text-on-band sm:text-[40px]">
           What do you want to learn?
         </h2>
         <p className="mx-auto mt-4 max-w-md text-[15.5px] leading-relaxed text-on-band-muted">

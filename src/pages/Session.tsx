@@ -257,16 +257,16 @@ function SessionComplete({
       <p className="mt-1.5 text-[15px] text-muted">{minutes} minutes completed.</p>
 
       <div className="mt-7 grid grid-cols-3 divide-x divide-line rounded-xl border border-line">
-        <div className="px-3 py-4">
-          <p className="text-lg font-semibold text-ink">{sessions}</p>
+        <div className="px-2.5 py-4 sm:px-3">
+          <p className="text-base font-semibold text-ink sm:text-lg">{sessions}</p>
           <p className="mt-0.5 text-xs text-muted">Sessions</p>
         </div>
-        <div className="px-3 py-4">
-          <p className="text-lg font-semibold text-ink">{percent}%</p>
+        <div className="px-2.5 py-4 sm:px-3">
+          <p className="text-base font-semibold text-ink sm:text-lg">{percent}%</p>
           <p className="mt-0.5 text-xs text-muted">Path done</p>
         </div>
-        <div className="px-3 py-4">
-          <p className="text-lg font-semibold text-ink">{minutes}m</p>
+        <div className="px-2.5 py-4 sm:px-3">
+          <p className="text-base font-semibold text-ink sm:text-lg">{minutes}m</p>
           <p className="mt-0.5 text-xs text-muted">Learned today</p>
         </div>
       </div>

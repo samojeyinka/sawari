@@ -59,7 +59,7 @@ export function ProgressPage() {
       />
 
       {/* headline stats */}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-line py-6 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-6 border-y border-line py-6 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-5">
         {statsList.map((stat, i) => (
           <div key={stat.label} className={cx('animate-rise', `stagger-${Math.min(i + 1, 4)}`)}>
             <p className="text-[28px] font-semibold leading-none text-ink">{stat.value}</p>
