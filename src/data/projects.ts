@@ -1,0 +1,183 @@
+import type { Project, ProjectFeedback } from '../types'
+
+/* Feedback shown after a submitted project is reviewed. */
+export const launchFeedback: ProjectFeedback = {
+  strengths: ['Clear objectives', 'Good stakeholder planning'],
+  improve: ['Risk mitigation', 'Timeline assumptions'],
+  note: 'Strong plan overall. Tighten the two areas above and this is ready to present.',
+}
+
+export const fallbackFeedback: ProjectFeedback = {
+  strengths: ['Clear objectives', 'Well structured deliverables'],
+  improve: ['Put a date against every task', 'Name one owner for the second half'],
+  note: 'Reviewed against the rubric for this project. Two adjustments and it is ready to share.',
+}
+
+export const mockProjects: Project[] = [
+  {
+    id: 'prj-launch',
+    title: 'Plan a Product Launch',
+    description: 'Create a complete project plan for launching a new product.',
+    status: 'active',
+    level: 'Intermediate',
+    estHours: 6,
+    objectives: [
+      'Turn a launch idea into a plan with clear scope and owners',
+      'Identify the people who can make or break the launch',
+      'Build a timeline with milestones you can track weekly',
+      'Name the top risks and decide how you would respond',
+    ],
+    tasks: [
+      {
+        id: 't1',
+        title: 'Define objectives',
+        detail: 'Write what a successful launch looks like in one paragraph.',
+      },
+      {
+        id: 't2',
+        title: 'Identify stakeholders',
+        detail: 'List who is affected, who decides, and how often they hear from you.',
+      },
+      {
+        id: 't3',
+        title: 'Create timeline',
+        detail: 'Milestones from kickoff to launch day, with buffer at the end.',
+      },
+      {
+        id: 't4',
+        title: 'Create risk register',
+        detail: 'Five real risks with likelihood, impact and a response for each.',
+      },
+      {
+        id: 't5',
+        title: 'Set the budget',
+        detail: 'Rough costs by area and the one number you would not go over.',
+      },
+      {
+        id: 't6',
+        title: 'Prepare final presentation',
+        detail: 'Ten slides that walk a stakeholder through the whole plan.',
+      },
+    ],
+    deliverables: [
+      'Project charter with scope and success criteria',
+      'Timeline with milestones and owners',
+      'Risk register with responses',
+      'Final stakeholder presentation',
+    ],
+    related: ['pm-2', 'pm-5', 'pm-6'],
+    completedTaskIds: ['t1', 't2', 't3'],
+    submitted: false,
+    reviewed: false,
+    submittedAt: null,
+    feedback: null,
+  },
+  {
+    id: 'prj-office',
+    title: 'Office Move Plan',
+    description: 'Move a 20 person team to a new office over one weekend without losing a day of work.',
+    status: 'completed',
+    level: 'Beginner',
+    estHours: 3,
+    objectives: [
+      'Plan a move that interrupts the team as little as possible',
+      'Coordinate vendors, IT and building management',
+    ],
+    tasks: [
+      { id: 't1', title: 'Scope the move', detail: 'What moves, what stays, what gets replaced.' },
+      { id: 't2', title: 'Book vendors', detail: 'Movers, IT setup and cleaning with confirmed dates.' },
+      { id: 't3', title: 'Weekend schedule', detail: 'Hour by hour plan with owners.' },
+      { id: 't4', title: 'Rollback plan', detail: 'What happens if the network is not ready Monday.' },
+    ],
+    deliverables: ['Move plan with schedule', 'Vendor confirmations', 'Monday readiness checklist'],
+    related: ['pm-2', 'pm-3'],
+    completedTaskIds: ['t1', 't2', 't3', 't4'],
+    submitted: true,
+    reviewed: true,
+    submittedAt: 'Sep 18',
+    feedback: {
+      strengths: [
+        'Clear scope, including what you decided not to move',
+        'Good fallback plan for the network delay',
+      ],
+      improve: [
+        'Give the IT task an owner, not just a deadline',
+        'Add one buffer day before people are expected back at full speed',
+      ],
+      note: 'Solid first plan. The rollback thinking is ahead of most first projects.',
+    },
+  },
+  {
+    id: 'prj-vendor',
+    title: 'Vendor Selection Brief',
+    description: 'Choose a supplier for a recurring service and justify the decision to a budget holder.',
+    status: 'completed',
+    level: 'Beginner',
+    estHours: 4,
+    objectives: ['Compare options against real criteria', 'Write a recommendation someone can approve'],
+    tasks: [
+      { id: 't1', title: 'Write criteria', detail: 'Cost, risk, effort and fit.' },
+      { id: 't2', title: 'Gather options', detail: 'Three candidates with real numbers.' },
+      { id: 't3', title: 'Score and compare', detail: 'Weighted scoring you can explain.' },
+      { id: 't4', title: 'Recommendation', detail: 'One page, one decision.' },
+    ],
+    deliverables: ['Criteria sheet', 'Comparison table', 'One page recommendation'],
+    related: ['pm-2', 'pm-5'],
+    completedTaskIds: ['t1', 't2', 't3', 't4'],
+    submitted: true,
+    reviewed: true,
+    submittedAt: 'Sep 8',
+    feedback: {
+      strengths: ['Criteria were specific enough to actually rule options out'],
+      improve: ['Show the cost of switching later, not just the monthly price'],
+      note: 'Good judgement. Next time, show your working for the weights.',
+    },
+  },
+  {
+    id: 'prj-sprint',
+    title: 'Sprint Improvement Plan',
+    description: 'Run a two week improvement sprint for an existing team and measure what changed.',
+    status: 'available',
+    level: 'Intermediate',
+    estHours: 5,
+    objectives: [
+      'Find the one team habit worth changing',
+      'Run it for two weeks and compare before with after',
+    ],
+    tasks: [
+      { id: 't1', title: 'Pick a problem', detail: 'Something the team complains about weekly.' },
+      { id: 't2', title: 'Choose one change', detail: 'Small enough to try in a single sprint.' },
+      { id: 't3', title: 'Run the sprint', detail: 'Keep notes on what actually happened.' },
+      { id: 't4', title: 'Compare results', detail: 'Before and after with one honest metric.' },
+      { id: 't5', title: 'Write the recap', detail: 'Keep, change or drop the experiment.' },
+    ],
+    deliverables: ['One page plan', 'Before and after notes', 'Team recap'],
+    related: ['pm-4'],
+    completedTaskIds: [],
+    submitted: false,
+    reviewed: false,
+    submittedAt: null,
+    feedback: null,
+  },
+  {
+    id: 'prj-closure',
+    title: 'Project Closure Report',
+    description: 'Close a finished project properly: outcomes, handover, and lessons worth keeping.',
+    status: 'available',
+    level: 'Beginner',
+    estHours: 3,
+    objectives: ['Summarise what shipped', 'Leave the next project better informed'],
+    tasks: [
+      { id: 't1', title: 'Outcome against goals', detail: 'What was promised versus what happened.' },
+      { id: 't2', title: 'Handover', detail: 'Who owns what from here.' },
+      { id: 't3', title: 'Lessons', detail: 'Three things you would repeat, three you would not.' },
+    ],
+    deliverables: ['Closure report', 'Handover note'],
+    related: ['pm-3', 'pm-7'],
+    completedTaskIds: [],
+    submitted: false,
+    reviewed: false,
+    submittedAt: null,
+    feedback: null,
+  },
+]

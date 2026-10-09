@@ -1,0 +1,346 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans:
+    'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+
+  /* neutrals: warm grays */
+  --color-ink: #17181c;
+  --color-ink-soft: #33353b;
+  --color-body: #55575e;
+  --color-muted: #83858d;
+  --color-faint: #a5a7ae;
+  --color-line: #e8e6e1;
+  --color-line-strong: #d7d5cf;
+  --color-canvas: #faf9f7;
+  --color-canvas-deep: #f3f2ee;
+
+  /* accent: calm teal, used sparingly */
+  --color-accent: #0f766e;
+  --color-accent-strong: #0b5f59;
+  --color-accent-soft: #e7f2f0;
+  --color-success: #157f5f;
+  --color-success-soft: #e9f4ef;
+  --color-danger: #b42318;
+  --color-danger-soft: #fbeceb;
+  --color-warn: #b45309;
+  --color-warn-soft: #fdf3e7;
+
+  /* warm bands + cards: the landing's alternating dark/light rhythm */
+  --color-band: #1b1a17;
+  --color-band-soft: #24221e;
+  --color-band-deep: #131211;
+  --color-band-teal: #17211f;
+  --color-panel: #262320;
+  --color-panel-soft: #2e2a26;
+  --color-cream: #f4efe6;
+  --color-cream-deep: #eae3d5;
+  --color-on-band: #f0eadf;
+  --color-on-band-muted: #b7ae9f;
+  --color-on-band-dim: #8b8479;
+  --color-accent-bright: #35b3a3;
+  --color-success-bright: #3fca96;
+  --color-warn-bright: #e8a15c;
+  --color-danger-bright: #f4978e;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-band-deep);
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-ink);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  button {
+    font: inherit;
+  }
+
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: var(--color-ink);
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* ---------- app dark band theme ----------
+   The signed-in app shares the landing's dark "band" aesthetic. We remap the
+   semantic tokens inside this wrapper so the existing utility classes in the
+   pages/components resolve to dark values without touching each file. */
+.app-theme {
+  --color-ink: #f0eadf;
+  --color-ink-soft: #d6cfc2;
+  --color-body: #b7ae9f;
+  --color-muted: #a79d8d;
+  --color-faint: #857d70;
+  --color-line: rgba(240, 234, 223, 0.12);
+  --color-line-strong: rgba(240, 234, 223, 0.24);
+  --color-canvas: #201e1a;
+  --color-canvas-deep: #2e2a26;
+
+  --color-accent: #35b3a3;
+  --color-accent-strong: #7fd8cb;
+  --color-accent-soft: rgba(53, 179, 163, 0.14);
+  --color-success: #3fca96;
+  --color-success-soft: rgba(63, 202, 150, 0.14);
+  --color-danger: #f4978e;
+  --color-danger-soft: rgba(244, 151, 142, 0.14);
+  --color-warn: #e8a15c;
+  --color-warn-soft: rgba(232, 161, 92, 0.14);
+
+  color: var(--color-body);
+}
+
+/* ---------- motion: subtle, quick ---------- */
+@keyframes saw-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes saw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes saw-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes saw-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes saw-pop {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes saw-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-fade {
+  animation: saw-fade 0.18s ease-out both;
+}
+.animate-rise {
+  animation: saw-rise 0.26s cubic-bezier(0.22, 0.7, 0.3, 1) both;
+}
+.animate-slide-right {
+  animation: saw-slide-right 0.24s cubic-bezier(0.22, 0.7, 0.3, 1) both;
+}
+.animate-slide-left {
+  animation: saw-slide-left 0.24s cubic-bezier(0.22, 0.7, 0.3, 1) both;
+}
+.animate-pop {
+  animation: saw-pop 0.22s cubic-bezier(0.22, 0.7, 0.3, 1) both;
+}
+.stagger-1 {
+  animation-delay: 0.05s;
+}
+.stagger-2 {
+  animation-delay: 0.1s;
+}
+.stagger-3 {
+  animation-delay: 0.15s;
+}
+.stagger-4 {
+  animation-delay: 0.2s;
+}
+
+/* marquee ticker: duplicated track scrolls left, pauses on hover */
+@keyframes saw-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: saw-marquee 36s linear infinite;
+}
+
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* kinetic CTA: hover rolls the label up into its twin (Dispatch pattern) */
+.kinetic {
+  display: inline-flex;
+  overflow: hidden;
+  vertical-align: middle;
+  /* track is two labels tall; start at the top so the first copy fills the
+     button — centering would show both halves of the label and its twin */
+  align-items: flex-start;
+}
+
+.kinetic-track {
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.35s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.kinetic:hover .kinetic-track,
+.kinetic:focus-visible .kinetic-track {
+  transform: translateY(-50%);
+}
+
+.kinetic-track > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* the twin label: drawn from data-label so the DOM text stays single */
+.kinetic-ghost::before {
+  content: attr(data-label);
+}
+
+/* ---------- hero backdrop: teal dusk wash + warm ember glow ---------- */
+.hero-wash {
+  background:
+    radial-gradient(60% 55% at 78% 18%, rgba(53, 179, 163, 0.16), transparent 65%),
+    radial-gradient(45% 40% at 12% 85%, rgba(255, 178, 123, 0.1), transparent 70%),
+    radial-gradient(80% 90% at 50% -10%, #23211d, transparent 75%),
+    var(--color-band);
+}
+
+/* faint ruled grid, like squared paper; anchored right so the coloured
+   HeroGrid cells in the same 56px lattice line up with the lines */
+.hero-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(244, 239, 230, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 239, 230, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: right top;
+  mask-image: radial-gradient(75% 75% at 50% 35%, black, transparent 100%);
+  pointer-events: none;
+}
+
+/* expanding section rows */
+.reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.22, 0.7, 0.3, 1);
+}
+.reveal.open {
+  grid-template-rows: 1fr;
+}
+.reveal > div {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* progress bar fill */
+.bar-fill {
+  transform-origin: left center;
+  transition: width 0.6s cubic-bezier(0.22, 0.7, 0.3, 1);
+}
+
+/* thin custom scrollbar for panes */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+.thin-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 3px;
+}
+
+/* date picker: selected day */
+.rdp-day_button[aria-selected='true'] {
+  background-color: var(--color-accent);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
