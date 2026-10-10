@@ -11,13 +11,14 @@ import type {
   Settings,
   User,
 } from '../types'
+import type { AlertVariant } from '../components/ui/Alert'
+import type { RegisterInput } from '../lib/api'
 import {
   mockLearningPaths,
   mockNotifications,
   mockProjects,
   mockRecent,
   mockSettings,
-  mockUser,
   buildGeneratedSession,
   findTemplateMatch,
   sectionsForSubject,
@@ -58,13 +59,11 @@ const WINDOW_TIMES: Record<string, string> = {
   anytime: '19:00',
 }
 
-interface Toast {
-  id: number
-  text: string
-}
+export type AuthStatus = 'checking' | 'authenticated' | 'guest'
 
 export interface AppState {
   user: User | null
+  authStatus: AuthStatus
   paths: LearningPath[]
   activePathId: string
   customContent: Record<string, SessionContent>
@@ -73,11 +72,11 @@ export interface AppState {
   recent: RecentlyDone[]
   settings: Settings
   setup: SetupAnswers
-  toasts: Toast[]
 }
 
 type Action =
-  | { type: 'auth/signIn'; email?: string }
+  | { type: 'auth/setUser'; user: User | null }
+  | { type: 'auth/sessionGuest' }
   | { type: 'auth/signOut' }
   | { type: 'setup/patch'; patch: Partial<SetupAnswers> }
   | { type: 'setup/reset' }
@@ -97,11 +96,10 @@ type Action =
   | { type: 'settings/notifications'; patch: Partial<Settings['notifications']> }
   | { type: 'settings/ai'; patch: Partial<Settings['ai']> }
   | { type: 'profile/update'; patch: Partial<User> }
-  | { type: 'toast/push'; text: string; id: number }
-  | { type: 'toast/dismiss'; id: number }
 
 export const initialState: AppState = {
   user: null,
+  authStatus: 'checking',
   paths: mockLearningPaths,
   activePathId: mockLearningPaths[0].id,
   customContent: {},
@@ -110,7 +108,6 @@ export const initialState: AppState = {
   recent: mockRecent,
   settings: mockSettings,
   setup: emptySetup,
-  toasts: [],
 }
 
 const activityKey = (pathId: string, sectionId: string, kind: ActivityKind) =>
@@ -160,16 +157,22 @@ function applyActivity(
 
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case 'auth/signIn':
+    case 'auth/setUser':
       return {
         ...state,
-        user: action.email && action.email !== mockUser.email
-          ? { ...mockUser, email: action.email }
-          : mockUser,
+        user: action.user,
+        authStatus: action.user ? 'authenticated' : 'guest',
       }
 
+    case 'auth/sessionGuest':
+      // Only the initial session check may downgrade to guest; a late response
+      // must never sign out a user who just logged in.
+      return state.authStatus === 'checking'
+        ? { ...state, user: null, authStatus: 'guest' }
+        : state
+
     case 'auth/signOut':
-      return { ...state, user: null }
+      return { ...state, user: null, authStatus: 'guest' }
 
     case 'setup/patch':
       return { ...state, setup: { ...state.setup, ...action.patch } }
@@ -431,12 +434,6 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'profile/update':
       return { ...state, user: state.user ? { ...state.user, ...action.patch } : null }
 
-    case 'toast/push':
-      return { ...state, toasts: [...state.toasts, { id: action.id, text: action.text }] }
-
-    case 'toast/dismiss':
-      return { ...state, toasts: state.toasts.filter((t) => t.id !== action.id) }
-
     default:
       return state
   }
@@ -453,7 +450,8 @@ export interface Store {
   state: AppState
   activePath: LearningPath | null
   unreadCount: number
-  signIn: (email?: string) => void
+  login: (email: string, password: string) => Promise<User>
+  register: (input: RegisterInput) => Promise<User>
   signOut: () => void
   patchSetup: (patch: Partial<SetupAnswers>) => void
   resetSetup: () => void
@@ -490,7 +488,7 @@ export interface Store {
   updateNotificationSettings: (patch: Partial<Settings['notifications']>) => void
   updateAi: (patch: Partial<Settings['ai']>) => void
   updateProfile: (patch: Partial<User>) => void
-  toast: (text: string) => void
+  toast: (text: string, variant?: AlertVariant) => void
   sessionContentFor: (sectionId: string) => SessionContent | null
 }
 

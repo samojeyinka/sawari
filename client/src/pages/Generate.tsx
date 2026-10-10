@@ -17,7 +17,7 @@ const phases = [
 ]
 
 export function GeneratePage() {
-  const { state, createPath, signIn } = useApp()
+  const { state, createPath } = useApp()
   const navigate = useNavigate()
   const setup = state.setup
   const [phase, setPhase] = useState(0)
@@ -45,9 +45,8 @@ export function GeneratePage() {
 
   const viewPath = () => {
     setLaunching(true)
-    signIn()
     createPath(setup.subject, setup)
-    navigate('/app/path')
+    navigate(state.user ? '/app/path' : '/login')
   }
 
   return (

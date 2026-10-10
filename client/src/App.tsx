@@ -2,7 +2,7 @@ import { lazy, Suspense, type ReactNode } from 'react'
 import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom'
 import { useApp } from './state/store'
 import { AppProvider } from './state/AppProvider'
-import { Toasts } from './components/ui/Toasts'
+import { AlertProvider } from './state/AlertProvider'
 import { AppShell } from './components/layout/AppShell'
 import { LandingPage } from './pages/Landing'
 import { RouteFallback } from './components/ui/RouteFallback'
@@ -25,46 +25,48 @@ const SettingsPage = lazy(() => import('./pages/Settings').then((m) => ({ defaul
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { state } = useApp()
+  if (state.authStatus === 'checking') return <RouteFallback />
   if (!state.user) return <Navigate to="/login" replace />
   return children
 }
 
 function App() {
   return (
-    <AppProvider>
-      <Router>
-        <Suspense fallback={<RouteFallback />}>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/setup" element={<SetupPage />} />
-            <Route path="/generate" element={<GeneratePage />} />
+    <AlertProvider>
+      <AppProvider>
+        <Router>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/setup" element={<SetupPage />} />
+              <Route path="/generate" element={<GeneratePage />} />
 
-            <Route
-              path="/app"
-              element={
-                <RequireAuth>
-                  <AppShell />
-                </RequireAuth>
-              }
-            >
-              <Route index element={<Navigate to="/app/today" replace />} />
-              <Route path="today" element={<TodayPage />} />
-              <Route path="path" element={<PathPage />} />
-              <Route path="session/:sectionId" element={<SessionPage />} />
-              <Route path="assessment/:sectionId" element={<AssessmentPage />} />
-              <Route path="projects" element={<ProjectsPage />} />
-              <Route path="projects/:projectId" element={<ProjectWorkspacePage />} />
-              <Route path="progress" element={<ProgressPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
+              <Route
+                path="/app"
+                element={
+                  <RequireAuth>
+                    <AppShell />
+                  </RequireAuth>
+                }
+              >
+                <Route index element={<Navigate to="/app/today" replace />} />
+                <Route path="today" element={<TodayPage />} />
+                <Route path="path" element={<PathPage />} />
+                <Route path="session/:sectionId" element={<SessionPage />} />
+                <Route path="assessment/:sectionId" element={<AssessmentPage />} />
+                <Route path="projects" element={<ProjectsPage />} />
+                <Route path="projects/:projectId" element={<ProjectWorkspacePage />} />
+                <Route path="progress" element={<ProgressPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-        <Toasts />
-      </Router>
-    </AppProvider>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </Router>
+      </AppProvider>
+    </AlertProvider>
   )
 }
 

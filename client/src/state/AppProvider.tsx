@@ -1,24 +1,72 @@
 import {
   useCallback,
+  useEffect,
   useMemo,
   useReducer,
-  useRef,
   type ReactNode,
 } from 'react'
-import type { SessionContent } from '../types'
+import type { SessionContent, User } from '../types'
 import { baseSessionContent } from '../data'
+import type { AlertVariant } from '../components/ui/Alert'
+import { authApi, type ApiUser, type RegisterInput } from '../lib/api'
+import { useAlert } from './alertContext'
 import type { Store } from './store'
 import { AppContext, initialState, reducer } from './store'
 
+/** Shapes the backend user into the frontend `User` type. */
+function mapApiUser(apiUser: ApiUser): User {
+  const fullName = [apiUser.firstName, apiUser.lastName].filter(Boolean).join(' ').trim()
+  return {
+    id: apiUser.id,
+    name: fullName || apiUser.email,
+    firstName: apiUser.firstName,
+    email: apiUser.email,
+    joined: apiUser.createdAt.slice(0, 10),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  }
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState)
-  const toastId = useRef(0)
+  const alert = useAlert()
 
-  const toast = useCallback((text: string) => {
-    const id = ++toastId.current
-    dispatch({ type: 'toast/push', text, id })
-    window.setTimeout(() => dispatch({ type: 'toast/dismiss', id }), 2800)
+  // Restore the session from the httpOnly cookie on first load.
+  useEffect(() => {
+    const controller = new AbortController()
+    authApi
+      .me(controller.signal)
+      .then((apiUser) => dispatch({ type: 'auth/setUser', user: mapApiUser(apiUser) }))
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        dispatch({ type: 'auth/sessionGuest' })
+      })
+    return () => controller.abort()
   }, [])
+
+  const login = useCallback(async (email: string, password: string) => {
+    const user = mapApiUser(await authApi.login({ email, password }))
+    dispatch({ type: 'auth/setUser', user })
+    return user
+  }, [])
+
+  const register = useCallback(async (input: RegisterInput) => {
+    const user = mapApiUser(await authApi.register(input))
+    dispatch({ type: 'auth/setUser', user })
+    return user
+  }, [])
+
+  const signOut = useCallback(() => {
+    dispatch({ type: 'auth/signOut' })
+    // Best-effort cookie clear; the local session is gone either way.
+    void authApi.logout().catch(() => undefined)
+  }, [])
+
+  const toast = useCallback(
+    (text: string, variant: AlertVariant = 'info') => {
+      alert.show(text, { variant })
+    },
+    [alert],
+  )
 
   const activePath = useMemo(
     () => state.paths.find((p) => p.id === state.activePathId) ?? state.paths[0] ?? null,
@@ -35,8 +83,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       state,
       activePath,
       unreadCount,
-      signIn: (email) => dispatch({ type: 'auth/signIn', email }),
-      signOut: () => dispatch({ type: 'auth/signOut' }),
+      login,
+      register,
+      signOut,
       patchSetup: (patch) => dispatch({ type: 'setup/patch', patch }),
       resetSetup: () => dispatch({ type: 'setup/reset' }),
       activatePath: (id) => dispatch({ type: 'path/activate', id }),
@@ -82,7 +131,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         (baseSessionContent[sectionId] as SessionContent | undefined) ??
         null,
     }
-  }, [state, activePath, unreadCount, toast])
+  }, [state, activePath, unreadCount, login, register, signOut, toast])
 
   return <AppContext.Provider value={store}>{children}</AppContext.Provider>
 }
