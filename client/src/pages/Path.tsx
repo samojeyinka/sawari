@@ -404,7 +404,7 @@ export function PathPage() {
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleDelete}
         title={`Delete ${activePath.subject}?`}
-        body="This removes the path and its progress from this browser. Your other paths are untouched."
+        body="This permanently removes the path and its progress. Your other paths are untouched."
         confirmLabel="Delete path"
         danger
       />

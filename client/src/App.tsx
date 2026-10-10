@@ -35,6 +35,8 @@ function RequireAuth({ children }: { children: ReactNode }) {
   const { state } = useApp()
   if (state.authStatus === 'checking') return <RouteFallback />
   if (!state.user) return <Navigate to="/login" replace />
+  // Wait for paths + projects to load so the dashboard never flashes empty.
+  if (state.dataStatus !== 'ready') return <RouteFallback />
   return children
 }
 

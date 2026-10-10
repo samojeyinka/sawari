@@ -3,7 +3,6 @@ import type {
   ActivityKind,
   AppNotification,
   LearningPath,
-  PathSection,
   Project,
   RecentlyDone,
   SessionContent,
@@ -13,21 +12,14 @@ import type {
 } from '../types'
 import type { AlertVariant } from '../components/ui/Alert'
 import type { RegisterInput } from '../lib/api'
-import {
-  mockLearningPaths,
-  mockNotifications,
-  mockProjects,
-  mockRecent,
-  mockSettings,
-  buildGeneratedSession,
-  findTemplateMatch,
-  sectionsForSubject,
-} from '../data'
-import { fallbackFeedback, launchFeedback } from '../data/projects'
+import { baseSessionContent, buildGeneratedSession, mockSettings } from '../data'
+import { fallbackFeedback } from '../data/projects'
 
 /* ------------------------------------------------------------------ */
 /*  Store: one slice of app state, one reducer, a handful of actions.  */
-/*  Everything is in memory so an API can replace it later cleanly.    */
+/*  Domain data (paths, projects) is loaded from and written to the    */
+/*  API; the reducer stays pure so it can also compute the next state  */
+/*  for optimistic updates.                                            */
 /* ------------------------------------------------------------------ */
 
 const emptySetup: SetupAnswers = {
@@ -43,27 +35,13 @@ const emptySetup: SetupAnswers = {
   targetDate: '',
 }
 
-const DAY_LABELS: Record<string, string> = {
-  mon: 'Mon',
-  tue: 'Tue',
-  wed: 'Wed',
-  thu: 'Thu',
-  fri: 'Fri',
-  sat: 'Sat',
-  sun: 'Sun',
-}
-const WINDOW_TIMES: Record<string, string> = {
-  morning: '09:00',
-  afternoon: '14:00',
-  evening: '19:00',
-  anytime: '19:00',
-}
-
 export type AuthStatus = 'checking' | 'authenticated' | 'guest'
+export type DataStatus = 'idle' | 'loading' | 'ready'
 
 export interface AppState {
   user: User | null
   authStatus: AuthStatus
+  dataStatus: DataStatus
   paths: LearningPath[]
   activePathId: string
   customContent: Record<string, SessionContent>
@@ -80,12 +58,16 @@ type Action =
   | { type: 'auth/signOut' }
   | { type: 'setup/patch'; patch: Partial<SetupAnswers> }
   | { type: 'setup/reset' }
+  | { type: 'data/loading' }
+  | { type: 'data/loaded'; paths: LearningPath[]; projects: Project[]; content: Record<string, SessionContent> }
+  | { type: 'path/add'; path: LearningPath; content: Record<string, SessionContent> }
+  | { type: 'path/replace'; path: LearningPath }
   | { type: 'path/activate'; id: string }
-  | { type: 'path/create'; pathId: string; createdAt: string; subject: string; setup: SetupAnswers }
   | { type: 'path/delete'; id: string }
   | { type: 'path/preferences'; pathId: string; patch: Partial<Pick<LearningPath, 'weeklyHours' | 'intensity' | 'formats' | 'targetDate' | 'goal'>> }
   | { type: 'path/activity'; pathId: string; sectionId: string; kind: ActivityKind; title: string; minutes: number }
   | { type: 'path/assessment'; pathId: string; sectionId: string; assessmentId: string; title: string; score: number; total: number; minutes: number }
+  | { type: 'project/replace'; project: Project }
   | { type: 'project/toggleTask'; projectId: string; taskId: string }
   | { type: 'project/submit'; projectId: string }
   | { type: 'project/review'; projectId: string }
@@ -100,12 +82,13 @@ type Action =
 export const initialState: AppState = {
   user: null,
   authStatus: 'checking',
-  paths: mockLearningPaths,
-  activePathId: mockLearningPaths[0].id,
+  dataStatus: 'idle',
+  paths: [],
+  activePathId: '',
   customContent: {},
-  projects: mockProjects,
-  notifications: mockNotifications,
-  recent: mockRecent,
+  projects: [],
+  notifications: [],
+  recent: [],
   settings: mockSettings,
   setup: emptySetup,
 }
@@ -172,7 +155,19 @@ export function reducer(state: AppState, action: Action): AppState {
         : state
 
     case 'auth/signOut':
-      return { ...state, user: null, authStatus: 'guest' }
+      return {
+        ...state,
+        user: null,
+        authStatus: 'guest',
+        dataStatus: 'idle',
+        paths: [],
+        activePathId: '',
+        customContent: {},
+        projects: [],
+        notifications: [],
+        recent: [],
+        setup: emptySetup,
+      }
 
     case 'setup/patch':
       return { ...state, setup: { ...state.setup, ...action.patch } }
@@ -180,94 +175,40 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'setup/reset':
       return { ...state, setup: emptySetup }
 
-    case 'path/activate':
-      return { ...state, activePathId: action.id }
+    case 'data/loading':
+      return state.dataStatus === 'loading' ? state : { ...state, dataStatus: 'loading' }
 
-    case 'path/create': {
-      const answers = action.setup
-      const matchId = findTemplateMatch(action.subject, state.paths)
-      const { createdAt } = action
-
-      if (matchId) {
-        // This subject already has a path: reopen it instead of starting a duplicate,
-        // and let the goal from setup update it.
-        const goal = answers.outcome.trim()
-        return {
-          ...state,
-          activePathId: matchId,
-          setup: emptySetup,
-          paths: goal
-            ? state.paths.map((p) => (p.id === matchId ? { ...p, goal } : p))
-            : state.paths,
-        }
-      }
-
-      // New subject: build a path from the template list and one session.
-      const templates = sectionsForSubject(action.subject)
-      const id = action.pathId
-      const sections: PathSection[] = templates.map((t, i) => ({
-        id: `${id}-s${i + 1}`,
-        order: i + 1,
-        title: t.title,
-        description: t.description,
-        minutes: t.minutes,
-        status: i === 0 ? 'current' : i === 1 ? 'upcoming' : 'locked',
-        doneMinutes: 0,
-        note:
-          i === 0
-            ? undefined
-            : i === 1
-              ? `Starts after ${templates[0].title}.`
-              : `Unlocks after ${templates[i - 1].title}.`,
-      }))
-
-      const path: LearningPath = {
-        id,
-        subject: titleCase(action.subject),
-        goal: answers.outcome.trim() || `Build real confidence with ${titleCase(action.subject)}.`,
-        experience: answers.experience,
-        reason: answers.reason,
-        weeklyHours: answers.weeklyHours ?? '5',
-        intensity: answers.intensity ?? 'balanced',
-        formats: answers.formats.length ? answers.formats : ['articles', 'exercises'],
-        targetDate: answers.targetDate,
-        createdAt,
-        stats: {
-          sessionsCompleted: 0,
-          minutesLearned: 0,
-          topicsExplored: 0,
-          projectsCompleted: 0,
-          week: [0, 0, 0, 0, 0, 0, 0],
-        },
-        currentSectionId: sections[0].id,
-        sections,
-        completedActivities: [],
-        countedSessions: [],
-        assessmentResults: {},
-        adaptationNote: null,
-      }
-
-      const content = buildGeneratedSession(answers, sections[0].title, 1)
-
-      const scheduledDays = answers.days.map((d) => DAY_LABELS[d]).filter(Boolean)
-      const scheduledTime = answers.timeWindow ? WINDOW_TIMES[answers.timeWindow] : undefined
-
+    case 'data/loaded': {
+      const activePathId = action.paths.some((p) => p.id === state.activePathId)
+        ? state.activePathId
+        : (action.paths[0]?.id ?? '')
       return {
         ...state,
-        paths: [...state.paths, path],
-        activePathId: path.id,
-        customContent: { ...state.customContent, [sections[0].id]: content },
-        setup: emptySetup,
-        settings: {
-          ...state.settings,
-          schedule: {
-            ...state.settings.schedule,
-            days: scheduledDays.length > 0 ? scheduledDays : state.settings.schedule.days,
-            time: scheduledTime ?? state.settings.schedule.time,
-          },
-        },
+        dataStatus: 'ready',
+        paths: action.paths,
+        projects: action.projects,
+        activePathId,
+        customContent: action.content,
       }
     }
+
+    case 'path/add':
+      return {
+        ...state,
+        paths: [...state.paths, action.path],
+        activePathId: action.path.id,
+        customContent: { ...state.customContent, ...action.content },
+        setup: emptySetup,
+      }
+
+    case 'path/replace':
+      return {
+        ...state,
+        paths: state.paths.map((p) => (p.id === action.path.id ? action.path : p)),
+      }
+
+    case 'path/activate':
+      return { ...state, activePathId: action.id }
 
     case 'path/delete': {
       const paths = state.paths.filter((p) => p.id !== action.id)
@@ -347,6 +288,12 @@ export function reducer(state: AppState, action: Action): AppState {
       }
     }
 
+    case 'project/replace':
+      return {
+        ...state,
+        projects: state.projects.map((p) => (p.id === action.project.id ? action.project : p)),
+      }
+
     case 'project/toggleTask':
       return {
         ...state,
@@ -384,7 +331,8 @@ export function reducer(state: AppState, action: Action): AppState {
             ? {
                 ...p,
                 reviewed: true,
-                feedback: p.feedback ?? (p.id === 'prj-launch' ? launchFeedback : fallbackFeedback),
+                status: 'completed',
+                feedback: p.feedback ?? fallbackFeedback,
               }
             : p,
         ),
@@ -439,9 +387,40 @@ export function reducer(state: AppState, action: Action): AppState {
   }
 }
 
-function titleCase(value: string): string {
+export function titleCase(value: string): string {
   const clean = value.trim()
   return clean.length ? clean.slice(0, 1).toUpperCase() + clean.slice(1) : 'Something new'
+}
+
+/** Rebuilds the setup answers a path was created from (enough to regenerate content). */
+export function setupFromPath(path: LearningPath): SetupAnswers {
+  return {
+    subject: path.subject,
+    experience: path.experience,
+    reason: path.reason,
+    outcome: path.goal,
+    weeklyHours: path.weeklyHours,
+    days: [],
+    timeWindow: null,
+    formats: path.formats,
+    intensity: path.intensity,
+    targetDate: path.targetDate,
+  }
+}
+
+/**
+ * Session content is generated client-side (there is no AI content API yet),
+ * keyed by section id. Sections that ship their own content (demo paths) are
+ * left to `baseSessionContent`.
+ */
+export function contentForPath(path: LearningPath): Record<string, SessionContent> {
+  const answers = setupFromPath(path)
+  const content: Record<string, SessionContent> = {}
+  for (const section of path.sections) {
+    if (baseSessionContent[section.id]) continue
+    content[section.id] = buildGeneratedSession(answers, section.title, section.order)
+  }
+  return content
 }
 
 /* ------------------------------- context ------------------------------- */
@@ -454,10 +433,11 @@ export interface Store {
   register: (input: RegisterInput) => Promise<User>
   refreshSession: () => Promise<void>
   signOut: () => void
+  reloadData: () => Promise<void>
   patchSetup: (patch: Partial<SetupAnswers>) => void
   resetSetup: () => void
   activatePath: (id: string) => void
-  createPath: (subject: string, answers: SetupAnswers) => void
+  createPath: (subject: string, answers: SetupAnswers) => Promise<void>
   deletePath: (id: string) => void
   updatePathPreferences: (
     pathId: string,
