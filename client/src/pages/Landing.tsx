@@ -1,7 +1,9 @@
 import type { MouseEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { LuPlay } from 'react-icons/lu'
+import { useApp } from '../state/store'
 import { Logo } from '../components/ui/Logo'
+import { AvatarMenu } from '../components/ui/AvatarMenu'
 import { KineticLink } from '../components/landing/KineticLink'
 import { HeroGrid } from '../components/landing/HeroGrid'
 import {
@@ -71,6 +73,9 @@ const subjects = [
 ]
 
 export function LandingPage() {
+  const { state, signOut } = useApp()
+  const user = state.user
+
   const scrollToHow = (e: MouseEvent) => {
     e.preventDefault()
     document.getElementById('how')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -92,15 +97,26 @@ export function LandingPage() {
             >
               How it works
             </a>
-            <Link
-              to="/login"
-              className="text-sm text-on-band-muted transition-colors hover:text-on-band"
-            >
-              Log in
-            </Link>
-            <KineticLink to="/setup" tone="cream" size="sm">
-              Build my path
-            </KineticLink>
+            {user ? (
+              <>
+                <KineticLink to="/setup" tone="cream" size="sm">
+                  Build my path
+                </KineticLink>
+                <AvatarMenu name={user.name} onSignOut={signOut} />
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-sm text-on-band-muted transition-colors hover:text-on-band"
+                >
+                  Log in
+                </Link>
+                <KineticLink to="/setup" tone="cream" size="sm">
+                  Build my path
+                </KineticLink>
+              </>
+            )}
           </nav>
         </div>
       </header>
@@ -252,7 +268,7 @@ export function LandingPage() {
           className="absolute inset-0 opacity-70"
           style={{
             background:
-              'radial-gradient(50% 60% at 85% 20%, rgba(53,179,163,0.12), transparent 65%), radial-gradient(40% 50% at 10% 90%, rgba(255,178,123,0.08), transparent 70%)',
+              'radial-gradient(50% 60% at 85% 20%, rgba(53,179,163,0.12), transparent 65%), radial-gradient(40% 50% at 10% 90%, rgba(90,170,210,0.1), transparent 70%)',
           }}
           aria-hidden="true"
         />
@@ -278,7 +294,7 @@ export function LandingPage() {
         className="relative border-t border-on-band/10 px-5 py-20 text-center sm:px-10 sm:py-24"
         style={{
           background:
-            'radial-gradient(rgba(240,234,223,0.05) 1px, transparent 1px)',
+            'radial-gradient(rgba(203,225,235,0.06) 1px, transparent 1px)',
           backgroundSize: '22px 22px',
           backgroundColor: 'var(--color-band-deep)',
         }}
@@ -307,8 +323,11 @@ export function LandingPage() {
             <a href="#how" onClick={scrollToHow} className="transition-colors hover:text-on-band">
               How it works
             </a>
-            <Link to="/login" className="transition-colors hover:text-on-band">
-              Log in
+            <Link
+              to={user ? '/app/today' : '/login'}
+              className="transition-colors hover:text-on-band"
+            >
+              {user ? 'Open my app' : 'Log in'}
             </Link>
           </div>
         </div>

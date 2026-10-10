@@ -28,13 +28,13 @@
   --color-warn: #b45309;
   --color-warn-soft: #fdf3e7;
 
-  /* warm bands + cards: the landing's alternating dark/light rhythm */
-  --color-band: #1b1a17;
-  --color-band-soft: #24221e;
-  --color-band-deep: #131211;
-  --color-band-teal: #17211f;
-  --color-panel: #262320;
-  --color-panel-soft: #2e2a26;
+  /* cool navy bands + cards: shared by the public pages and the app shell */
+  --color-band: #001e2b;
+  --color-band-soft: #072736;
+  --color-band-deep: #001521;
+  --color-band-teal: #06283a;
+  --color-panel: #0b2a3a;
+  --color-panel-soft: #133b4e;
   --color-cream: #f4efe6;
   --color-cream-deep: #eae3d5;
   --color-on-band: #f0eadf;
@@ -102,15 +102,23 @@
    semantic tokens inside this wrapper so the existing utility classes in the
    pages/components resolve to dark values without touching each file. */
 .app-theme {
+  /* cool navy surfaces instead of the warm brown "band":
+     sidebar #112733, main content #001E2B, cards/panels a step above */
+  --color-band: #011721;
+  --color-band-soft: #072736;
+  --color-band-deep: #001521;
+  --color-panel: #0b2a3a;
+  --color-panel-soft: #133b4e;
+
   --color-ink: #f0eadf;
   --color-ink-soft: #d6cfc2;
   --color-body: #b7ae9f;
   --color-muted: #a79d8d;
   --color-faint: #857d70;
-  --color-line: rgba(240, 234, 223, 0.12);
-  --color-line-strong: rgba(240, 234, 223, 0.24);
-  --color-canvas: #201e1a;
-  --color-canvas-deep: #2e2a26;
+  --color-line: rgba(203, 225, 235, 0.14);
+  --color-line-strong: rgba(203, 225, 235, 0.26);
+  --color-canvas: #0f222d;
+  --color-canvas-deep: #0a3243;
 
   --color-accent: #35b3a3;
   --color-accent-strong: #7fd8cb;
@@ -268,12 +276,12 @@
   content: attr(data-label);
 }
 
-/* ---------- hero backdrop: teal dusk wash + warm ember glow ---------- */
+/* ---------- hero backdrop: teal dusk wash + cool blue glow ---------- */
 .hero-wash {
   background:
     radial-gradient(60% 55% at 78% 18%, rgba(53, 179, 163, 0.16), transparent 65%),
-    radial-gradient(45% 40% at 12% 85%, rgba(255, 178, 123, 0.1), transparent 70%),
-    radial-gradient(80% 90% at 50% -10%, #23211d, transparent 75%),
+    radial-gradient(45% 40% at 12% 85%, rgba(90, 170, 210, 0.1), transparent 70%),
+    radial-gradient(80% 90% at 50% -10%, #0a2b3a, transparent 75%),
     var(--color-band);
 }
 
@@ -284,8 +292,8 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(244, 239, 230, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(244, 239, 230, 0.045) 1px, transparent 1px);
+    linear-gradient(rgba(203, 225, 235, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(203, 225, 235, 0.05) 1px, transparent 1px);
   background-size: 56px 56px;
   background-position: right top;
   mask-image: radial-gradient(75% 75% at 50% 35%, black, transparent 100%);
