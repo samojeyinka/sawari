@@ -55,6 +55,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return user
   }, [])
 
+  const refreshSession = useCallback(async () => {
+    dispatch({ type: 'auth/setUser', user: mapApiUser(await authApi.me()) })
+  }, [])
+
   const signOut = useCallback(() => {
     dispatch({ type: 'auth/signOut' })
     // Best-effort cookie clear; the local session is gone either way.
@@ -85,6 +89,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unreadCount,
       login,
       register,
+      refreshSession,
       signOut,
       patchSetup: (patch) => dispatch({ type: 'setup/patch', patch }),
       resetSetup: () => dispatch({ type: 'setup/reset' }),
@@ -131,7 +136,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         (baseSessionContent[sectionId] as SessionContent | undefined) ??
         null,
     }
-  }, [state, activePath, unreadCount, login, register, signOut, toast])
+  }, [state, activePath, unreadCount, login, register, refreshSession, signOut, toast])
 
   return <AppContext.Provider value={store}>{children}</AppContext.Provider>
 }

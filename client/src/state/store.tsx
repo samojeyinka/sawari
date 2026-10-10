@@ -452,6 +452,7 @@ export interface Store {
   unreadCount: number
   login: (email: string, password: string) => Promise<User>
   register: (input: RegisterInput) => Promise<User>
+  refreshSession: () => Promise<void>
   signOut: () => void
   patchSetup: (patch: Partial<SetupAnswers>) => void
   resetSetup: () => void

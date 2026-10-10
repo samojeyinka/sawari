@@ -4,22 +4,24 @@ import passport from 'passport'
 import { env } from '../../config/env.js'
 import { login, logout, register } from '../../controllers/auth.controller.js'
 import { oauthCallback } from '../../controllers/oauth.controller.js'
-import { asyncHandler } from '../../lib/asyncHandler.js'
-import { httpError } from '../../lib/AppError.js'
 import { authLimiter } from '../../middleware/rateLimiter.js'
 import { validate } from '../../middleware/validate.js'
 import { loginSchema, registerSchema } from '../../validators/authValidators.js'
 
 const router = Router()
 
-/** 501 when the provider's credentials have not been configured. */
+/**
+ * Bounces back to the frontend when the provider's credentials are not
+ * configured, so the browser never lands on a raw error page.
+ */
 function requireOAuth(provider: 'github' | 'google') {
-  return asyncHandler(async (_req: Request, _res: Response, next: NextFunction) => {
+  return (_req: Request, res: Response, next: NextFunction): void => {
     if (!env[provider === 'github' ? 'GITHUB_CLIENT_ID' : 'GOOGLE_CLIENT_ID']) {
-      throw httpError.notImplemented(`${provider} sign-in is not configured on the server.`)
+      res.redirect(`${env.FRONTEND_URL}?oauth=unavailable&provider=${provider}`)
+      return
     }
     next()
-  })
+  }
 }
 
 router.post('/register', authLimiter, validate(registerSchema), register)

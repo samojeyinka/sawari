@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LuCheck, LuEye, LuEyeOff, LuLoaderCircle } from 'react-icons/lu'
+import { FaGithub, FaGoogle } from 'react-icons/fa6'
 import { useApp } from '../state/store'
 import { useAlert } from '../state/alertContext'
+import { authApi } from '../lib/api'
 import { Logo } from '../components/ui/Logo'
 import { cx } from '../lib/utils'
 
@@ -41,6 +43,10 @@ export function LoginPage() {
     setMode(next)
     setPassword('')
     setShowPassword(false)
+  }
+
+  const startOAuth = (provider: 'github' | 'google') => {
+    window.location.assign(authApi.oauthUrl(provider))
   }
 
   const submit = async (e: FormEvent) => {
@@ -229,6 +235,32 @@ export function LoginPage() {
                 )}
               </button>
             </form>
+
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center gap-3 text-[11px] uppercase tracking-wide text-on-band-dim">
+                <span className="h-px flex-1 bg-on-band/15" />
+                or continue with
+                <span className="h-px flex-1 bg-on-band/15" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => startOAuth('github')}
+                  className="inline-flex h-11 items-center justify-center gap-2 border border-on-band/20 bg-band text-sm font-medium text-on-band transition-colors duration-150 hover:border-on-band/35 hover:bg-band-soft"
+                >
+                  <FaGithub className="h-4 w-4" />
+                  GitHub
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startOAuth('google')}
+                  className="inline-flex h-11 items-center justify-center gap-2 border border-on-band/20 bg-band text-sm font-medium text-on-band transition-colors duration-150 hover:border-on-band/35 hover:bg-band-soft"
+                >
+                  <FaGoogle className="h-4 w-4" />
+                  Google
+                </button>
+              </div>
+            </div>
           </div>
 
           <p className="mt-6 text-sm text-on-band-muted">

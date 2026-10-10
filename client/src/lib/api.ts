@@ -116,4 +116,6 @@ export const authApi = {
   login: (input: LoginInput) => request<ApiUser>('/auth/login', { method: 'POST', body: input }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   me: (signal?: AbortSignal) => request<ApiUser>('/me', { signal }),
+  /** Absolute URL that starts a social sign-in flow (full-page navigation). */
+  oauthUrl: (provider: 'github' | 'google') => `${API_BASE}/auth/${provider}`,
 }
