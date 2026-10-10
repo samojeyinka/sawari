@@ -1,0 +1,74 @@
+import { z } from 'zod'
+import {
+  EXPERIENCE_LEVELS,
+  GOAL_REASONS,
+  INTENSITIES,
+  LEARNING_FORMATS,
+  SECTION_STATUSES,
+  WEEKLY_HOURS,
+} from '../domain/index.js'
+import { isoDate, listQuerySchema } from './common.js'
+
+export const sectionSchema = z.strictObject({
+  id: z.string().min(1).max(60),
+  order: z.number().int().min(0),
+  title: z.string().trim().min(1).max(160),
+  description: z.string().max(1000).default(''),
+  minutes: z.number().int().min(0).default(0),
+  status: z.enum(SECTION_STATUSES),
+  doneMinutes: z.number().int().min(0).default(0),
+  note: z.string().max(1000).optional(),
+})
+
+export const statsSchema = z.strictObject({
+  sessionsCompleted: z.number().int().min(0).optional(),
+  minutesLearned: z.number().int().min(0).optional(),
+  topicsExplored: z.number().int().min(0).optional(),
+  projectsCompleted: z.number().int().min(0).optional(),
+  week: z.array(z.number().int().min(0)).max(7).optional(),
+})
+
+export const assessmentResultSchema = z.strictObject({
+  score: z.number().min(0),
+  total: z.number().min(0),
+  date: z.string().min(1).max(40),
+  firstAttempt: z.boolean().default(true),
+})
+
+/** Fields the client supplies when creating a path (setup answers). */
+export const createLearningPathSchema = z.strictObject({
+  subject: z.string().trim().min(1).max(120),
+  goal: z.string().max(500).default(''),
+  experience: z.enum(EXPERIENCE_LEVELS).nullable().default(null),
+  reason: z.enum(GOAL_REASONS).nullable().default(null),
+  weeklyHours: z.enum(WEEKLY_HOURS),
+  intensity: z.enum(INTENSITIES),
+  formats: z.array(z.enum(LEARNING_FORMATS)).default([]),
+  targetDate: isoDate.nullable().default(null),
+})
+
+/** Everything the client may change afterwards (progress + plan tuning). */
+export const updateLearningPathSchema = z.strictObject({
+  subject: z.string().trim().min(1).max(120).optional(),
+  goal: z.string().max(500).optional(),
+  experience: z.enum(EXPERIENCE_LEVELS).nullable().optional(),
+  reason: z.enum(GOAL_REASONS).nullable().optional(),
+  weeklyHours: z.enum(WEEKLY_HOURS).optional(),
+  intensity: z.enum(INTENSITIES).optional(),
+  formats: z.array(z.enum(LEARNING_FORMATS)).optional(),
+  targetDate: isoDate.nullable().optional(),
+  sections: z.array(sectionSchema).optional(),
+  stats: statsSchema.optional(),
+  currentSectionId: z.string().max(60).nullable().optional(),
+  completedActivities: z.array(z.string().max(80)).optional(),
+  countedSessions: z.array(z.string().max(80)).optional(),
+  assessmentResults: z.record(z.string().max(80), assessmentResultSchema).optional(),
+  adaptationNote: z.string().max(2000).nullable().optional(),
+})
+
+export const listLearningPathsQuery = listQuerySchema({
+  subject: z.string().trim().max(120).optional(),
+})
+
+export type CreateLearningPathInput = z.infer<typeof createLearningPathSchema>
+export type UpdateLearningPathInput = z.infer<typeof updateLearningPathSchema>
