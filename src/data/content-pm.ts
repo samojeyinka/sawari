@@ -48,14 +48,15 @@ export const pmSessions: Record<string, SessionContent> = {
     },
     resource: {
       id: 'res-pm-1',
-      title: 'What a project manager actually does all day',
-      kind: 'article',
-      source: 'Sawari Reader',
-      minutes: 10,
+      title: 'Project management, in twelve minutes',
+      kind: 'video',
+      source: 'YouTube · Adriana Girdler',
+      minutes: 12,
+      url: 'https://www.youtube.com/watch?v=Z3usMyZ5eXA',
       summary:
-        'A honest look at the daily work behind the title, far from the textbook breakdown of process groups.',
+        'Watch this before the reading. It grounds the vocabulary you are about to use, and the notes below are what to hold on to afterwards.',
       body: [
-        'Ask someone what a project manager does and you will hear "plans and tracks". Ask a project manager and you get a different answer: most of the day is spent removing ambiguity. Who owns this. What does done mean. Which of these two risks matters more.',
+        'Ask someone what a project manager does and you will hear "plans and tracks". The video gives the honest answer: most of the day is spent removing ambiguity. Who owns this. What does done mean. Which of these two risks matters more.',
         'The calendar is rarely blocks of planning. It is a standup, then a conversation with the person who is stuck, then a message to the sponsor who wants to know if the date holds, then twenty minutes rewriting an agenda so the next meeting ends with decisions instead of notes.',
         'The useful skill is not software. It is writing things down clearly enough that other people can act on them. A status update that says "on track" is noise. One that says "the vendor confirmed Friday, which puts testing a day behind, and I need a decision on whether we cut the optional screen" is the whole job.',
         'If you are new to this, start there. In your next message about work, name the decision you need. Watch how much faster things move.',

@@ -1,6 +1,7 @@
 import type { Resource } from '../../types'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
+import { MediaEmbed } from '../learn/MediaEmbed'
 import { cx } from '../../lib/utils'
 
 const kindLabels: Record<Resource['kind'], string> = {
@@ -21,6 +22,8 @@ export function ResourcePreviewModal({
 }) {
   if (!resource) return null
 
+  const isVideo = resource.kind === 'video'
+
   return (
     <Modal open={open} onClose={onClose} size="lg" title={resource.title}>
       <div className="space-y-4">
@@ -34,8 +37,12 @@ export function ResourcePreviewModal({
             {kindLabels[resource.kind]}
           </span>
           <span>{resource.source}</span>
-          <span>{resource.minutes} min read</span>
+          <span>
+            {resource.minutes} min {isVideo ? 'watch' : 'read'}
+          </span>
         </div>
+
+        {resource.url && <MediaEmbed url={resource.url} title={resource.title} />}
 
         <p className="text-[15px] leading-relaxed text-ink-soft">{resource.summary}</p>
 
@@ -48,7 +55,7 @@ export function ResourcePreviewModal({
         </div>
 
         <div className="flex justify-end border-t border-line pt-4">
-          <Button onClick={onClose}>Done reading</Button>
+          <Button onClick={onClose}>{isVideo ? 'Done watching' : 'Done reading'}</Button>
         </div>
       </div>
     </Modal>

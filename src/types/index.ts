@@ -67,6 +67,9 @@ export interface Resource {
   minutes: number
   summary: string
   body: string[]
+  /** Optional external link. When it is a YouTube/Vimeo URL the reader embeds
+   *  the player inline so the learner watches without leaving the session. */
+  url?: string
 }
 
 export interface PracticeItem {

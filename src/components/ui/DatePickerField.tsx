@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { DayPicker, type ChevronProps, type ClassNames } from 'react-day-picker'
+import { DayPicker, type ChevronProps } from 'react-day-picker'
 import { LuCalendar, LuChevronDown, LuChevronLeft, LuChevronRight } from 'react-icons/lu'
 import { cx } from '../../lib/utils'
 import { inputClass } from './ProgressBar'
@@ -17,30 +17,6 @@ function fromISO(iso: string): Date | undefined {
 }
 
 const fmt = new Intl.DateTimeFormat('en', { year: 'numeric', month: 'long', day: 'numeric' })
-
-const classNames: Partial<ClassNames> = {
-  root: 'p-1.5',
-  months: 'flex flex-col gap-1',
-  nav: 'flex items-center justify-between px-0.5',
-  button_previous:
-    'grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted transition-colors hover:bg-canvas hover:text-ink',
-  button_next:
-    'grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted transition-colors hover:bg-canvas hover:text-ink',
-  month_caption: 'flex-1 text-center',
-  caption_label: 'text-sm font-medium text-ink',
-  month_grid: 'mt-0.5 w-full border-collapse',
-  weekdays: 'flex',
-  weekday:
-    'flex h-7 flex-1 items-center justify-center text-[11px] font-semibold uppercase tracking-wide text-muted',
-  week: 'flex',
-  day: 'flex',
-  day_button:
-    'flex h-7 flex-1 items-center justify-center rounded-md text-[13px] text-body transition-colors duration-100 hover:bg-canvas hover:text-ink disabled:pointer-events-none',
-  today: 'font-semibold text-accent',
-  outside: 'text-faint',
-  disabled: 'opacity-35',
-  chevron: 'm-0',
-}
 
 export function DatePickerField({
   value,
@@ -89,7 +65,7 @@ export function DatePickerField({
         <div
           role="dialog"
           aria-label="Pick a date"
-          className="absolute inset-0 top-full z-40 mt-2 w-full animate-rise rounded-xl border border-line bg-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+          className="absolute left-0 top-full z-40 mt-2 animate-rise rounded-xl border border-line bg-panel p-3 shadow-[0_12px_32px_rgba(0,0,0,0.35)]"
         >
           <DayPicker
             mode="single"
@@ -98,7 +74,6 @@ export function DatePickerField({
             onSelect={pick}
             defaultMonth={selected ?? new Date()}
             locale={{ options: { weekStartsOn: 1 } }}
-            classNames={classNames}
             components={{ Chevron }}
           />
         </div>

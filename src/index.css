@@ -325,10 +325,77 @@
   border-radius: 3px;
 }
 
-/* date picker: selected day */
-.rdp-day_button[aria-selected='true'] {
-  background-color: var(--color-accent);
+/* ---------- date picker (react-day-picker) ----------
+   The package ships its own stylesheet; we only remap its CSS variables to the
+   app's dark band theme and soften a few defaults. */
+.app-theme .rdp-root {
+  --rdp-accent-color: var(--color-accent);
+  --rdp-accent-background-color: var(--color-accent-soft);
+  --rdp-today-color: var(--color-accent);
+
+  --rdp-day-height: 38px;
+  --rdp-day-width: 38px;
+  --rdp-day_button-height: 34px;
+  --rdp-day_button-width: 34px;
+  --rdp-day_button-border: 0;
+  --rdp-day_button-border-radius: 8px;
+  --rdp-selected-border: 0;
+
+  --rdp-nav_button-height: 2rem;
+  --rdp-nav_button-width: 2rem;
+  --rdp-nav-height: 2.25rem;
+
+  font-size: 13px;
+  color: var(--color-body);
+}
+
+.app-theme .rdp-root .rdp-month_caption {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.app-theme .rdp-root .rdp-caption_label {
   color: var(--color-ink);
+}
+
+.app-theme .rdp-root .rdp-nav button {
+  border-radius: 8px;
+  transition: background-color 0.12s ease;
+}
+
+.app-theme .rdp-root .rdp-nav button:hover {
+  background-color: var(--color-canvas);
+}
+
+.app-theme .rdp-root .rdp-chevron {
+  fill: var(--color-muted);
+}
+
+.app-theme .rdp-root .rdp-weekday {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+.app-theme .rdp-root .rdp-day_button {
+  transition: background-color 0.1s ease;
+}
+
+.app-theme .rdp-root .rdp-day_button:hover {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+.app-theme .rdp-root .rdp-selected {
+  font-size: inherit;
+}
+
+.app-theme .rdp-root .rdp-selected .rdp-day_button {
+  background-color: var(--color-accent);
+  color: #08231f;
   font-weight: 600;
 }
 

@@ -1,6 +1,7 @@
 import { LuCheck } from 'react-icons/lu'
 import type { Resource } from '../../types'
 import { Button } from '../ui/Button'
+import { MediaEmbed } from './MediaEmbed'
 import { cx } from '../../lib/utils'
 
 const kindLabels: Record<Resource['kind'], string> = {
@@ -8,6 +9,13 @@ const kindLabels: Record<Resource['kind'], string> = {
   video: 'Video',
   book: 'Book',
   template: 'Template',
+}
+
+const kindVerbs: Record<Resource['kind'], string> = {
+  article: 'Read',
+  video: 'Watch',
+  book: 'Read',
+  template: 'Use',
 }
 
 export function ResourceView({
@@ -19,10 +27,12 @@ export function ResourceView({
   done: boolean
   onComplete: () => void
 }) {
+  const isVideo = resource.kind === 'video'
+
   return (
     <article className="mx-auto max-w-3xl animate-rise">
       <div className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-accent">
-        Read <span className="text-line-strong">·</span>
+        {kindVerbs[resource.kind]} <span className="text-line-strong">·</span>
         <span className="text-muted">{resource.minutes} min</span>
       </div>
 
@@ -41,6 +51,8 @@ export function ResourceView({
         </div>
       </div>
 
+      {resource.url && <MediaEmbed url={resource.url} title={resource.title} />}
+
       <p className="mt-5 text-[16px] leading-[1.7] text-ink-soft">{resource.summary}</p>
 
       <div className="mt-4 space-y-4">
@@ -54,12 +66,16 @@ export function ResourceView({
       <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-line pt-5">
         {done ? (
           <span className="inline-flex items-center gap-2 text-sm font-medium text-success">
-            <LuCheck className="h-4 w-4" /> Marked as read
+            <LuCheck className="h-4 w-4" /> {isVideo ? 'Marked as watched' : 'Marked as read'}
           </span>
         ) : (
           <>
-            <Button onClick={onComplete}>Mark as read</Button>
-            <span className="text-[13px] text-muted">Take your time, then move to practice.</span>
+            <Button onClick={onComplete}>{isVideo ? 'Mark as watched' : 'Mark as read'}</Button>
+            <span className="text-[13px] text-muted">
+              {isVideo
+                ? 'Watch it here, then move to practice.'
+                : 'Take your time, then move to practice.'}
+            </span>
           </>
         )}
       </div>

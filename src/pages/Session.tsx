@@ -149,7 +149,9 @@ export function SessionPage() {
                   >
                     {done ? <LuCheck className="h-3 w-3" strokeWidth={3} /> : i + 1}
                   </span>
-                  {kindLabels[activity.kind]}
+                  {activity.kind === 'read' && content.resource.kind === 'video'
+                    ? 'Watch'
+                    : kindLabels[activity.kind]}
                   <span className="hidden text-faint sm:inline">· {activity.minutes} min</span>
                   <span
                     className={cx(

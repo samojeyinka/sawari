@@ -104,6 +104,7 @@ export function buildGeneratedSession(
     answers.outcome.trim() ||
     `feel at home with ${subject}`
   const weekly = answers.weeklyHours === '15+' ? '15 or more' : (answers.weeklyHours ?? '5')
+  const wantsVideo = answers.formats.includes('videos')
 
   return {
     lesson: {
@@ -134,22 +135,38 @@ export function buildGeneratedSession(
         },
       ],
     },
-    resource: {
-      id: `gen-res-${index}`,
-      title: `A simple weekly rhythm for ${subject}`,
-      kind: 'article',
-      source: 'Sawari Reader',
-      minutes: 10,
-      summary:
-        'How to structure your week so the time you planned actually gets used, and the sessions stack up instead of slipping.',
-      body: [
-        `Decide the two or three fixed slots for ${subject} before the week starts. Put them in your calendar as real appointments. Time that is not scheduled is time that gets spent on whatever is louddest.`,
-        'Start each session by reopening what you did last time, five minutes maximum. Memory is cheaper to refresh than to rebuild, and the restart eliminates the "where was I" ten minutes that kills momentum.',
-        'End each session by writing the next action in one line. "Try the same exercise with different inputs" is enough. Future you should not have to think to continue.',
-        `Protect the sessions from the inside too. When you miss one, do not double the next to compensate. It turns ${subject} into a debt, and people quietly stop paying debts.`,
-        'Once a week, look back over what you finished. Keeping evidence of finished work is the cheapest motivation there is, and it shows you whether your plan matched reality.',
-      ],
-    },
+    resource: wantsVideo
+      ? {
+          id: `gen-res-${index}`,
+          title: `How to learn ${subject} faster`,
+          kind: 'video',
+          source: 'YouTube · TEDx Talks',
+          minutes: 18,
+          url: 'https://www.youtube.com/watch?v=O96fE1E-rf8',
+          summary:
+            'A seventeen minute talk on how memory actually works, so the time you planned turns into skills that stick. Watch it once before you start this section.',
+          body: [
+            'The talk makes one point worth keeping: learning moves between focused attention and relaxed, diffused thinking. Cramming only uses the first half of that loop.',
+            'Notice the spacing advice. Short sessions on separate days beat one long block, which is exactly why this path gives you many small sessions instead of a few big ones.',
+            `Write down one thing from the video you will change about how you study ${subject}, and keep it beside the section notes.`,
+          ],
+        }
+      : {
+          id: `gen-res-${index}`,
+          title: `A simple weekly rhythm for ${subject}`,
+          kind: 'article',
+          source: 'Sawari Reader',
+          minutes: 10,
+          summary:
+            'How to structure your week so the time you planned actually gets used, and the sessions stack up instead of slipping.',
+          body: [
+            `Decide the two or three fixed slots for ${subject} before the week starts. Put them in your calendar as real appointments. Time that is not scheduled is time that gets spent on whatever is louddest.`,
+            'Start each session by reopening what you did last time, five minutes maximum. Memory is cheaper to refresh than to rebuild, and the restart eliminates the "where was I" ten minutes that kills momentum.',
+            'End each session by writing the next action in one line. "Try the same exercise with different inputs" is enough. Future you should not have to think to continue.',
+            `Protect the sessions from the inside too. When you miss one, do not double the next to compensate. It turns ${subject} into a debt, and people quietly stop paying debts.`,
+            'Once a week, look back over what you finished. Keeping evidence of finished work is the cheapest motivation there is, and it shows you whether your plan matched reality.',
+          ],
+        },
     practice: {
       id: `gen-prc-${index}`,
       title: 'Plan one finished piece of work',

@@ -6,6 +6,7 @@ import type {
   GoalReason,
   Intensity,
   LearningFormat,
+  SetupAnswers,
   WeeklyHours,
   Weekday,
   TimeWindow,
@@ -16,6 +17,7 @@ import { Button } from '../components/ui/Button'
 import { ChoiceCard } from '../components/ui/Choice'
 import { Chip, Field, inputClass } from '../components/ui/ProgressBar'
 import { DatePickerField } from '../components/ui/DatePickerField'
+import { LuSparkles } from 'react-icons/lu'
 import { cx } from '../lib/utils'
 
 const steps = [
@@ -25,7 +27,7 @@ const steps = [
   'Time each week',
   'Formats',
   'Intensity',
-  'Target date',
+  'Your timeline',
 ]
 
 const subjects = [
@@ -96,14 +98,79 @@ const intensities: { id: Intensity; label: string; hint: string }[] = [
   { id: 'intensive', label: 'Intensive', hint: 'Push hard, finish sooner' },
 ]
 
+/* ---------- timeline: turn "when do I finish?" into a helpful duration ----
+   Asking for an end date up front is meaningless without knowing the start.
+   Instead we estimate a realistic duration from the answers they already gave,
+   then let them pick a start day and a pace; the finish date is derived. */
+
+const HOURS_BASE_MONTHS: Record<WeeklyHours, number> = { '2': 12, '5': 6, '10': 4, '15+': 3 }
+const INTENSITY_FACTOR: Record<Intensity, number> = { relaxed: 1.2, balanced: 1, intensive: 0.85 }
+const EXPERIENCE_FACTOR: Record<ExperienceLevel, number> = {
+  beginner: 1.15,
+  some: 1.05,
+  comfortable: 1,
+  advanced: 0.9,
+}
+
+function recommendedMonths(setup: SetupAnswers): number {
+  const base = setup.weeklyHours ? HOURS_BASE_MONTHS[setup.weeklyHours] : 6
+  const intensity = setup.intensity ? INTENSITY_FACTOR[setup.intensity] : 1
+  const experience = setup.experience ? EXPERIENCE_FACTOR[setup.experience] : 1
+  return Math.max(1, Math.round(base * intensity * experience))
+}
+
+function monthLabel(months: number): string {
+  return months === 1 ? '1 month' : `${months} months`
+}
+
+function todayISO(): string {
+  const d = new Date()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+
+function addMonths(iso: string, months: number): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const base = new Date(y, m - 1, d)
+  base.setMonth(base.getMonth() + months)
+  const mm = String(base.getMonth() + 1).padStart(2, '0')
+  const dd = String(base.getDate()).padStart(2, '0')
+  return `${base.getFullYear()}-${mm}-${dd}`
+}
+
+const timelineFmt = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' })
+
+function finishDate(startISO: string, months: number): string {
+  return timelineFmt.format(new Date(addMonths(startISO || todayISO(), months)))
+}
+
+function formatISO(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  if (!y || !m || !d) return iso
+  return timelineFmt.format(new Date(y, m - 1, d))
+}
+
 export function SetupPage() {
   const { state, patchSetup } = useApp()
   const navigate = useNavigate()
   const setup = state.setup
   const [step, setStep] = useState(0)
   const [error, setError] = useState('')
+  const [startISO, setStartISO] = useState(todayISO())
+  const [durationMonths, setDurationMonths] = useState<number | null>(null)
 
   const progress = ((step + 1) / steps.length) * 100
+
+  const recMonths = recommendedMonths(setup)
+  const fastMonths = Math.max(1, Math.round(recMonths * 0.65))
+  const relaxedMonths = Math.max(recMonths + 1, Math.round(recMonths * 1.5))
+  const seenMonths = new Set<number>()
+  const durationOptions = [
+    { months: fastMonths, tag: 'Fastest', hint: 'Push the pace' },
+    { months: recMonths, tag: 'Recommended', hint: 'Steady and sustainable' },
+    { months: relaxedMonths, tag: 'Relaxed', hint: 'More breathing room' },
+  ].filter((option) => (seenMonths.has(option.months) ? false : (seenMonths.add(option.months), true)))
 
   const validate = (): string | null => {
     switch (step) {
@@ -157,6 +224,16 @@ export function SetupPage() {
     patchSetup({
       days: setup.days.includes(id) ? setup.days.filter((d) => d !== id) : [...setup.days, id],
     })
+  }
+
+  const chooseDuration = (months: number) => {
+    setDurationMonths(months)
+    patchSetup({ targetDate: addMonths(startISO || todayISO(), months) })
+  }
+
+  const changeStart = (iso: string) => {
+    setStartISO(iso)
+    if (durationMonths) patchSetup({ targetDate: addMonths(iso || todayISO(), durationMonths) })
   }
 
   return (
@@ -361,28 +438,74 @@ export function SetupPage() {
 
             {/* step 6 */}
             {step === 6 && (
-              <div className="mt-7 space-y-5">
+              <div className="mt-7 space-y-6">
+                <div className="rounded-xl border border-accent bg-accent-soft/50 px-4 py-4">
+                  <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-accent-strong">
+                    <LuSparkles className="h-3.5 w-3.5" />
+                    Recommended timeline
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                    At{' '}
+                    <span className="font-semibold text-ink">
+                      {setup.weeklyHours ? `${setup.weeklyHours} hours a week` : 'your current pace'}
+                    </span>
+                    {setup.intensity && (
+                      <>
+                        {' '}
+                        on a <span className="font-semibold text-ink">{setup.intensity}</span> pace
+                      </>
+                    )}
+                    , most people reach this goal in about{' '}
+                    <span className="font-semibold text-ink">{monthLabel(recMonths)}</span>. The fastest
+                    realistic path is around{' '}
+                    <span className="font-semibold text-ink">{monthLabel(fastMonths)}</span>.
+                  </p>
+                </div>
+
                 <Field
-                  label="Target date"
-                  htmlFor="target"
-                  hint="Optional. A date keeps you honest, but you can leave it open."
+                  label="When do you want to start?"
+                  htmlFor="start"
+                  hint="We use this to work out your finish date. Defaults to today."
                 >
                   <DatePickerField
-                    id="target"
-                    value={setup.targetDate}
-                    onChange={(iso) => patchSetup({ targetDate: iso })}
-                    placeholder="Pick a target date"
+                    id="start"
+                    value={startISO}
+                    onChange={changeStart}
+                    placeholder="Today"
                   />
                 </Field>
-                {setup.targetDate && (
-                  <button
-                    type="button"
-                    onClick={() => patchSetup({ targetDate: '' })}
-                    className="text-sm font-medium text-accent transition-colors hover:text-accent-strong"
-                  >
-                    No deadline, clear it
-                  </button>
-                )}
+
+                <div>
+                  <p className="mb-1 text-sm font-medium text-ink">
+                    How long do you want to give it?
+                  </p>
+                  <p className="mb-3 text-[13px] text-muted">
+                    Pick a pace — we will set your finish date for you.
+                  </p>
+                  <div className="space-y-2.5">
+                    {durationOptions.map((option) => (
+                      <ChoiceCard
+                        key={option.months}
+                        selected={durationMonths === option.months}
+                        onClick={() => chooseDuration(option.months)}
+                        label={`${monthLabel(option.months)} · ${option.tag}`}
+                        description={`${option.hint} · finish ${finishDate(startISO, option.months)}`}
+                      />
+                    ))}
+                  </div>
+                  {setup.targetDate && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDurationMonths(null)
+                        patchSetup({ targetDate: '' })
+                      }}
+                      className="mt-3 text-sm font-medium text-accent transition-colors hover:text-accent-strong"
+                    >
+                      No timeline, keep it open
+                    </button>
+                  )}
+                </div>
 
                 <div className="rounded-xl border border-line bg-canvas px-4 py-4">
                   <p className="text-[13px] font-medium uppercase tracking-[0.08em] text-muted">
@@ -398,7 +521,7 @@ export function SetupPage() {
                     {setup.timeWindow &&
                       ` · ${timeWindows.find((w) => w.id === setup.timeWindow)?.label.toLowerCase()}`}
                     {setup.intensity && ` · ${setup.intensity}`}
-                    {setup.targetDate && ` · target ${setup.targetDate}`}
+                    {setup.targetDate && ` · finish by ${formatISO(setup.targetDate)}`}
                   </p>
                 </div>
               </div>
