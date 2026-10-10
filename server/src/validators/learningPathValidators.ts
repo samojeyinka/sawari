@@ -45,6 +45,7 @@ export const createLearningPathSchema = z.strictObject({
   intensity: z.enum(INTENSITIES),
   formats: z.array(z.enum(LEARNING_FORMATS)).default([]),
   targetDate: isoDate.nullable().default(null),
+  sections: z.array(sectionSchema).optional(),
 })
 
 /** Everything the client may change afterwards (progress + plan tuning). */
