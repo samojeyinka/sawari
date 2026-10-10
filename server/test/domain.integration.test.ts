@@ -46,12 +46,36 @@ test('learning path + project lifecycle, scoped per user', { skip: !hasDb }, asy
       intensity: 'balanced',
       formats: ['videos', 'exercises'],
       targetDate: '2026-12-31',
+      sections: [
+        {
+          id: 'sec-1',
+          order: 1,
+          title: 'Foundations',
+          description: 'The basics',
+          minutes: 30,
+          status: 'current',
+          doneMinutes: 0,
+        },
+        {
+          id: 'sec-2',
+          order: 2,
+          title: 'In practice',
+          description: 'Apply it',
+          minutes: 45,
+          status: 'locked',
+          doneMinutes: 0,
+        },
+      ],
     })
   assert.equal(created.status, 201)
   assert.equal(created.body.success, true)
   assert.ok(created.body.data.id)
   assert.equal(created.body.data.userId, undefined)
   assert.equal(created.body.data.subject, 'Project Management')
+  // sections supplied at creation are persisted and returned
+  assert.equal(created.body.data.sections.length, 2)
+  assert.equal(created.body.data.sections[0].id, 'sec-1')
+  assert.equal(created.body.data.sections[1].title, 'In practice')
   const pathId = created.body.data.id as string
 
   // list (paginated, includes meta, hides sections)

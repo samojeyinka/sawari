@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { LuCheck, LuLoaderCircle } from 'react-icons/lu'
 import { useApp } from '../state/store'
+import { useAlert } from '../state/alertContext'
 import { findTemplateMatch, sectionsForSubject } from '../data'
 import { Logo } from '../components/ui/Logo'
 import { Button } from '../components/ui/Button'
@@ -18,6 +19,7 @@ const phases = [
 
 export function GeneratePage() {
   const { state, createPath } = useApp()
+  const alert = useAlert()
   const navigate = useNavigate()
   const setup = state.setup
   const [phase, setPhase] = useState(0)
@@ -43,10 +45,20 @@ export function GeneratePage() {
     : sectionsForSubject(setup.subject)[0].title
   const weekly = setup.weeklyHours === '15+' ? '15+' : (setup.weeklyHours ?? '5')
 
-  const viewPath = () => {
+  const viewPath = async () => {
+    // Building a path now persists to the account, so a session is required.
+    if (!state.user) {
+      navigate('/login')
+      return
+    }
     setLaunching(true)
-    createPath(setup.subject, setup)
-    navigate(state.user ? '/app/path' : '/login')
+    try {
+      await createPath(setup.subject, setup)
+      navigate('/app/path')
+    } catch (error) {
+      alert.fromError(error, 'We could not build your path. Please try again.')
+      setLaunching(false)
+    }
   }
 
   return (
@@ -132,7 +144,7 @@ export function GeneratePage() {
             </div>
 
             <div className="mt-8">
-              <Button size="lg" onClick={viewPath}>
+              <Button size="lg" onClick={viewPath} loading={launching}>
                 View my path
               </Button>
             </div>

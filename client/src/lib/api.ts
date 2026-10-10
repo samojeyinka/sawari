@@ -5,6 +5,21 @@
 /*  - throws ApiError carrying the server's message/code on failure    */
 /* ------------------------------------------------------------------ */
 
+import type {
+  AssessmentResult,
+  ExperienceLevel,
+  GoalReason,
+  Intensity,
+  LearningFormat,
+  LearningPath,
+  PathSection,
+  PathStats,
+  Project,
+  ProjectFeedback,
+  ProjectTask,
+  WeeklyHours,
+} from '../types'
+
 const API_BASE =
   (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:4000/api/v1'
 
@@ -118,4 +133,179 @@ export const authApi = {
   me: (signal?: AbortSignal) => request<ApiUser>('/me', { signal }),
   /** Absolute URL that starts a social sign-in flow (full-page navigation). */
   oauthUrl: (provider: 'github' | 'google') => `${API_BASE}/auth/${provider}`,
+}
+
+/* ------------------------------------------------------------------ */
+/*  Learning paths                                                     */
+/* ------------------------------------------------------------------ */
+
+/** Shape returned by the API (server-generated id + timestamps). */
+export interface ApiLearningPath {
+  id: string
+  subject: string
+  goal: string
+  experience: ExperienceLevel | null
+  reason: GoalReason | null
+  weeklyHours: WeeklyHours
+  intensity: Intensity
+  formats: LearningFormat[]
+  targetDate: string | null
+  sections: PathSection[]
+  stats: PathStats
+  currentSectionId: string | null
+  completedActivities: string[]
+  countedSessions: string[]
+  assessmentResults: Record<string, AssessmentResult>
+  adaptationNote: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateLearningPathInput {
+  subject: string
+  goal?: string
+  experience: ExperienceLevel | null
+  reason: GoalReason | null
+  weeklyHours: WeeklyHours
+  intensity: Intensity
+  formats: LearningFormat[]
+  targetDate: string | null
+  sections?: PathSection[]
+}
+
+export interface UpdateLearningPathInput {
+  subject?: string
+  goal?: string
+  experience?: ExperienceLevel | null
+  reason?: GoalReason | null
+  weeklyHours?: WeeklyHours
+  intensity?: Intensity
+  formats?: LearningFormat[]
+  targetDate?: string | null
+  sections?: PathSection[]
+  stats?: Partial<PathStats>
+  currentSectionId?: string | null
+  completedActivities?: string[]
+  countedSessions?: string[]
+  assessmentResults?: Record<string, AssessmentResult>
+  adaptationNote?: string | null
+}
+
+/** Maps the API shape into the frontend domain shape. */
+export function mapApiLearningPath(api: ApiLearningPath): LearningPath {
+  return {
+    id: api.id,
+    subject: api.subject,
+    goal: api.goal,
+    experience: api.experience,
+    reason: api.reason,
+    weeklyHours: api.weeklyHours,
+    intensity: api.intensity,
+    formats: api.formats,
+    targetDate: api.targetDate ?? '',
+    createdAt: api.createdAt.slice(0, 10),
+    sections: api.sections ?? [],
+    stats: api.stats,
+    currentSectionId: api.currentSectionId ?? api.sections?.[0]?.id ?? '',
+    completedActivities: api.completedActivities ?? [],
+    countedSessions: api.countedSessions ?? [],
+    assessmentResults: api.assessmentResults ?? {},
+    adaptationNote: api.adaptationNote ?? null,
+  }
+}
+
+export const learningPathsApi = {
+  list: (signal?: AbortSignal) =>
+    request<ApiLearningPath[]>('/learning-paths', { signal }),
+  get: (id: string) => request<ApiLearningPath>(`/learning-paths/${id}`),
+  create: (input: CreateLearningPathInput) =>
+    request<ApiLearningPath>('/learning-paths', { method: 'POST', body: input }),
+  update: (id: string, patch: UpdateLearningPathInput) =>
+    request<ApiLearningPath>(`/learning-paths/${id}`, { method: 'PATCH', body: patch }),
+  remove: (id: string) => request<void>(`/learning-paths/${id}`, { method: 'DELETE' }),
+}
+
+/* ------------------------------------------------------------------ */
+/*  Projects                                                           */
+/* ------------------------------------------------------------------ */
+
+export interface ApiProject {
+  id: string
+  pathId: string | null
+  title: string
+  description: string
+  status: Project['status']
+  level: string
+  estHours: number
+  objectives: string[]
+  tasks: ProjectTask[]
+  deliverables: string[]
+  related: string[]
+  completedTaskIds: string[]
+  submitted: boolean
+  reviewed: boolean
+  submittedAt: string | null
+  feedback: ProjectFeedback | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateProjectInput {
+  title: string
+  description?: string
+  pathId?: string | null
+  level?: string
+  estHours?: number
+  objectives?: string[]
+  tasks?: ProjectTask[]
+  deliverables?: string[]
+  related?: string[]
+}
+
+export interface UpdateProjectInput {
+  title?: string
+  description?: string
+  status?: Project['status']
+  level?: string
+  estHours?: number
+  objectives?: string[]
+  tasks?: ProjectTask[]
+  deliverables?: string[]
+  related?: string[]
+  completedTaskIds?: string[]
+  submitted?: boolean
+  reviewed?: boolean
+  submittedAt?: string | null
+  feedback?: ProjectFeedback | null
+}
+
+/** Maps the API shape into the frontend domain shape. */
+export function mapApiProject(api: ApiProject): Project {
+  return {
+    id: api.id,
+    title: api.title,
+    description: api.description,
+    status: api.status,
+    level: api.level,
+    estHours: api.estHours,
+    objectives: api.objectives ?? [],
+    tasks: api.tasks ?? [],
+    deliverables: api.deliverables ?? [],
+    related: api.related ?? [],
+    completedTaskIds: api.completedTaskIds ?? [],
+    submitted: api.submitted,
+    reviewed: api.reviewed,
+    submittedAt: api.submittedAt ?? null,
+    feedback: api.feedback ?? null,
+  }
+}
+
+export const projectsApi = {
+  list: (signal?: AbortSignal) => request<ApiProject[]>('/projects', { signal }),
+  get: (id: string) => request<ApiProject>(`/projects/${id}`),
+  create: (input: CreateProjectInput) =>
+    request<ApiProject>('/projects', { method: 'POST', body: input }),
+  update: (id: string, patch: UpdateProjectInput) =>
+    request<ApiProject>(`/projects/${id}`, { method: 'PATCH', body: patch }),
+  remove: (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' }),
 }
