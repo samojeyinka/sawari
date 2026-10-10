@@ -93,7 +93,7 @@ export function LoginPage() {
       <header className="relative z-10 px-5 py-5 sm:px-10">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between">
           <Link to="/" aria-label="Sawari home">
-            <Logo tone="on-band" />
+            <Logo />
           </Link>
           <Link
             to="/setup"

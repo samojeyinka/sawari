@@ -82,7 +82,7 @@ export function LandingPage() {
       <header className="fixed inset-x-0 top-0 z-40 border-b border-on-band/10 bg-band/85 backdrop-blur">
         <div className="mx-auto flex h-[60px] max-w-[1200px] items-center justify-between px-5 sm:px-10">
           <Link to="/" aria-label="Sawari home">
-            <Logo tone="on-band" />
+            <Logo />
           </Link>
           <nav className="flex items-center gap-3 sm:gap-7">
             <a
@@ -154,7 +154,7 @@ export function LandingPage() {
               </div>
               <div className="grid md:grid-cols-[190px_minmax(0,1fr)]">
                 <div className="hidden border-r border-on-band/10 bg-panel/50 p-4 md:block">
-                  <Logo size="sm" tone="on-band" />
+                  <Logo size="sm" />
                   <div className="mt-4 space-y-1.5">
                     {['Today', 'Learning path', 'Projects', 'Progress'].map((item, i) => (
                       <div
@@ -299,7 +299,7 @@ export function LandingPage() {
       {/* footer — dark band */}
       <footer className="border-t border-on-band/10 bg-band px-5 py-10 sm:px-10">
         <div className="mx-auto flex max-w-[1200px] flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-          <Logo tone="on-band" size="sm" />
+          <Logo size="sm" />
           <p className="text-[13px] text-on-band-muted">
             Frontend prototype with mock data. Paths, sessions and reviews are simulated.
           </p>
