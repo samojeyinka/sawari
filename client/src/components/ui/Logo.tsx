@@ -9,9 +9,9 @@ export function Logo({
   className?: string
 }) {
   const heights = {
-    sm: 'h-5',
-    md: 'h-6',
-    lg: 'h-8',
+    sm: 'h-[25px]',
+    md: 'h-[30px]',
+    lg: 'h-10',
   }
   return <img src="/logo.png" alt="Sawari" className={cx('w-auto', heights[size], className)} />
 }
