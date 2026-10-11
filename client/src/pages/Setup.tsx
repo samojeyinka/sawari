@@ -17,7 +17,6 @@ import { Button } from '../components/ui/Button'
 import { ChoiceCard } from '../components/ui/Choice'
 import { Chip, Field, inputClass } from '../components/ui/ProgressBar'
 import { DatePickerField } from '../components/ui/DatePickerField'
-import { LuSparkles } from 'react-icons/lu'
 import { cx } from '../lib/utils'
 
 const steps = [
