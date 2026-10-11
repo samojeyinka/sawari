@@ -18,6 +18,7 @@ import { ChoiceCard } from '../components/ui/Choice'
 import { Chip, Field, inputClass } from '../components/ui/ProgressBar'
 import { DatePickerField } from '../components/ui/DatePickerField'
 import { cx } from '../lib/utils'
+import { extractGoal, type GoalExtraction, type GoalMode } from '../lib/goalExtract'
 
 const steps = [
   'What do you want to learn?',
@@ -40,6 +41,12 @@ const subjects = [
   'Public Speaking',
   'Product Management',
   'Graphic Design',
+]
+
+const goalModes: { id: GoalMode; label: string; hint: string }[] = [
+  { id: 'topic', label: 'A skill or topic', hint: 'Type it or pick one' },
+  { id: 'admire', label: 'Someone I admire', hint: 'Copy their skills' },
+  { id: 'build', label: 'Something to build', hint: 'Work back from it' },
 ]
 
 const experiences: { id: ExperienceLevel; label: string; hint: string }[] = [
@@ -158,6 +165,10 @@ export function SetupPage() {
   const [error, setError] = useState('')
   const [startISO, setStartISO] = useState(todayISO())
   const [durationMonths, setDurationMonths] = useState<number | null>(null)
+  const [mode, setMode] = useState<GoalMode>('topic')
+  const [aim, setAim] = useState('')
+  const [extraction, setExtraction] = useState<GoalExtraction | null>(null)
+  const [extracting, setExtracting] = useState(false)
 
   const progress = ((step + 1) / steps.length) * 100
 
@@ -174,6 +185,10 @@ export function SetupPage() {
   const validate = (): string | null => {
     switch (step) {
       case 0:
+        if (mode !== 'topic' && !extraction)
+          return mode === 'admire'
+            ? 'Find their skills first.'
+            : 'Describe it, then find the skills.'
         return setup.subject.trim().length >= 2 ? null : 'Tell us what you want to learn.'
       case 1:
         return setup.experience ? null : 'Pick the option closest to you.'
@@ -209,6 +224,26 @@ export function SetupPage() {
     setError('')
     if (step > 0) setStep(step - 1)
     else navigate('/')
+  }
+
+  const changeMode = (next: GoalMode) => {
+    setMode(next)
+    setError('')
+    setExtraction(null)
+    setAim('')
+  }
+
+  const runExtract = () => {
+    if (mode === 'topic' || aim.trim().length < 3) return
+    setError('')
+    setExtracting(true)
+    setExtraction(null)
+    window.setTimeout(() => {
+      const result = extractGoal(mode, aim)
+      setExtraction(result)
+      patchSetup({ subject: result.subject, outcome: result.outcome })
+      setExtracting(false)
+    }, 700)
   }
 
   const toggleFormat = (id: LearningFormat) => {
@@ -259,35 +294,155 @@ export function SetupPage() {
             {/* step 0 */}
             {step === 0 && (
               <div className="mt-7">
-                <Field
-                  label="Subject"
-                  htmlFor="subject"
-                  hint="Anything. We will build the path around it."
-                  error={error}
-                >
-                  <input
-                    id="subject"
-                    value={setup.subject}
-                    onChange={(e) => patchSetup({ subject: e.target.value })}
-                    placeholder="Project Management"
-                    autoFocus
-                    className={cx(inputClass, error && 'border-danger')}
-                  />
-                </Field>
-                <div className="mt-5">
-                  <p className="mb-2.5 text-[13px] font-medium text-muted">Popular right now</p>
-                  <div className="flex flex-wrap gap-2">
-                    {subjects.map((subject) => (
-                      <Chip
-                        key={subject}
-                        selected={setup.subject === subject}
-                        onClick={() => patchSetup({ subject })}
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {goalModes.map((option) => {
+                    const active = mode === option.id
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => changeMode(option.id)}
+                        aria-pressed={active}
+                        className={cx(
+                          'rounded-lg border px-3.5 py-3 text-left transition-all duration-150',
+                          active
+                            ? 'border-accent bg-accent-soft/60'
+                            : 'border-line bg-panel hover:border-line-strong hover:bg-canvas',
+                        )}
                       >
-                        {subject}
-                      </Chip>
-                    ))}
-                  </div>
+                        <span className="block text-[13px] font-medium text-ink">{option.label}</span>
+                        <span className="mt-0.5 block truncate text-[11px] text-muted">{option.hint}</span>
+                      </button>
+                    )
+                  })}
                 </div>
+
+                {mode === 'topic' && (
+                  <div className="mt-6">
+                    <Field
+                      label="Subject"
+                      htmlFor="subject"
+                      hint="Anything. We will build the path around it."
+                      error={error}
+                    >
+                      <input
+                        id="subject"
+                        value={setup.subject}
+                        onChange={(e) => patchSetup({ subject: e.target.value })}
+                        placeholder="Project Management"
+                        autoFocus
+                        className={cx(inputClass, error && 'border-danger')}
+                      />
+                    </Field>
+                    <div className="mt-5">
+                      <p className="mb-2.5 text-[13px] font-medium text-muted">Popular right now</p>
+                      <div className="flex flex-wrap gap-2">
+                        {subjects.map((subject) => (
+                          <Chip
+                            key={subject}
+                            selected={setup.subject === subject}
+                            onClick={() => patchSetup({ subject })}
+                          >
+                            {subject}
+                          </Chip>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {mode === 'admire' && (
+                  <div className="mt-6">
+                    <Field
+                      label="LinkedIn profile"
+                      htmlFor="linkedin"
+                      hint="Paste a profile link. We read the skills behind their niche and shape your path the same way."
+                    >
+                      <input
+                        id="linkedin"
+                        value={aim}
+                        onChange={(e) => {
+                          setAim(e.target.value)
+                          setExtraction(null)
+                        }}
+                        placeholder="linkedin.com/in/…"
+                        autoFocus
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Button
+                      type="button"
+                      className="mt-4"
+                      onClick={runExtract}
+                      loading={extracting}
+                      disabled={aim.trim().length < 3}
+                    >
+                      Find their skills
+                    </Button>
+                  </div>
+                )}
+
+                {mode === 'build' && (
+                  <div className="mt-6">
+                    <Field
+                      label="What do you want to build?"
+                      htmlFor="build"
+                      hint="Describe it in a sentence. We work out the skills it takes, then build the path."
+                    >
+                      <textarea
+                        id="build"
+                        rows={3}
+                        value={aim}
+                        onChange={(e) => {
+                          setAim(e.target.value)
+                          setExtraction(null)
+                        }}
+                        placeholder="A booking website for my photography studio"
+                        autoFocus
+                        className={cx(inputClass, 'resize-y leading-relaxed')}
+                      />
+                    </Field>
+                    <Button
+                      type="button"
+                      className="mt-4"
+                      onClick={runExtract}
+                      loading={extracting}
+                      disabled={aim.trim().length < 3}
+                    >
+                      Find the skills
+                    </Button>
+                  </div>
+                )}
+
+                {extraction && mode !== 'topic' && (
+                  <div className="mt-6 animate-rise rounded-xl border border-accent bg-accent-soft/40 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-accent-strong">
+                        {extraction.note}
+                      </p>
+                      <span className="shrink-0 rounded-full border border-accent/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-strong">
+                        Simulated
+                      </span>
+                    </div>
+                    <p className="mt-2 text-[15px] leading-relaxed text-ink">
+                      Your path will be built around{' '}
+                      <span className="font-semibold">{extraction.subject}</span>.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {extraction.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="rounded-lg border border-line bg-panel px-2.5 py-1 text-[12.5px] text-body"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="mt-3 text-[13px] text-muted">Goal · {extraction.outcome}</p>
+                  </div>
+                )}
+
+                {error && mode !== 'topic' && <p className="mt-3 text-[13px] text-danger">{error}</p>}
               </div>
             )}
 
