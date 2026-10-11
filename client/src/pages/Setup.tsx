@@ -381,7 +381,7 @@ export function SetupPage() {
                 <div>
                   <p className="text-sm font-medium text-ink">Best time of day</p>
                   <p className="mt-1 text-[13px] text-muted">
-                    Optional — we put your toughest material in your best hours.
+                    We put your toughest material in your best hours. (Optional)
                   </p>
                   <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                     {timeWindows.map((option) => (
@@ -441,7 +441,7 @@ export function SetupPage() {
               <div className="mt-7 space-y-6">
                 <div className="rounded-xl border border-accent bg-accent-soft/50 px-4 py-4">
                   <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-accent-strong">
-                    <LuSparkles className="h-3.5 w-3.5" />
+                  
                     Recommended timeline
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-ink-soft">
@@ -480,7 +480,7 @@ export function SetupPage() {
                     How long do you want to give it?
                   </p>
                   <p className="mb-3 text-[13px] text-muted">
-                    Pick a pace — we will set your finish date for you.
+                    Pick a pace, we will set your finish date for you.
                   </p>
                   <div className="space-y-2.5">
                     {durationOptions.map((option) => (

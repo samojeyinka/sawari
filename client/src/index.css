@@ -37,9 +37,9 @@
   --color-panel-soft: #133b4e;
   --color-cream: #f4efe6;
   --color-cream-deep: #eae3d5;
-  --color-on-band: #f0eadf;
-  --color-on-band-muted: #b7ae9f;
-  --color-on-band-dim: #8b8479;
+  --color-on-band: #f2f5f7;
+  --color-on-band-muted: #cdd8de;
+  --color-on-band-dim: #93a7b1;
   --color-accent-bright: #35b3a3;
   --color-success-bright: #3fca96;
   --color-warn-bright: #e8a15c;
@@ -110,11 +110,11 @@
   --color-panel: #0b2a3a;
   --color-panel-soft: #133b4e;
 
-  --color-ink: #f0eadf;
-  --color-ink-soft: #d6cfc2;
-  --color-body: #b7ae9f;
-  --color-muted: #a79d8d;
-  --color-faint: #857d70;
+  --color-ink: #f2f5f7;
+  --color-ink-soft: #dde5ea;
+  --color-body: #cdd8de;
+  --color-muted: #b5c4cc;
+  --color-faint: #93a7b1;
   --color-line: rgba(203, 225, 235, 0.14);
   --color-line-strong: rgba(203, 225, 235, 0.26);
   --color-canvas: #0f222d;
