@@ -150,7 +150,7 @@ export function TodayVisual() {
       </div>
       <div
         className={cx(
-          'flex items-center justify-between bg-panel-soft px-5 py-3',
+          'flex flex-col md:flex-row items-center justify-between bg-panel-soft px-5 py-3',
           rowBorder,
         )}
       >

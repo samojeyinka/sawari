@@ -19,12 +19,12 @@ type SectionId =
   | 'account'
 
 const sections: { id: SectionId; label: string }[] = [
-  { id: 'profile', label: 'Profile' },
   { id: 'preferences', label: 'Learning preferences' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'ai', label: 'AI provider' },
   { id: 'account', label: 'Account' },
+  { id: 'profile', label: 'Profile' },
 ]
 
 const hoursOptions: { id: WeeklyHours; label: string }[] = [
@@ -83,7 +83,7 @@ export function SettingsPage() {
       />
 
       <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <div className="lg:sticky lg:top-6 lg:self-start">{nav}</div>
+        <div className="min-w-0 lg:sticky lg:top-6 lg:self-start">{nav}</div>
 
         <div className="min-w-0 animate-rise" key={active}>
           {active === 'profile' && <ProfileSection />}

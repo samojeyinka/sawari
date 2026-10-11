@@ -76,14 +76,14 @@ export function Toggle({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={cx(
-        'relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200',
+        'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full px-0.5 transition-colors duration-200',
         checked ? 'bg-accent' : 'bg-line-strong',
       )}
     >
       <span
         className={cx(
-          'absolute top-0.5 h-5 w-5 rounded-full bg-panel shadow-sm transition-transform duration-200',
-          checked ? 'translate-x-[22px]' : 'translate-x-0.5',
+          'h-5 w-5 rounded-full bg-on-band shadow-sm transition-transform duration-200',
+          checked ? 'translate-x-5' : 'translate-x-0',
         )}
       />
     </button>

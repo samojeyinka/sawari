@@ -54,22 +54,22 @@ export function Sidebar({ onOpenNotifications }: { onOpenNotifications: () => vo
           </span>
           Notifications
         </button>
-
-        {user && (
-          <NavLink
-            to="/app/settings"
-            className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-panel/70"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-semibold text-band">
-              {initials(user.name)}
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-ink">{user.name}</span>
-              <span className="block truncate text-xs text-muted">{user.email}</span>
-            </span>
-          </NavLink>
-        )}
       </div>
+
+      {user && (
+        <NavLink
+          to="/app/settings"
+          className="mt-auto flex items-center gap-3 border-t border-line px-3 py-3 transition-colors hover:bg-panel/70"
+        >
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-semibold text-band">
+            {initials(user.name)}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-medium text-ink">{user.name}</span>
+            <span className="block truncate text-xs text-muted">{user.email}</span>
+          </span>
+        </NavLink>
+      )}
     </aside>
   )
 }
