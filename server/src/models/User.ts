@@ -1,6 +1,6 @@
 import mongoose, { type Document, type Model, Schema, type Types } from 'mongoose'
 import { hash, compare } from 'bcryptjs'
-import { REMINDER_DAYS, type Provider, type ReminderDay } from '../domain/index.js'
+import { INTENSITIES, LEARNING_FORMATS, REMINDER_DAYS, WEEKLY_HOURS, type Intensity, type LearningFormat, type Provider, type ReminderDay, type WeeklyHours } from '../domain/index.js'
 
 export interface SafeUser {
   id: string
@@ -23,6 +23,17 @@ export interface ReminderPreferences {
   reminderTime: string
   /** Which local weekdays receive the daily reminder. */
   reminderDays: ReminderDay[]
+  /** Remind even on rest days. */
+  restDay: boolean
+  projectFeedback: boolean
+  pathUpdates: boolean
+  productNews: boolean
+  /** Learning plan shaping (mirrors the client setup answers). */
+  weeklyHours: WeeklyHours
+  intensity: Intensity
+  formats: LearningFormat[]
+  /** Default session length in minutes. */
+  sessionLength: number
 }
 
 export const DEFAULT_REMINDER_PREFERENCES: ReminderPreferences = {
@@ -31,6 +42,14 @@ export const DEFAULT_REMINDER_PREFERENCES: ReminderPreferences = {
   timezone: 'UTC',
   reminderTime: '19:00',
   reminderDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+  restDay: true,
+  projectFeedback: true,
+  pathUpdates: true,
+  productNews: false,
+  weeklyHours: '5',
+  intensity: 'balanced',
+  formats: ['articles', 'exercises', 'projects', 'quizzes'],
+  sessionLength: 45,
 }
 
 export interface UserDocument extends Document {
@@ -87,6 +106,31 @@ const preferencesSchema = new Schema<ReminderPreferences>(
       type: [String],
       enum: REMINDER_DAYS,
       default: () => [...DEFAULT_REMINDER_PREFERENCES.reminderDays],
+    },
+    restDay: { type: Boolean, default: DEFAULT_REMINDER_PREFERENCES.restDay },
+    projectFeedback: { type: Boolean, default: DEFAULT_REMINDER_PREFERENCES.projectFeedback },
+    pathUpdates: { type: Boolean, default: DEFAULT_REMINDER_PREFERENCES.pathUpdates },
+    productNews: { type: Boolean, default: DEFAULT_REMINDER_PREFERENCES.productNews },
+    weeklyHours: {
+      type: String,
+      enum: WEEKLY_HOURS,
+      default: DEFAULT_REMINDER_PREFERENCES.weeklyHours,
+    },
+    intensity: {
+      type: String,
+      enum: INTENSITIES,
+      default: DEFAULT_REMINDER_PREFERENCES.intensity,
+    },
+    formats: {
+      type: [String],
+      enum: LEARNING_FORMATS,
+      default: () => [...DEFAULT_REMINDER_PREFERENCES.formats],
+    },
+    sessionLength: {
+      type: Number,
+      default: DEFAULT_REMINDER_PREFERENCES.sessionLength,
+      min: 5,
+      max: 240,
     },
   },
   { _id: false },
@@ -176,5 +220,15 @@ export function toReminderPreferences(user: {
     reminderDays: prefs?.reminderDays?.length
       ? [...prefs.reminderDays]
       : [...DEFAULT_REMINDER_PREFERENCES.reminderDays],
+    restDay: prefs?.restDay ?? DEFAULT_REMINDER_PREFERENCES.restDay,
+    projectFeedback: prefs?.projectFeedback ?? DEFAULT_REMINDER_PREFERENCES.projectFeedback,
+    pathUpdates: prefs?.pathUpdates ?? DEFAULT_REMINDER_PREFERENCES.pathUpdates,
+    productNews: prefs?.productNews ?? DEFAULT_REMINDER_PREFERENCES.productNews,
+    weeklyHours: prefs?.weeklyHours ?? DEFAULT_REMINDER_PREFERENCES.weeklyHours,
+    intensity: prefs?.intensity ?? DEFAULT_REMINDER_PREFERENCES.intensity,
+    formats: prefs?.formats?.length
+      ? [...prefs.formats]
+      : [...DEFAULT_REMINDER_PREFERENCES.formats],
+    sessionLength: prefs?.sessionLength ?? DEFAULT_REMINDER_PREFERENCES.sessionLength,
   }
 }

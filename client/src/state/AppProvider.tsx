@@ -10,6 +10,7 @@ import type {
   ActivityKind,
   LearningPath,
   Project,
+  Settings,
   SetupAnswers,
   User,
 } from '../types'
@@ -27,6 +28,7 @@ import {
   projectsApi,
   sessionsApi,
   settingsApi,
+  type ApiSettings,
   type ApiUser,
   type RegisterInput,
   type UpdateLearningPathInput,
@@ -51,6 +53,32 @@ const WINDOW_TIMES: Record<string, string> = {
   afternoon: '14:00',
   evening: '19:00',
   anytime: '19:00',
+}
+
+/** Shapes the backend settings into a `settings/loaded` action payload. */
+function mapSettingsLoaded(apiSettings: ApiSettings) {
+  return {
+    type: 'settings/loaded' as const,
+    timezone: apiSettings.timezone,
+    preferences: {
+      weeklyHours: apiSettings.weeklyHours,
+      intensity: apiSettings.intensity,
+      formats: apiSettings.formats,
+      sessionLength: apiSettings.sessionLength,
+    },
+    schedule: {
+      days: apiSettings.reminderDays,
+      time: apiSettings.reminderTime,
+      restDay: apiSettings.restDay,
+    },
+    notifications: {
+      dailyReminder: apiSettings.dailyReminder,
+      weeklySummary: apiSettings.weeklySummary,
+      projectFeedback: apiSettings.projectFeedback,
+      pathUpdates: apiSettings.pathUpdates,
+      productNews: apiSettings.productNews,
+    },
+  }
 }
 
 /** Shapes the backend user into the frontend `User` type. */
@@ -101,15 +129,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatchNext({ type: 'notif/loaded', notifications: apiNotifications.map(mapApiNotification) })
     dispatchNext({ type: 'billing/loaded', billing: apiBilling })
     if (apiSettings) {
-      dispatchNext({
-        type: 'settings/loaded',
-        timezone: apiSettings.timezone,
-        schedule: { days: apiSettings.reminderDays, time: apiSettings.reminderTime },
-        notifications: {
-          dailyReminder: apiSettings.dailyReminder,
-          weeklySummary: apiSettings.weeklySummary,
-        },
-      })
+      dispatchNext(mapSettingsLoaded(apiSettings))
     }
   }, [dispatchNext])
 
@@ -164,15 +184,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           notifications: apiNotifications.map(mapApiNotification),
         })
         if (apiSettings) {
-          dispatch({
-            type: 'settings/loaded',
-            timezone: apiSettings.timezone,
-            schedule: { days: apiSettings.reminderDays, time: apiSettings.reminderTime },
-            notifications: {
-              dailyReminder: apiSettings.dailyReminder,
-              weeklySummary: apiSettings.weeklySummary,
-            },
-          })
+          dispatch(mapSettingsLoaded(apiSettings))
         }
       } catch (error) {
         if (cancelled) return
@@ -404,17 +416,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const scheduledDays = answers.days.map((d) => DAY_LABELS[d]).filter(Boolean)
       const scheduledTime = answers.timeWindow ? WINDOW_TIMES[answers.timeWindow] : undefined
       if (scheduledDays.length > 0 || scheduledTime) {
-        dispatchNext({
-          type: 'settings/schedule',
-          patch: {
-            ...(scheduledDays.length > 0 ? { days: scheduledDays } : {}),
-            ...(scheduledTime ? { time: scheduledTime } : {}),
-          },
+        const schedulePatch: Partial<Settings['schedule']> = {
+          ...(scheduledDays.length > 0 ? { days: scheduledDays } : {}),
+          ...(scheduledTime ? { time: scheduledTime } : {}),
+        }
+        dispatchNext({ type: 'settings/schedule', patch: schedulePatch })
+        persistSettings({
+          ...(scheduledDays.length > 0 ? { reminderDays: scheduledDays } : {}),
+          ...(scheduledTime ? { reminderTime: scheduledTime } : {}),
         })
       }
       return path
     },
-    [dispatchNext],
+    [dispatchNext, persistSettings],
   )
 
   const retryPathBuild = useCallback(
@@ -619,12 +633,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ensureSessionContent,
       sessionContentError: (sectionId) => state.contentErrors[sectionId] || null,
       isSessionContentLoading: (sectionId) => Boolean(state.contentLoading[sectionId]),
-      updatePreferences: (patch) => dispatch({ type: 'settings/preferences', patch }),
+      updatePreferences: (patch) => {
+        dispatch({ type: 'settings/preferences', patch })
+        const apiPatch: UpdateSettingsInput = {}
+        if (patch.weeklyHours !== undefined) apiPatch.weeklyHours = patch.weeklyHours
+        if (patch.intensity !== undefined) apiPatch.intensity = patch.intensity
+        if (patch.formats !== undefined) apiPatch.formats = patch.formats
+        if (patch.sessionLength !== undefined) apiPatch.sessionLength = patch.sessionLength
+        persistSettings(apiPatch)
+      },
       updateSchedule: (patch) => {
         dispatch({ type: 'settings/schedule', patch })
         const apiPatch: UpdateSettingsInput = {}
         if (patch.days) apiPatch.reminderDays = patch.days
         if (patch.time) apiPatch.reminderTime = patch.time
+        if (patch.restDay !== undefined) apiPatch.restDay = patch.restDay
         persistSettings(apiPatch)
       },
       updateNotificationSettings: (patch) => {
@@ -632,9 +655,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const apiPatch: UpdateSettingsInput = {}
         if (patch.dailyReminder !== undefined) apiPatch.dailyReminder = patch.dailyReminder
         if (patch.weeklySummary !== undefined) apiPatch.weeklySummary = patch.weeklySummary
+        if (patch.projectFeedback !== undefined) apiPatch.projectFeedback = patch.projectFeedback
+        if (patch.pathUpdates !== undefined) apiPatch.pathUpdates = patch.pathUpdates
+        if (patch.productNews !== undefined) apiPatch.productNews = patch.productNews
         persistSettings(apiPatch)
       },
-      updateAi: (patch) => dispatch({ type: 'settings/ai', patch }),
       updateProfile: (patch) => {
         dispatch({ type: 'profile/update', patch })
         if (patch.timezone !== undefined) persistSettings({ timezone: patch.timezone })
