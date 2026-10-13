@@ -250,6 +250,59 @@ export function goalExtractMessages(mode: GoalExtractionMode, input: string): Ch
   ]
 }
 
+/* --------------------------- project review ----------------------- */
+
+export interface ProjectReviewParams {
+  title: string
+  description?: string
+  objectives: string[]
+  tasks: { title: string; done: boolean }[]
+  submissionNote?: string
+}
+
+export const PROJECT_REVIEW_SYSTEM = `You review a learner's finished project for a study app called Sawari. Be a rigorous, encouraging reviewer: specific, honest, and tied to the actual work described.
+You receive the project brief, which tasks were completed, and the learner's own submission note.
+
+CRITICAL RULES:
+- Reference their real tasks and note. Name what is strong and what is missing.
+- Never generic praise ("great job", "good effort") without a concrete reason.
+- If the note is empty and few tasks are done, say so plainly and keep the next steps concrete and small.
+- "strengths": 2 to 5 specific things done well.
+- "improve": 2 to 5 concrete next steps.
+- "note": 1 to 2 sentences, overall verdict.
+
+Return only valid JSON matching this shape:
+{
+  "strengths": ["string"],
+  "improve": ["string"],
+  "note": "string"
+}`
+
+export function projectReviewMessages(params: ProjectReviewParams): ChatMessage[] {
+  const taskLines = params.tasks.length
+    ? params.tasks.map((t) => `- [${t.done ? 'done' : 'open'}] ${t.title}`).join('\n')
+    : '(no task breakdown provided)';
+  return [
+    { role: 'system', content: PROJECT_REVIEW_SYSTEM },
+    {
+      role: 'user',
+      content: [
+        `Project: ${params.title}`,
+        params.description ? `Brief: ${params.description}` : '',
+        params.objectives.length ? `Objectives: ${params.objectives.join('; ')}` : '',
+        `Tasks:\n${taskLines}`,
+        params.submissionNote?.trim()
+          ? `Learner's submission note: "${params.submissionNote.trim()}"`
+          : 'Learner left no submission note.',
+        '',
+        'Review the project.',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    },
+  ]
+}
+
 /* ------------------------------ timeline -------------------------- */
 
 export interface TimelinePromptParams {

@@ -206,6 +206,7 @@ export interface Project {
   submitted: boolean
   reviewed: boolean
   submittedAt: string | null
+  submissionNote: string | null
   feedback: ProjectFeedback | null
 }
 

@@ -70,6 +70,7 @@ export const mockProjects: Project[] = [
     submitted: false,
     reviewed: false,
     submittedAt: null,
+    submissionNote: null,
     feedback: null,
   },
   {
@@ -95,6 +96,7 @@ export const mockProjects: Project[] = [
     submitted: true,
     reviewed: true,
     submittedAt: 'Sep 18',
+    submissionNote: 'Scope cut to onboarding only.',
     feedback: {
       strengths: [
         'Clear scope, including what you decided not to move',
@@ -127,6 +129,7 @@ export const mockProjects: Project[] = [
     submitted: true,
     reviewed: true,
     submittedAt: 'Sep 8',
+    submissionNote: null,
     feedback: {
       strengths: ['Criteria were specific enough to actually rule options out'],
       improve: ['Show the cost of switching later, not just the monthly price'],
@@ -157,6 +160,7 @@ export const mockProjects: Project[] = [
     submitted: false,
     reviewed: false,
     submittedAt: null,
+    submissionNote: null,
     feedback: null,
   },
   {
@@ -178,6 +182,7 @@ export const mockProjects: Project[] = [
     submitted: false,
     reviewed: false,
     submittedAt: null,
+    submissionNote: null,
     feedback: null,
   },
 ]

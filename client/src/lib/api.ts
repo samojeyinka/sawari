@@ -345,6 +345,7 @@ export interface ApiProject {
   submitted: boolean
   reviewed: boolean
   submittedAt: string | null
+  submissionNote: string | null
   feedback: ProjectFeedback | null
   createdAt: string
   updatedAt: string
@@ -376,6 +377,7 @@ export interface UpdateProjectInput {
   submitted?: boolean
   reviewed?: boolean
   submittedAt?: string | null
+  submissionNote?: string | null
   feedback?: ProjectFeedback | null
 }
 
@@ -396,6 +398,7 @@ export function mapApiProject(api: ApiProject): Project {
     submitted: api.submitted,
     reviewed: api.reviewed,
     submittedAt: api.submittedAt ?? null,
+    submissionNote: api.submissionNote ?? null,
     feedback: api.feedback ?? null,
   }
 }
@@ -408,6 +411,7 @@ export const projectsApi = {
   update: (id: string, patch: UpdateProjectInput) =>
     request<ApiProject>(`/projects/${id}`, { method: 'PATCH', body: patch }),
   remove: (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' }),
+  review: (id: string) => request<ApiProject>(`/projects/${id}/review`, { method: 'POST' }),
 }
 
 /* ------------------------------------------------------------------ */

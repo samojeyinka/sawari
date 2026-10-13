@@ -55,6 +55,16 @@ export const goalExtractionResponseSchema = z.object({
 
 export type GoalExtractionResponse = z.infer<typeof goalExtractionResponseSchema>
 
+/* --------------------------- project review ----------------------- */
+
+export const projectReviewResponseSchema = z.object({
+  strengths: z.array(z.string().min(3).max(500)).min(1).max(6),
+  improve: z.array(z.string().min(3).max(500)).min(1).max(6),
+  note: z.string().min(3).max(1000),
+})
+
+export type ProjectReviewResponse = z.infer<typeof projectReviewResponseSchema>
+
 /* ------------------------------ timeline -------------------------- */
 
 export const aiTimelineResponseSchema = z.object({

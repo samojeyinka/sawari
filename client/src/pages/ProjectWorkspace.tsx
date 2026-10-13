@@ -12,6 +12,13 @@ import { ProgressBar } from '../components/ui/ProgressBar'
 import { SubmitProjectModal } from '../components/modals/SubmitProjectModal'
 import { cx } from '../lib/utils'
 
+function formatSubmittedAt(value: string | null): string {
+  if (!value) return 'just now'
+  const time = Date.parse(value)
+  if (Number.isNaN(time)) return value
+  return new Date(time).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
 export function ProjectWorkspacePage() {
   const { projectId } = useParams()
   const { state, toggleTask, submitProject, reviewProject, toast } = useApp()
@@ -32,16 +39,18 @@ export function ProjectWorkspacePage() {
     toast(wasDone ? 'Task reopened' : `Done: ${title}`)
   }
 
-  const handleConfirmSubmit = () => {
+  const handleConfirmSubmit = async (note: string) => {
     setSubmitOpen(false)
     setSubmitting(true)
-    submitProject(project.id)
-    toast('Project submitted for review')
-    window.setTimeout(() => {
-      reviewProject(project.id)
-      setSubmitting(false)
+    submitProject(project.id, note)
+    try {
+      await reviewProject(project.id)
       toast('Project reviewed')
-    }, 1800)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Review failed. Try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -187,7 +196,7 @@ export function ProjectWorkspacePage() {
               <div className="mt-4 animate-rise">
                 <div>
                   <p className="text-[15px] font-semibold text-ink">Project reviewed.</p>
-                  <p className="text-[13px] text-muted">Submitted {project.submittedAt}</p>
+                  <p className="text-[13px] text-muted">Submitted {formatSubmittedAt(project.submittedAt)}</p>
                 </div>
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">

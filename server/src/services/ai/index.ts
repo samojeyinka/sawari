@@ -6,11 +6,13 @@ import {
   goalExtractMessages,
   outlineMessages,
   practiceReviewMessages,
+  projectReviewMessages,
   timelineMessages,
   type BriefSection,
   type GoalExtractionMode,
   type LearnerBrief,
   type PracticeReviewParams,
+  type ProjectReviewParams,
   type SessionGenContext,
   type TimelinePromptParams,
 } from './prompts.js'
@@ -19,10 +21,12 @@ import {
   goalExtractionResponseSchema,
   outlineResponseSchema,
   practiceReviewResponseSchema,
+  projectReviewResponseSchema,
   sessionResponseSchema,
   type AiTimelineResponse,
   type GoalExtractionResponse,
   type PracticeReviewResponse,
+  type ProjectReviewResponse,
   type SessionResponse,
 } from './schemas.js'
 
@@ -180,6 +184,17 @@ export async function extractGoal(
     goalExtractMessages(mode, input),
     goalExtractionResponseSchema,
     { maxTokens: 1024, thinking: false, temperature: 0.4, apiKey },
+  )
+}
+
+export async function reviewProjectSubmission(
+  params: ProjectReviewParams,
+  apiKey?: string,
+): Promise<ProjectReviewResponse> {
+  return generateValidated(
+    projectReviewMessages(params),
+    projectReviewResponseSchema,
+    { maxTokens: 1200, thinking: false, temperature: 0.4, apiKey },
   )
 }
 
