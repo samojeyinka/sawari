@@ -5,6 +5,12 @@ export const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id.')
 
 export const idParamSchema = z.object({ id: objectId })
 
+/** `/:id/sections/:sectionId` — a path id plus its section key. */
+export const sectionParamSchema = z.object({
+  id: objectId,
+  sectionId: z.string().min(1).max(60),
+})
+
 /** ISO calendar date, `YYYY-MM-DD`. */
 export const isoDate = z
   .string()

@@ -2,11 +2,28 @@ import { Router } from 'express'
 import type { NextFunction, Request, Response } from 'express'
 import passport from 'passport'
 import { env } from '../../config/env.js'
-import { login, logout, register } from '../../controllers/auth.controller.js'
+import {
+  changePassword,
+  forgotPassword,
+  login,
+  logout,
+  register,
+  resendVerificationCode,
+  resetPassword,
+  verifyEmail,
+} from '../../controllers/auth.controller.js'
 import { oauthCallback } from '../../controllers/oauth.controller.js'
+import { authenticate } from '../../middleware/authenticate.js'
 import { authLimiter } from '../../middleware/rateLimiter.js'
 import { validate } from '../../middleware/validate.js'
-import { loginSchema, registerSchema } from '../../validators/authValidators.js'
+import {
+  changePasswordSchema,
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+} from '../../validators/authValidators.js'
 
 const router = Router()
 
@@ -25,6 +42,11 @@ function requireOAuth(provider: 'github' | 'google') {
 }
 
 router.post('/register', authLimiter, validate(registerSchema), register)
+router.post('/verify-email', authenticate, validate(verifyEmailSchema), verifyEmail)
+router.post('/resend-code', authenticate, authLimiter, resendVerificationCode)
+router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), forgotPassword)
+router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword)
+router.post('/change-password', authenticate, authLimiter, validate(changePasswordSchema), changePassword)
 router.post('/login', authLimiter, validate(loginSchema), login)
 router.post('/logout', logout)
 

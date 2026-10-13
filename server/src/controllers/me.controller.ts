@@ -3,7 +3,7 @@ import { asyncHandler } from '../lib/asyncHandler.js'
 import { httpError } from '../lib/AppError.js'
 import { toSafeUser, User } from '../models/User.js'
 import type { UpdateMeInput } from '../validators/authValidators.js'
-
+ 
 /* ------------------------------ current user ---------------------- */
 
 export const me = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {

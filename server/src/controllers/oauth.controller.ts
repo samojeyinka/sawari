@@ -49,6 +49,6 @@ export const oauthCallback = asyncHandler(
     await user.save()
 
     setAuthCookie(res, user._id.toString())
-    res.redirect(`${env.FRONTEND_URL}?oauth=success`)
+    res.redirect(`${env.FRONTEND_URL}?oauth=success&provider=${profile.provider}`)
   },
 )

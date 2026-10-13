@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LuArrowLeft } from 'react-icons/lu'
+import { LuArrowLeft, LuLoaderCircle, LuSparkles } from 'react-icons/lu'
 import type {
   ExperienceLevel,
   GoalReason,
@@ -12,6 +12,7 @@ import type {
   TimeWindow,
 } from '../types'
 import { useApp } from '../state/store'
+import { aiApi, type AiTimelineEstimate } from '../lib/api'
 import { Logo } from '../components/ui/Logo'
 import { Button } from '../components/ui/Button'
 import { ChoiceCard } from '../components/ui/Choice'
@@ -169,12 +170,45 @@ export function SetupPage() {
   const [aim, setAim] = useState('')
   const [extraction, setExtraction] = useState<GoalExtraction | null>(null)
   const [extracting, setExtracting] = useState(false)
+  const [aiTimeline, setAiTimeline] = useState<AiTimelineEstimate | null>(null)
+  const [loadingTimeline, setLoadingTimeline] = useState(false)
+
+  // Fetch AI timeline estimation for the learner's specific topic and parameters
+  useEffect(() => {
+    if (!setup.subject.trim()) return
+    if (step !== 6) return
+
+    let active = true
+    setLoadingTimeline(true)
+    aiApi
+      .estimateTimeline({
+        subject: setup.subject,
+        outcome: setup.outcome,
+        experience: setup.experience,
+        weeklyHours: setup.weeklyHours,
+        intensity: setup.intensity,
+      })
+      .then((est) => {
+        if (active) setAiTimeline(est)
+      })
+      .catch(() => {
+        // Graceful fallback to static calculation
+      })
+      .finally(() => {
+        if (active) setLoadingTimeline(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [step, setup.subject, setup.outcome, setup.experience, setup.weeklyHours, setup.intensity])
 
   const progress = ((step + 1) / steps.length) * 100
 
-  const recMonths = recommendedMonths(setup)
-  const fastMonths = Math.max(1, Math.round(recMonths * 0.65))
-  const relaxedMonths = Math.max(recMonths + 1, Math.round(recMonths * 1.5))
+  const baseRecMonths = recommendedMonths(setup)
+  const recMonths = aiTimeline?.recommendedMonths ?? baseRecMonths
+  const fastMonths = aiTimeline?.fastMonths ?? Math.max(1, Math.round(recMonths * 0.65))
+  const relaxedMonths = aiTimeline?.relaxedMonths ?? Math.max(recMonths + 1, Math.round(recMonths * 1.5))
   const seenMonths = new Set<number>()
   const durationOptions = [
     { months: fastMonths, tag: 'Fastest', hint: 'Push the pace' },
@@ -594,25 +628,39 @@ export function SetupPage() {
             {step === 6 && (
               <div className="mt-7 space-y-6">
                 <div className="rounded-xl border border-accent bg-accent-soft/50 px-4 py-4">
-                  <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-accent-strong">
-                  
-                    Recommended timeline
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-accent-strong">
+                      <LuSparkles className="h-3.5 w-3.5" />
+                      AI Recommended timeline
+                    </p>
+                    {loadingTimeline && (
+                      <span className="inline-flex items-center gap-1 text-[11.5px] text-accent font-medium">
+                        <LuLoaderCircle className="h-3 w-3 animate-spin" />
+                        Analyzing {setup.subject}...
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-                    At{' '}
-                    <span className="font-semibold text-ink">
-                      {setup.weeklyHours ? `${setup.weeklyHours} hours a week` : 'your current pace'}
-                    </span>
-                    {setup.intensity && (
+                    {aiTimeline?.reason ? (
+                      aiTimeline.reason
+                    ) : (
                       <>
-                        {' '}
-                        on a <span className="font-semibold text-ink">{setup.intensity}</span> pace
+                        At{' '}
+                        <span className="font-semibold text-ink">
+                          {setup.weeklyHours ? `${setup.weeklyHours} hours a week` : 'your current pace'}
+                        </span>
+                        {setup.intensity && (
+                          <>
+                            {' '}
+                            on a <span className="font-semibold text-ink">{setup.intensity}</span> pace
+                          </>
+                        )}
+                        , realistic mastery for <span className="font-semibold text-ink">{setup.subject}</span> takes about{' '}
+                        <span className="font-semibold text-ink">{monthLabel(recMonths)}</span>. The fastest
+                        focused path is around{' '}
+                        <span className="font-semibold text-ink">{monthLabel(fastMonths)}</span>.
                       </>
                     )}
-                    , most people reach this goal in about{' '}
-                    <span className="font-semibold text-ink">{monthLabel(recMonths)}</span>. The fastest
-                    realistic path is around{' '}
-                    <span className="font-semibold text-ink">{monthLabel(fastMonths)}</span>.
                   </p>
                 </div>
 

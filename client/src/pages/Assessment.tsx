@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { LuArrowLeft, LuCheck, LuX } from 'react-icons/lu'
 import { useApp } from '../state/store'
+import { isSectionAttendable } from '../lib/sections'
 import { getSessionActivities } from '../data'
 import { Button } from '../components/ui/Button'
 import { ProgressBar } from '../components/ui/ProgressBar'
@@ -30,6 +31,11 @@ export function AssessmentPage() {
 
   if (!activePath || !section || !content || !assessment) {
     return <Navigate to="/app/today" replace />
+  }
+
+  // Checks are attendance only: previewing sections fall back to the session.
+  if (!isSectionAttendable(activePath, section.id)) {
+    return <Navigate to={`/app/session/${section.id}`} replace />
   }
 
   const question = questions[index]

@@ -9,58 +9,32 @@ import {
 import type {
   ActivityKind,
   LearningPath,
-  PathSection,
   Project,
-  SessionContent,
   SetupAnswers,
   User,
 } from '../types'
 import type { AlertVariant } from '../components/ui/Alert'
-import { baseSessionContent, findTemplateMatch, sectionsForSubject } from '../data'
+import { findTemplateMatch } from '../data'
 import {
   ApiError,
   authApi,
   learningPathsApi,
   mapApiLearningPath,
+  mapApiNotification,
   mapApiProject,
+  notificationsApi,
   projectsApi,
+  sessionsApi,
+  settingsApi,
   type ApiUser,
   type RegisterInput,
   type UpdateLearningPathInput,
+  type UpdateSettingsInput,
 } from '../lib/api'
 import { useAlert } from './alertContext'
+import { saveLastAuth } from '../lib/lastAuth'
 import type { Store } from './store'
-import { AppContext, contentForPath, initialState, reducer, titleCase } from './store'
-
-/** Builds the section list for a newly generated path (client-owned section ids). */
-function buildSections(
-  subject: string,
-  templates: ReturnType<typeof sectionsForSubject>,
-): PathSection[] {
-  const slug =
-    subject
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 16) || 'path'
-  const stamp = Date.now().toString(36)
-  return templates.map((template, i) => ({
-    id: `${slug}-${stamp}-s${i + 1}`,
-    order: i + 1,
-    title: template.title,
-    description: template.description,
-    minutes: template.minutes,
-    status: i === 0 ? 'current' : i === 1 ? 'upcoming' : 'locked',
-    doneMinutes: 0,
-    note:
-      i === 0
-        ? undefined
-        : i === 1
-          ? `Starts after ${templates[0].title}.`
-          : `Unlocks after ${templates[i - 1].title}.`,
-  }))
-}
+import { AppContext, initialState, reducer, titleCase } from './store'
 
 const DAY_LABELS: Record<string, string> = {
   mon: 'Mon',
@@ -86,6 +60,7 @@ function mapApiUser(apiUser: ApiUser): User {
     name: fullName || apiUser.email,
     firstName: apiUser.firstName,
     email: apiUser.email,
+    emailVerified: Boolean(apiUser.emailVerified),
     joined: apiUser.createdAt.slice(0, 10),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   }
@@ -109,21 +84,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const reloadData = useCallback(async () => {
-    const [apiPaths, apiProjects] = await Promise.all([
+    const [apiPaths, apiProjects, apiNotifications, apiSettings] = await Promise.all([
       learningPathsApi.list(),
       projectsApi.list(),
+      notificationsApi.list().catch(() => []),
+      settingsApi.get().catch(() => null),
     ])
-    const paths = apiPaths.map(mapApiLearningPath)
-    const content = paths.reduce<Record<string, SessionContent>>(
-      (acc, path) => Object.assign(acc, contentForPath(path)),
-      {},
-    )
     dispatchNext({
       type: 'data/loaded',
-      paths,
+      paths: apiPaths.map(mapApiLearningPath),
       projects: apiProjects.map(mapApiProject),
-      content,
+      content: {},
     })
+    dispatchNext({ type: 'notif/loaded', notifications: apiNotifications.map(mapApiNotification) })
+    if (apiSettings) {
+      dispatchNext({
+        type: 'settings/loaded',
+        timezone: apiSettings.timezone,
+        schedule: { days: apiSettings.reminderDays, time: apiSettings.reminderTime },
+        notifications: {
+          dailyReminder: apiSettings.dailyReminder,
+          weeklySummary: apiSettings.weeklySummary,
+        },
+      })
+    }
   }, [dispatchNext])
 
   const handleSyncError = useCallback(
@@ -159,22 +143,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     void (async () => {
       try {
-        const [apiPaths, apiProjects] = await Promise.all([
+        const [apiPaths, apiProjects, apiNotifications, apiSettings] = await Promise.all([
           learningPathsApi.list(),
           projectsApi.list(),
+          notificationsApi.list().catch(() => []),
+          settingsApi.get().catch(() => null),
         ])
         if (cancelled) return
-        const paths = apiPaths.map(mapApiLearningPath)
-        const content = paths.reduce<Record<string, SessionContent>>(
-          (acc, path) => Object.assign(acc, contentForPath(path)),
-          {},
-        )
         dispatch({
           type: 'data/loaded',
-          paths,
+          paths: apiPaths.map(mapApiLearningPath),
           projects: apiProjects.map(mapApiProject),
-          content,
+          content: {},
         })
+        dispatch({
+          type: 'notif/loaded',
+          notifications: apiNotifications.map(mapApiNotification),
+        })
+        if (apiSettings) {
+          dispatch({
+            type: 'settings/loaded',
+            timezone: apiSettings.timezone,
+            schedule: { days: apiSettings.reminderDays, time: apiSettings.reminderTime },
+            notifications: {
+              dailyReminder: apiSettings.dailyReminder,
+              weeklySummary: apiSettings.weeklySummary,
+            },
+          })
+        }
       } catch (error) {
         if (cancelled) return
         if (error instanceof ApiError && error.isUnauthorized) {
@@ -191,16 +187,120 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [state.authStatus, alert])
 
+  // Periodically refresh notifications in the background so reminders and path readiness appear live.
+  useEffect(() => {
+    if (state.authStatus !== 'authenticated') return
+
+    const poll = async () => {
+      try {
+        const notifs = await notificationsApi.list()
+        dispatchNext({ type: 'notif/loaded', notifications: notifs.map(mapApiNotification) })
+      } catch {
+        // Silently ignore background poll error
+      }
+    }
+
+    const interval = window.setInterval(poll, 30_000)
+    window.addEventListener('focus', poll)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', poll)
+    }
+  }, [state.authStatus, dispatchNext])
+
+  // Paths still being designed by the AI worker. Poll each one until it
+  // settles so every page (path, today, …) updates live instead of going
+  // stale the moment the user leaves the generate screen.
+  const buildingKey = useMemo(
+    () =>
+      state.paths
+        .filter(
+          (p) =>
+            p.generationStatus === 'queued' ||
+            p.generationStatus === 'generating' ||
+            p.generationStatus === 'idle',
+        )
+        .map((p) => p.id)
+        .sort()
+        .join(','),
+    [state.paths],
+  )
+  const watchedBuilds = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (state.authStatus !== 'authenticated' || buildingKey === '') return
+    const ids = buildingKey.split(',')
+    for (const id of ids) watchedBuilds.current.add(id)
+    let cancelled = false
+
+    const refresh = async (id: string) => {
+      try {
+        const updated = mapApiLearningPath(await learningPathsApi.get(id))
+        if (cancelled) return
+        dispatchNext({ type: 'path/replace', path: updated })
+        if (updated.generationStatus === 'ready' || updated.generationStatus === 'failed') {
+          if (watchedBuilds.current.has(id)) {
+            watchedBuilds.current.delete(id)
+            if (updated.generationStatus === 'ready') {
+              alert.success(`Your ${updated.subject} path is ready.`)
+            }
+          }
+        }
+      } catch (error) {
+        // Vanished server-side (deleted elsewhere): drop it so we stop polling.
+        if (!cancelled && error instanceof ApiError && error.status === 404) {
+          watchedBuilds.current.delete(id)
+          dispatchNext({ type: 'path/delete', id })
+        }
+        // Anything else is transient; the next tick retries silently.
+      }
+    }
+
+    const tick = () => {
+      for (const id of ids) void refresh(id)
+    }
+    tick()
+    const timer = window.setInterval(tick, 2000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [state.authStatus, buildingKey, alert, dispatchNext])
+
   const login = useCallback(async (email: string, password: string) => {
     const user = mapApiUser(await authApi.login({ email, password }))
+    saveLastAuth({ method: 'email', email })
     dispatch({ type: 'auth/setUser', user })
     return user
   }, [])
 
   const register = useCallback(async (input: RegisterInput) => {
     const user = mapApiUser(await authApi.register(input))
+    saveLastAuth({ method: 'email', email: input.email })
     dispatch({ type: 'auth/setUser', user })
     return user
+  }, [])
+
+  const verifyEmail = useCallback(async (code: string) => {
+    const user = mapApiUser(await authApi.verifyEmail(code))
+    dispatch({ type: 'auth/setUser', user })
+    return user
+  }, [])
+
+  const resendVerificationCode = useCallback(async () => {
+    await authApi.resendVerificationCode()
+  }, [])
+
+  const forgotPassword = useCallback(async (email: string) => {
+    await authApi.forgotPassword(email)
+  }, [])
+
+  const resetPassword = useCallback(async (token: string, password: string) => {
+    await authApi.resetPassword(token, password)
+  }, [])
+
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    await authApi.changePassword(currentPassword, newPassword)
   }, [])
 
   const refreshSession = useCallback(async () => {
@@ -254,23 +354,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [handleSyncError],
   )
 
+  /** Persists reminder/notification preferences to the server (best-effort). */
+  const persistSettings = useCallback(
+    (patch: UpdateSettingsInput) => {
+      if (Object.keys(patch).length === 0) return
+      void settingsApi.update(patch).catch(handleSyncError)
+    },
+    [handleSyncError],
+  )
+
   const createPath = useCallback(
-    async (subject: string, answers: SetupAnswers) => {
+    async (subject: string, answers: SetupAnswers): Promise<LearningPath> => {
       // Reopening a subject that already has a path: update its goal, don't duplicate.
       const matchId = findTemplateMatch(subject, stateRef.current.paths)
       if (matchId) {
+        let current = stateRef.current.paths.find((p) => p.id === matchId)!
         const goal = answers.outcome.trim()
         if (goal) {
-          const updated = mapApiLearningPath(await learningPathsApi.update(matchId, { goal }))
-          dispatchNext({ type: 'path/replace', path: updated })
+          current = mapApiLearningPath(await learningPathsApi.update(matchId, { goal }))
+          dispatchNext({ type: 'path/replace', path: current })
         }
         dispatchNext({ type: 'path/activate', id: matchId })
         dispatchNext({ type: 'setup/reset' })
-        return
+        return current
       }
 
-      const templates = sectionsForSubject(subject)
-      const sections = buildSections(subject, templates)
       const created = await learningPathsApi.create({
         subject: titleCase(subject),
         goal: answers.outcome.trim() || `Build real confidence with ${titleCase(subject)}.`,
@@ -280,10 +388,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         intensity: answers.intensity ?? 'balanced',
         formats: answers.formats.length ? answers.formats : ['articles', 'exercises'],
         targetDate: answers.targetDate || null,
-        sections,
       })
       const path = mapApiLearningPath(created)
-      dispatchNext({ type: 'path/add', path, content: contentForPath(path) })
+      dispatchNext({ type: 'path/add', path, content: {} })
 
       const scheduledDays = answers.days.map((d) => DAY_LABELS[d]).filter(Boolean)
       const scheduledTime = answers.timeWindow ? WINDOW_TIMES[answers.timeWindow] : undefined
@@ -296,6 +403,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
           },
         })
       }
+      return path
+    },
+    [dispatchNext],
+  )
+
+  const retryPathBuild = useCallback(
+    async (id: string): Promise<LearningPath> => {
+      const updated = mapApiLearningPath(await learningPathsApi.retry(id))
+      dispatchNext({ type: 'path/replace', path: updated })
+      return updated
     },
     [dispatchNext],
   )
@@ -401,6 +518,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [dispatchNext, pushProject],
   )
 
+  const markRead = useCallback(
+    (id: string) => {
+      dispatchNext({ type: 'notif/read', id })
+      void notificationsApi.markRead(id).catch(handleSyncError)
+    },
+    [dispatchNext, handleSyncError],
+  )
+
+  const markAllRead = useCallback(() => {
+    dispatchNext({ type: 'notif/readAll' })
+    void notificationsApi.markAllRead().catch(handleSyncError)
+  }, [dispatchNext, handleSyncError])
+
+  // Sections whose content request is already in flight (avoid duplicates).
+  const contentInFlight = useRef<Set<string>>(new Set())
+
+  const ensureSessionContent = useCallback(
+    async (sectionId: string, force = false) => {
+      const current = stateRef.current
+      if (!force && current.customContent[sectionId]) return
+      if (contentInFlight.current.has(sectionId)) return
+
+      const path = current.paths.find((p) => p.sections.some((s) => s.id === sectionId))
+      const section = path?.sections.find((s) => s.id === sectionId)
+      if (!path || !section) return
+
+      contentInFlight.current.add(sectionId)
+      dispatchNext({ type: 'content/loading', sectionId })
+      try {
+        const content = await sessionsApi.getOrGenerate(path.id, sectionId, force)
+        dispatchNext({ type: 'content/loaded', content: { [sectionId]: content } })
+      } catch (error) {
+        const message =
+          error instanceof ApiError && error.message
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : 'Could not generate session content.'
+        dispatchNext({ type: 'content/error', sectionId, error: message })
+      } finally {
+        contentInFlight.current.delete(sectionId)
+      }
+    },
+    [dispatchNext],
+  )
+
   const activePath = useMemo(
     () => state.paths.find((p) => p.id === state.activePathId) ?? state.paths[0] ?? null,
     [state.paths, state.activePathId],
@@ -418,6 +581,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unreadCount,
       login,
       register,
+      verifyEmail,
+      resendVerificationCode,
+      forgotPassword,
+      resetPassword,
+      changePassword,
       refreshSession,
       signOut,
       reloadData,
@@ -425,6 +593,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       resetSetup: () => dispatch({ type: 'setup/reset' }),
       activatePath: (id) => dispatch({ type: 'path/activate', id }),
       createPath,
+      retryPathBuild,
       deletePath,
       updatePathPreferences,
       completeActivity,
@@ -432,19 +601,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toggleTask,
       submitProject,
       reviewProject,
-      markRead: (id) => dispatch({ type: 'notif/read', id }),
-      markAllRead: () => dispatch({ type: 'notif/readAll' }),
+      markRead,
+      markAllRead,
+      ensureSessionContent,
+      sessionContentError: (sectionId) => state.contentErrors[sectionId] || null,
+      isSessionContentLoading: (sectionId) => Boolean(state.contentLoading[sectionId]),
       updatePreferences: (patch) => dispatch({ type: 'settings/preferences', patch }),
-      updateSchedule: (patch) => dispatch({ type: 'settings/schedule', patch }),
-      updateNotificationSettings: (patch) =>
-        dispatch({ type: 'settings/notifications', patch }),
+      updateSchedule: (patch) => {
+        dispatch({ type: 'settings/schedule', patch })
+        const apiPatch: UpdateSettingsInput = {}
+        if (patch.days) apiPatch.reminderDays = patch.days
+        if (patch.time) apiPatch.reminderTime = patch.time
+        persistSettings(apiPatch)
+      },
+      updateNotificationSettings: (patch) => {
+        dispatch({ type: 'settings/notifications', patch })
+        const apiPatch: UpdateSettingsInput = {}
+        if (patch.dailyReminder !== undefined) apiPatch.dailyReminder = patch.dailyReminder
+        if (patch.weeklySummary !== undefined) apiPatch.weeklySummary = patch.weeklySummary
+        persistSettings(apiPatch)
+      },
       updateAi: (patch) => dispatch({ type: 'settings/ai', patch }),
-      updateProfile: (patch) => dispatch({ type: 'profile/update', patch }),
+      updateProfile: (patch) => {
+        dispatch({ type: 'profile/update', patch })
+        if (patch.timezone !== undefined) persistSettings({ timezone: patch.timezone })
+      },
       toast,
-      sessionContentFor: (sectionId) =>
-        state.customContent[sectionId] ??
-        (baseSessionContent[sectionId] as SessionContent | undefined) ??
-        null,
+      sessionContentFor: (sectionId) => state.customContent[sectionId] ?? null,
     }
   }, [
     state,
@@ -452,10 +635,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     unreadCount,
     login,
     register,
+    verifyEmail,
+    resendVerificationCode,
+    forgotPassword,
+    resetPassword,
+    changePassword,
     refreshSession,
     signOut,
     reloadData,
     createPath,
+    retryPathBuild,
     deletePath,
     updatePathPreferences,
     completeActivity,
@@ -463,6 +652,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     toggleTask,
     submitProject,
     reviewProject,
+    markRead,
+    markAllRead,
+    ensureSessionContent,
+    persistSettings,
     toast,
   ])
 

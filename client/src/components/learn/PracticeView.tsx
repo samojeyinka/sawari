@@ -1,23 +1,29 @@
 import { useState } from 'react'
-import { LuCheck, LuX } from 'react-icons/lu'
+import { LuCheck, LuSparkles, LuX } from 'react-icons/lu'
 import type { Practice } from '../../types'
+import { aiApi, type PracticeReviewResult } from '../../lib/api'
 import { Button } from '../ui/Button'
 import { inputClass } from '../ui/ProgressBar'
+import { PreviewNotice } from './PreviewNotice'
 import { cx } from '../../lib/utils'
 
 export function PracticeView({
   practice,
   done,
+  preview = false,
   onComplete,
 }: {
   practice: Practice
   done: boolean
+  preview?: boolean
   onComplete: () => void
 }) {
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [text, setText] = useState('')
   const [revealed, setRevealed] = useState(false)
   const [error, setError] = useState('')
+  const [review, setReview] = useState<PracticeReviewResult | null>(null)
+  const [checking, setChecking] = useState(false)
 
   const items = practice.items ?? []
   const answered = Object.keys(answers).length
@@ -28,10 +34,42 @@ export function PracticeView({
     setAnswers((prev) => ({ ...prev, [itemId]: index }))
   }
 
-  const finish = () => {
-    if (practice.kind === 'written' && text.trim().length < 10 && !revealed) {
-      setError('Write a few words first, or reveal the example answer.')
+  const handleCheckAi = async () => {
+    if (text.trim().length < 5) {
+      setError('Please type your response first before checking with AI.')
       return
+    }
+    setError('')
+    setChecking(true)
+    try {
+      const res = await aiApi.reviewPractice({
+        prompt: practice.prompt ?? practice.title,
+        userAnswer: text.trim(),
+        modelAnswer: practice.modelAnswer,
+        topic: practice.title,
+      })
+      setReview(res)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not check answer with AI.')
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  const finish = async () => {
+    if (practice.kind === 'written') {
+      if (text.trim().length < 5 && !revealed) {
+        setError('Write your answer first, or reveal the example answer.')
+        return
+      }
+      if (!review && !revealed) {
+        await handleCheckAi()
+        return
+      }
+      if (review && !review.acceptable && !revealed) {
+        setError('Please improve your answer to address the prompt, or reveal the example answer to continue.')
+        return
+      }
     }
     setError('')
     onComplete()
@@ -74,7 +112,7 @@ export function PracticeView({
                       <button
                         key={option}
                         type="button"
-                        disabled={hasAnswer}
+                        disabled={hasAnswer || preview}
                         onClick={() => answer(item.id, index)}
                         className={cx(
                           'flex items-center justify-between gap-2 rounded-lg border px-3.5 py-2.5 text-left text-sm transition-all duration-150',
@@ -130,32 +168,111 @@ export function PracticeView({
           <textarea
             id="practice-answer"
             value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={6}
-            placeholder="Write your answer here. Two or three sentences is plenty."
-            className={cx(inputClass, 'min-h-36 resize-y leading-relaxed')}
+            disabled={preview}
+            onChange={(e) => {
+              setText(e.target.value)
+              if (error) setError('')
+            }}
+            rows={5}
+            placeholder="Write your answer here. Explain the key concepts, mechanisms, or steps."
+            className={cx(inputClass, 'min-h-32 resize-y leading-relaxed')}
           />
-          {error && <p className="mt-2 text-[13px] text-danger">{error}</p>}
+
+          {!preview && (
+            <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3">
+              <Button
+                type="button"
+                onClick={() => void handleCheckAi()}
+                loading={checking}
+                disabled={text.trim().length < 5}
+                variant={review?.acceptable ? 'secondary' : 'primary'}
+              >
+                <LuSparkles className="mr-2 h-4 w-4" />
+                {review ? 'Re-check with AI' : 'Check answer with AI'}
+              </Button>
+
+              {!revealed && (
+                <button
+                  type="button"
+                  onClick={() => setRevealed(true)}
+                  className="text-sm font-medium text-muted transition-colors hover:text-ink"
+                >
+                  Reveal example answer
+                </button>
+              )}
+            </div>
+          )}
+
+          {error && <p className="mt-2.5 text-[13px] text-danger">{error}</p>}
+
+          {/* AI Review feedback card */}
+          {review && (
+            <div
+              className={cx(
+                'mt-5 animate-rise rounded-xl border p-4 sm:p-5',
+                review.status === 'correct' && 'border-success/35 bg-success-soft/50',
+                review.status === 'close' && 'border-warn/35 bg-warn-soft/50',
+                review.status === 'needs_improvement' && 'border-danger/35 bg-danger-soft/50',
+              )}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span
+                  className={cx(
+                    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wider',
+                    review.status === 'correct' && 'bg-success text-band',
+                    review.status === 'close' && 'bg-warn text-band',
+                    review.status === 'needs_improvement' && 'bg-danger text-band',
+                  )}
+                >
+                  {review.status === 'correct' ? (
+                    <>
+                      <LuCheck className="h-3.5 w-3.5" strokeWidth={3} />
+                      Accurate & On Target
+                    </>
+                  ) : review.status === 'close' ? (
+                    <>
+                      <LuSparkles className="h-3.5 w-3.5" />
+                      Close · Good Grasp
+                    </>
+                  ) : (
+                    <>
+                      <LuX className="h-3.5 w-3.5" strokeWidth={3} />
+                      Needs Improvement
+                    </>
+                  )}
+                </span>
+                <span className="text-xs font-semibold text-muted">
+                  Accuracy Score: {review.score}/100
+                </span>
+              </div>
+
+              <div className="mt-3.5 space-y-2.5 text-sm leading-relaxed">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    What you got right
+                  </p>
+                  <p className="mt-0.5 text-ink">{review.feedback}</p>
+                </div>
+
+                <div className="border-t border-line/40 pt-2.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    How it can be better
+                  </p>
+                  <p className="mt-0.5 text-ink-soft">{review.improvements}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {revealed && practice.modelAnswer && (
-            <div className="mt-4 animate-rise rounded-xl border border-line bg-canvas px-4 py-4">
+            <div className="mt-5 animate-rise rounded-xl border border-line bg-canvas px-4 py-4">
               <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-muted">
-                Example answer
+                Exemplar / Model answer
               </p>
               <p className="mt-1.5 text-[15px] leading-relaxed text-ink-soft">
                 {practice.modelAnswer}
               </p>
             </div>
-          )}
-
-          {!revealed && (
-            <button
-              type="button"
-              onClick={() => setRevealed(true)}
-              className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors hover:text-accent-strong"
-            >
-              Reveal example answer
-            </button>
           )}
         </div>
       )}
@@ -165,17 +282,33 @@ export function PracticeView({
           <span className="inline-flex items-center gap-2 text-sm font-medium text-success">
             <LuCheck className="h-4 w-4" /> Practice complete
           </span>
+        ) : preview ? (
+          <PreviewNotice />
         ) : (
           <>
             <Button
-              onClick={finish}
-              disabled={practice.kind === 'classify' && !allAnswered}
+              onClick={() => void finish()}
+              loading={checking}
+              disabled={
+                (practice.kind === 'classify' && !allAnswered) ||
+                (practice.kind === 'written' && !revealed && (!review || !review.acceptable))
+              }
             >
               Complete practice
             </Button>
             {practice.kind === 'classify' && !allAnswered && (
               <span className="text-[13px] text-muted">
                 Answer all {items.length} to finish.
+              </span>
+            )}
+            {practice.kind === 'written' && !review && !revealed && (
+              <span className="text-[13px] text-muted">
+                Check with AI above to verify your answer before completing.
+              </span>
+            )}
+            {practice.kind === 'written' && review && !review.acceptable && !revealed && (
+              <span className="text-[13px] font-medium text-warn">
+                Improve your answer above based on feedback, or reveal example answer.
               </span>
             )}
           </>

@@ -4,11 +4,13 @@ import {
   LuCheck,
   LuChevronDown,
   LuEllipsis,
+  LuEye,
   LuLock,
 } from 'react-icons/lu'
 import type { Resource } from '../types'
 import { useApp } from '../state/store'
 import {
+  contentResources,
   formatHours,
   getSessionActivities,
   pathMinutesLeft,
@@ -20,18 +22,20 @@ import { Button } from '../components/ui/Button'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { StatusBadge } from '../components/ui/Choice'
 import { ResourcePreviewModal } from '../components/modals/ResourcePreviewModal'
+import { PathBuilding, PathBuildFailed } from '../components/path/PathBuildStatus'
 import { EditPreferencesModal } from '../components/modals/EditPreferencesModal'
 import { ConfirmModal } from '../components/modals/ConfirmModal'
 import { cx } from '../lib/utils'
 
 export function PathPage() {
-  const { activePath, sessionContentFor, deletePath, toast } = useApp()
+  const { activePath, sessionContentFor, deletePath, retryPathBuild, toast } = useApp()
   const navigate = useNavigate()
   const [openId, setOpenId] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [preview, setPreview] = useState<Resource | null>(null)
+  const [retrying, setRetrying] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -72,6 +76,32 @@ export function PathPage() {
     toast('Learning path deleted')
     setDeleteOpen(false)
     navigate('/app/today')
+  }
+
+  const building =
+    activePath.generationStatus === 'queued' ||
+    activePath.generationStatus === 'generating' ||
+    activePath.generationStatus === 'idle'
+  if (building) {
+    return <PathBuilding subject={activePath.subject} status={activePath.generationStatus} />
+  }
+
+  if (activePath.generationStatus === 'failed') {
+    return (
+      <PathBuildFailed
+        subject={activePath.subject}
+        error={activePath.generationError}
+        retrying={retrying}
+        onRetry={() => {
+          setRetrying(true)
+          retryPathBuild(activePath.id)
+            .catch((err: unknown) =>
+              toast(err instanceof Error ? err.message : 'Retry failed.'),
+            )
+            .finally(() => setRetrying(false))
+        }}
+      />
+    )
   }
 
   return (
@@ -287,19 +317,24 @@ export function PathPage() {
                             <h4 className="mb-2.5 text-xs font-medium uppercase tracking-[0.08em] text-muted">
                               Resources
                             </h4>
-                            <button
-                              onClick={() => setPreview(content.resource)}
-                              className="flex w-full items-center gap-3 rounded-lg border border-line bg-panel px-3 py-2.5 text-left transition-colors hover:border-line-strong hover:bg-canvas"
-                            >
-                              <span className="min-w-0 flex-1">
-                                <span className="block truncate text-sm font-medium text-ink">
-                                  {content.resource.title}
-                                </span>
-                                <span className="block text-xs text-muted">
-                                  {content.resource.kind} · {content.resource.minutes} min
-                                </span>
-                              </span>
-                            </button>
+                            <div className="space-y-2">
+                              {contentResources(content).map((resource) => (
+                                <button
+                                  key={resource.id}
+                                  onClick={() => setPreview(resource)}
+                                  className="flex w-full items-center gap-3 rounded-lg border border-line bg-panel px-3 py-2.5 text-left transition-colors hover:border-line-strong hover:bg-canvas"
+                                >
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block truncate text-sm font-medium text-ink">
+                                      {resource.title}
+                                    </span>
+                                    <span className="block text-xs text-muted">
+                                      {resource.kind} · {resource.minutes} min
+                                    </span>
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
                           </div>
 
                           <div>
@@ -332,8 +367,10 @@ export function PathPage() {
                     ) : (
                       <div className="mt-5 rounded-lg border border-dashed border-line-strong bg-panel/60 px-4 py-5">
                         <p className="text-sm text-muted">
-                          {section.note ??
-                            'Activities, resources and the assessment open when this section starts.'}
+                          {locked
+                            ? 'Open the session preview to see the full lesson, resources and practice. Activities unlock once the previous sections are complete.'
+                            : (section.note ??
+                              'Activities, resources and the assessment open when this section starts.')}
                         </p>
                       </div>
                     )}
@@ -353,15 +390,30 @@ export function PathPage() {
                         </Button>
                       )}
                       {upcoming && (
-                        <Button variant="secondary" disabled>
-                          Starts after {prevSection ? prevSection.title : 'the current section'}
-                        </Button>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Button
+                            variant="secondary"
+                            onClick={() => navigate(`/app/session/${section.id}`)}
+                          >
+                            <LuEye className="h-4 w-4" /> Preview session
+                          </Button>
+                          <span className="text-[13px] text-muted">
+                            Starts after {prevSection ? prevSection.title : 'the current section'}
+                          </span>
+                        </div>
                       )}
                       {locked && (
-                        <Button variant="secondary" disabled>
-                          <LuLock className="h-4 w-4" />
-                          {section.note ?? 'Locked'}
-                        </Button>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Button
+                            variant="secondary"
+                            onClick={() => navigate(`/app/session/${section.id}`)}
+                          >
+                            <LuEye className="h-4 w-4" /> Preview session
+                          </Button>
+                          <span className="text-[13px] text-muted">
+                            {section.note ?? 'Complete the previous sections to unlock'}
+                          </span>
+                        </div>
                       )}
                       {allDone && section.status === 'completed' && (
                         <span className="flex items-center gap-1.5 text-[13px] text-success">

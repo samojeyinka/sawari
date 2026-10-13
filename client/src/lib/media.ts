@@ -56,3 +56,13 @@ function youtube(id: string, watchUrl: string): MediaSource {
     label: 'YouTube',
   }
 }
+
+/** Human-readable host of a URL ("developer.mozilla.org"), for link cards. */
+export function domainOf(raw?: string): string | null {
+  if (!raw) return null
+  try {
+    return new URL(raw).hostname.replace(/^www\./, '')
+  } catch {
+    return null
+  }
+}

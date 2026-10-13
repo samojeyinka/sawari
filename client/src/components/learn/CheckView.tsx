@@ -1,13 +1,16 @@
 import type { Assessment, AssessmentResult } from '../../types'
 import { Button } from '../ui/Button'
+import { PreviewNotice } from './PreviewNotice'
 
 export function CheckView({
   assessment,
   result,
+  preview = false,
   onStart,
 }: {
   assessment: Assessment
   result?: AssessmentResult
+  preview?: boolean
   onStart: () => void
 }) {
   return (
@@ -39,9 +42,13 @@ export function CheckView({
       </div>
 
       <div className="mt-6">
-        <Button size="lg" onClick={onStart}>
-          {result ? 'Retake the check' : 'Start the check'}
-        </Button>
+        {preview ? (
+          <PreviewNotice />
+        ) : (
+          <Button size="lg" onClick={onStart}>
+            {result ? 'Retake the check' : 'Start the check'}
+          </Button>
+        )}
       </div>
 
       <p className="mt-4 text-[13px] text-muted">

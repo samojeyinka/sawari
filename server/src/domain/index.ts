@@ -29,8 +29,15 @@ export type LearningFormat = (typeof LEARNING_FORMATS)[number]
 export const SECTION_STATUSES = ['completed', 'current', 'upcoming', 'locked'] as const
 export type SectionStatus = (typeof SECTION_STATUSES)[number]
 
+export const GENERATION_STATUSES = ['idle', 'queued', 'generating', 'ready', 'failed'] as const
+export type GenerationStatus = (typeof GENERATION_STATUSES)[number]
+
 export const PROJECT_STATUSES = ['active', 'completed', 'available'] as const
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number]
 
 export const PROVIDERS = ['local', 'github', 'google'] as const
 export type Provider = (typeof PROVIDERS)[number]
+
+/** Weekday codes for reminder scheduling, Monday-first. */
+export const REMINDER_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
+export type ReminderDay = (typeof REMINDER_DAYS)[number]

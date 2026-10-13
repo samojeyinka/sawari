@@ -1,103 +1,74 @@
-import { LuCheck } from 'react-icons/lu'
+import { LuCheck, LuLock } from 'react-icons/lu'
 import type { Resource } from '../../types'
 import { Button } from '../ui/Button'
-import { MediaEmbed } from './MediaEmbed'
-import { cx } from '../../lib/utils'
-
-const kindLabels: Record<Resource['kind'], string> = {
-  article: 'Article',
-  video: 'Video',
-  book: 'Book',
-  template: 'Template',
-}
-
-const kindVerbs: Record<Resource['kind'], string> = {
-  article: 'Read',
-  video: 'Watch',
-  book: 'Read',
-  template: 'Use',
-}
+import { formatPacingTime, useActivityPacing } from '../../hooks/useActivityPacing'
+import { DigestionTracker } from './DigestionTracker'
+import { PreviewNotice } from './PreviewNotice'
+import { ResourceBlock } from './ResourceBlock'
 
 export function ResourceView({
-  resource,
+  activityId,
+  resources,
   done,
+  preview = false,
   onComplete,
 }: {
-  resource: Resource
+  activityId: string
+  resources: Resource[]
   done: boolean
+  preview?: boolean
   onComplete: () => void
 }) {
-  const isVideo = resource.kind === 'video'
+  const totalMinutes = resources.reduce((sum, r) => sum + r.minutes, 0)
+  const allVideo = resources.length > 0 && resources.every((r) => r.kind === 'video')
+
+  const pacing = useActivityPacing({
+    activityId,
+    baseMinutes: totalMinutes,
+    done,
+    disabled: preview,
+  })
 
   return (
     <article className="mx-auto max-w-3xl animate-rise">
-      <div className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-accent">
-        {kindVerbs[resource.kind]} <span className="text-line-strong">·</span>
-        <span className="text-muted">{resource.minutes} min</span>
-      </div>
+      {resources.map((resource, i) => (
+        <ResourceBlock key={resource.id} resource={resource} index={i} total={resources.length} />
+      ))}
 
-      <div className="mt-2 flex items-start gap-4 rounded-xl border border-line bg-canvas/70 p-4">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-line bg-panel text-body">
-          <ResourceGlyph kind={resource.kind} />
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-ink">{resource.title}</h2>
-          <p className="mt-1 text-[13px] text-muted">
-            <span className={cx(resource.kind === 'template' && 'text-accent-strong')}>
-              {kindLabels[resource.kind]}
-            </span>{' '}
-            · {resource.source} · {resource.minutes} min
-          </p>
-        </div>
-      </div>
+      {/* Digestion pacing tracker */}
+      {!preview && <DigestionTracker pacing={pacing} baseMinutes={totalMinutes} />}
 
-      {resource.url && <MediaEmbed url={resource.url} title={resource.title} />}
-
-      <p className="mt-5 text-[16px] leading-[1.7] text-ink-soft">{resource.summary}</p>
-
-      <div className="mt-4 space-y-4">
-        {resource.body.map((paragraph, i) => (
-          <p key={i} className="text-[15.5px] leading-[1.75] text-body">
-            {paragraph}
-          </p>
-        ))}
-      </div>
-
+      {/* Action / Completion bar */}
       <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-line pt-5">
         {done ? (
           <span className="inline-flex items-center gap-2 text-sm font-medium text-success">
-            <LuCheck className="h-4 w-4" /> {isVideo ? 'Marked as watched' : 'Marked as read'}
+            <LuCheck className="h-4 w-4" /> {allVideo ? 'Marked as watched' : 'Marked as read'}
           </span>
+        ) : preview ? (
+          <PreviewNotice />
+        ) : !pacing.isUnlocked ? (
+          <>
+            <Button disabled variant="secondary" className="cursor-not-allowed opacity-60">
+              <LuLock className="h-4 w-4" /> Unlocks in {formatPacingTime(pacing.remainingSeconds)}
+            </Button>
+            <span className="text-[13px] text-muted">
+              {allVideo
+                ? 'Absorb the videos. Unlocks after digestion time.'
+                : 'Read the sources and reflect on key concepts.'}
+            </span>
+          </>
         ) : (
           <>
-            <Button onClick={onComplete}>{isVideo ? 'Mark as watched' : 'Mark as read'}</Button>
+            <Button onClick={onComplete} variant="primary">
+              <LuCheck className="h-4 w-4" />{' '}
+              {allVideo ? 'Finish watching & continue' : 'Finish reading & continue'}
+            </Button>
             <span className="text-[13px] text-muted">
-              {isVideo
-                ? 'Watch it here, then move to practice.'
-                : 'Take your time, then move to practice.'}
+              Pacing requirement met. Next up: hands-on practice.
             </span>
           </>
         )}
       </div>
     </article>
-  )
-}
-
-function ResourceGlyph({ kind }: { kind: Resource['kind'] }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-      {kind === 'template' ? (
-        <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
-      ) : kind === 'video' ? (
-        <path d="M9 7.5v9l7.5-4.5L9 7.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      ) : (
-        <path
-          d="M5 5.5A1.5 1.5 0 0 1 6.5 4H12v16H6.5A1.5 1.5 0 0 1 5 18.5v-13ZM19 5.5A1.5 1.5 0 0 0 17.5 4H12v16h5.5a1.5 1.5 0 0 0 1.5-1.5v-13Z"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinejoin="round"
-        />
-      )}
-    </svg>
   )
 }

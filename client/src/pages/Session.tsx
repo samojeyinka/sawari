@@ -1,31 +1,47 @@
-import { useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   LuArrowLeft,
   LuCheck,
-  LuLock,
+  LuEye,
+  LuTriangleAlert,
 } from 'react-icons/lu'
 import type { ActivityKind } from '../types'
 import { useApp } from '../state/store'
-import { getSessionActivities, pathPercent } from '../data'
+import { isSectionAttendable, firstIncompleteBefore } from '../lib/sections'
+import { contentIsAllVideo, contentResources, getSessionActivities, pathPercent } from '../data'
 import { kindLabels } from '../components/learn/kinds'
 import { LessonView } from '../components/learn/LessonView'
 import { ResourceView } from '../components/learn/ResourceView'
 import { PracticeView } from '../components/learn/PracticeView'
 import { CheckView } from '../components/learn/CheckView'
+import { SessionPending } from '../components/learn/SessionPending'
 import { Button } from '../components/ui/Button'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { cx } from '../lib/utils'
 
 const order: ActivityKind[] = ['learn', 'read', 'practice', 'check']
 
+const isTabParam = (value: string | null): value is ActivityKind =>
+  value === 'learn' || value === 'read' || value === 'practice' || value === 'check'
+
 export function SessionPage() {
   const { sectionId } = useParams()
-  const { activePath, sessionContentFor, completeActivity, toast } = useApp()
+  const {
+    activePath,
+    sessionContentFor,
+    ensureSessionContent,
+    completeActivity,
+    toast,
+    sessionContentError,
+  } = useApp()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const section = activePath?.sections.find((s) => s.id === sectionId)
   const content = section ? sessionContentFor(section.id) : null
+  const error = section ? sessionContentError(section.id) : null
+  const resources = content ? contentResources(content) : []
   const activities =
     activePath && section && content
       ? getSessionActivities(activePath.id, section.id, content)
@@ -36,31 +52,66 @@ export function SessionPage() {
   const allDone = activities.length > 0 && doneCount === activities.length
   const sessionMinutes = activities.reduce((sum, a) => sum + a.minutes, 0)
 
-  const [active, setActive] = useState<ActivityKind>(
-    () => order.find((k) => !activities.some((a) => a.kind === k && isDone(a.id))) ?? 'learn',
-  )
+  // Anything that is not the current (or a finished) section opens read-only:
+  // learners can see everything ahead, but progress only counts once earlier
+  // sections are done.
+  const attendable = activePath && section ? isSectionAttendable(activePath, section.id) : false
+  const preview = Boolean(section && !attendable)
+  const blocker =
+    activePath && section && preview ? firstIncompleteBefore(activePath, section.id) : null
+
+  const [active, setActive] = useState<ActivityKind>(() => {
+    // A ?tab= param in the URL wins so refreshes (and shared links) reopen
+    // the same tab; otherwise resume at the first incomplete activity.
+    const param = searchParams.get('tab')
+    if (isTabParam(param)) return param
+    return order.find((k) => !activities.some((a) => a.kind === k && isDone(a.id))) ?? 'learn'
+  })
   const [view, setView] = useState<'activity' | 'complete'>(allDone ? 'complete' : 'activity')
+
+  /** Switch tabs and mirror the choice into ?tab= (replace, not push). */
+  const setActiveTab = (kind: ActivityKind) => {
+    setActive(kind)
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('tab', kind)
+        return next
+      },
+      { replace: true },
+    )
+  }
+
+  // Normalize the URL so the default tab is also deep-linkable. Once ?tab=
+  // is valid this is a no-op, so later tab switches never loop back here.
+  useEffect(() => {
+    if (isTabParam(searchParams.get('tab'))) return
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('tab', active)
+        return next
+      },
+      { replace: true },
+    )
+  }, [searchParams, setSearchParams, active])
+
+  useEffect(() => {
+    if (section && !content && !error) {
+      void ensureSessionContent(section.id)
+    }
+  }, [section, content, error, ensureSessionContent])
 
   if (!activePath) {
     return <Navigate to="/app/today" replace />
   }
 
-  if (!section || !content) {
+  if (!section) {
     return (
       <div className="mx-auto max-w-xl px-5 py-20 text-center sm:px-8">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-canvas-deep text-muted">
-          <LuLock className="h-5 w-5" />
-        </span>
-        <h1 className="mt-4 text-xl font-semibold text-ink">
-          {!section
-            ? 'Session not found'
-            : section.status === 'locked'
-              ? 'This section is locked'
-              : 'This session opens later'}
-        </h1>
+        <h1 className="mt-4 text-xl font-semibold text-ink">Session not found</h1>
         <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">
-          {section?.note ??
-            'Finish the current section first and this one opens up on its own.'}
+          The section you are looking for is not on this path.
         </p>
         <Link to="/app/path" className="mt-6 inline-block">
           <Button variant="secondary">Back to learning path</Button>
@@ -69,11 +120,36 @@ export function SessionPage() {
     )
   }
 
+  if (error && !content) {
+    return (
+      <div className="mx-auto max-w-xl px-5 py-20 text-center sm:px-8 animate-rise">
+        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-danger-soft text-danger">
+          <LuTriangleAlert className="h-6 w-6" />
+        </span>
+        <h1 className="mt-4 text-xl font-semibold text-ink">Could not load session</h1>
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">
+          {error}
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Button onClick={() => void ensureSessionContent(section.id, true)}>
+            Retry
+          </Button>
+          <Link to="/app/path">
+            <Button variant="secondary">Back to path</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!content) return <SessionPending />
+
   const result = content
     ? activePath.assessmentResults[content.assessment.id]
     : undefined
 
   const complete = (kind: ActivityKind) => {
+    if (preview) return
     const activity = activities.find((a) => a.kind === kind)
     if (!activity) return
     const othersDone = order
@@ -90,7 +166,7 @@ export function SessionPage() {
     const next = order.find(
       (k) => k !== kind && !activities.some((a) => a.kind === k && isDone(a.id)),
     )
-    if (next) setActive(next)
+    if (next) setActiveTab(next)
     else setView('complete')
   }
 
@@ -98,6 +174,24 @@ export function SessionPage() {
 
   return (
     <div>
+      {preview && (
+        <div className="border-b border-line bg-canvas/70">
+          <div className="mx-auto flex max-w-4xl items-start gap-3 px-5 py-3.5 sm:px-8">
+            <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-line bg-panel text-muted">
+              <LuEye className="h-3.5 w-3.5" />
+            </span>
+            <p className="text-[13px] leading-relaxed text-muted">
+              <span className="font-medium text-ink">You are previewing this session. </span>
+              {blocker ? (
+                <>Complete “{blocker.title}” to unlock it and track your progress.</>
+              ) : (
+                'Complete the earlier sections to unlock it and track your progress.'
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* session header */}
       <header className="border-b border-line bg-panel">
         <div className="mx-auto max-w-4xl px-5 pt-5 sm:px-8">
@@ -130,7 +224,7 @@ export function SessionPage() {
                   key={activity.id}
                   onClick={() => {
                     setView('activity')
-                    setActive(activity.kind)
+                    setActiveTab(activity.kind)
                   }}
                   className={cx(
                     'relative flex shrink-0 items-center gap-2 px-3 py-3 text-sm transition-colors duration-150',
@@ -149,7 +243,7 @@ export function SessionPage() {
                   >
                     {done ? <LuCheck className="h-3 w-3" strokeWidth={3} /> : i + 1}
                   </span>
-                  {activity.kind === 'read' && content.resource.kind === 'video'
+                  {activity.kind === 'read' && content && contentIsAllVideo(content)
                     ? 'Watch'
                     : kindLabels[activity.kind]}
                   <span className="hidden text-faint sm:inline">· {activity.minutes} min</span>
@@ -181,15 +275,19 @@ export function SessionPage() {
           <>
             {active === 'learn' && (
               <LessonView
+                activityId={`${activePath.id}|${section.id}|learn`}
                 lesson={content.lesson}
                 done={isDone(`${activePath.id}|${section.id}|learn`)}
+                preview={preview}
                 onComplete={() => complete('learn')}
               />
             )}
             {active === 'read' && (
               <ResourceView
-                resource={content.resource}
+                activityId={`${activePath.id}|${section.id}|read`}
+                resources={resources}
                 done={isDone(`${activePath.id}|${section.id}|read`)}
+                preview={preview}
                 onComplete={() => complete('read')}
               />
             )}
@@ -197,6 +295,7 @@ export function SessionPage() {
               <PracticeView
                 practice={content.practice}
                 done={isDone(`${activePath.id}|${section.id}|practice`)}
+                preview={preview}
                 onComplete={() => complete('practice')}
               />
             )}
@@ -204,6 +303,7 @@ export function SessionPage() {
               <CheckView
                 assessment={content.assessment}
                 result={result}
+                preview={preview}
                 onStart={() => navigate(`/app/assessment/${section.id}`)}
               />
             )}
@@ -214,7 +314,7 @@ export function SessionPage() {
                 variant="ghost"
                 onClick={() => {
                   const idx = order.indexOf(active)
-                  if (idx > 0) setActive(order[idx - 1])
+                  if (idx > 0) setActiveTab(order[idx - 1])
                 }}
                 disabled={active === 'learn'}
               >
@@ -224,7 +324,7 @@ export function SessionPage() {
                 variant="secondary"
                 onClick={() => {
                   const idx = order.indexOf(active)
-                  if (idx < order.length - 1) setActive(order[idx + 1])
+                  if (idx < order.length - 1) setActiveTab(order[idx + 1])
                 }}
                 disabled={active === 'check'}
               >

@@ -1,33 +1,23 @@
-import type { LearningPath, PathSection, SessionActivity, SessionContent } from '../types'
-import { pmSessions } from './content-pm'
-import { miscSessions } from './content-misc'
+import type { LearningPath, PathSection, Resource, SessionActivity, SessionContent } from '../types'
 
 export { mockUser, mockNotifications, mockSettings } from './user'
 export { mockProjects } from './projects'
-export { mockMilestones, mockRecent } from './progress'
+export { mockRecent } from './progress'
 export { mockLearningPaths } from './paths'
 export {
-  sectionsForSubject,
   findTemplateMatch,
-  buildGeneratedSession,
   preferredFormats,
 } from './templates'
 
-/* All session content in one registry, keyed by section id. */
-export const baseSessionContent: Record<string, SessionContent> = {
-  ...pmSessions,
-  ...miscSessions,
-}
-
 /**
- * Resolve session content for a section. Generated paths add their content
- * at creation time through the store, so this merges both sources.
+ * Resolve session content for a section from cache.
+ * DeepSeek AI generates all session content on first open and stores it in state.
  */
 export function getSessionContent(
   sectionId: string,
   custom?: Record<string, SessionContent>,
 ): SessionContent | null {
-  return custom?.[sectionId] ?? baseSessionContent[sectionId] ?? null
+  return custom?.[sectionId] ?? null
 }
 
 export function getSection(path: LearningPath, sectionId: string): PathSection | undefined {
@@ -51,12 +41,34 @@ export function getSessionActivities(
   content: SessionContent,
 ): SessionActivity[] {
   const base = `${pathId}|${sectionId}`
+  const resources = contentResources(content)
+  const readTitle =
+    resources.length > 1
+      ? `${resources[0].title} · +${resources.length - 1} more`
+      : (resources[0]?.title ?? 'Resources')
+  const readMinutes = resources.reduce((sum, r) => sum + r.minutes, 0)
   return [
     { id: `${base}|learn`, kind: 'learn', title: content.lesson.title, minutes: content.lesson.minutes },
-    { id: `${base}|read`, kind: 'read', title: content.resource.title, minutes: content.resource.minutes },
+    { id: `${base}|read`, kind: 'read', title: readTitle, minutes: readMinutes },
     { id: `${base}|practice`, kind: 'practice', title: content.practice.title, minutes: content.practice.minutes },
     { id: `${base}|check`, kind: 'check', title: content.assessment.title, minutes: content.assessment.minutes },
   ]
+}
+
+/**
+ * Every resource of a session as an array. Older cached rows carry a single
+ * legacy `resource` instead of `resources` — both shapes read the same way.
+ */
+export function contentResources(content: SessionContent): Resource[] {
+  if (content.resources?.length) return content.resources
+  if (content.resource) return [content.resource]
+  return []
+}
+
+/** True when every resource of the session is a video (watch vs. read label). */
+export function contentIsAllVideo(content: SessionContent): boolean {
+  const resources = contentResources(content)
+  return resources.length > 0 && resources.every((r) => r.kind === 'video')
 }
 
 export function pathPercent(path: LearningPath): number {

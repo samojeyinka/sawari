@@ -8,6 +8,8 @@ export const HTTP = {
   tooMany: 429,
   internal: 500,
   notImplemented: 501,
+  badGateway: 502,
+  serviceUnavailable: 503,
 } as const
 
 export type HttpStatus = (typeof HTTP)[keyof typeof HTTP]
@@ -63,4 +65,8 @@ export const httpError = {
     new AppError(message, HTTP.tooMany, 'rate_limited', undefined, true),
   notImplemented: (message: string, code = 'not_implemented') =>
     new AppError(message, HTTP.notImplemented, code, undefined, true),
+  badGateway: (message: string, code = 'bad_gateway') =>
+    new AppError(message, HTTP.badGateway, code, undefined, true),
+  serviceUnavailable: (message: string, code = 'service_unavailable') =>
+    new AppError(message, HTTP.serviceUnavailable, code, undefined, true),
 }

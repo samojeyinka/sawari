@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom'
 import { useApp } from './state/store'
 import { useAlert } from './state/alertContext'
+import { saveLastAuth } from './lib/lastAuth'
 import { AppProvider } from './state/AppProvider'
 import { AlertProvider } from './state/AlertProvider'
 import { AppShell } from './components/layout/AppShell'
@@ -18,6 +19,9 @@ import { RouteFallback } from './components/ui/RouteFallback'
 /* Landing stays eager so the entry paint is instant; every other screen
    loads as its own chunk. */
 const LoginPage = lazy(() => import('./pages/Login').then((m) => ({ default: m.LoginPage })))
+const ResetPasswordPage = lazy(() =>
+  import('./pages/ResetPassword').then((m) => ({ default: m.ResetPasswordPage })),
+)
 const SetupPage = lazy(() => import('./pages/Setup').then((m) => ({ default: m.SetupPage })))
 const GeneratePage = lazy(() => import('./pages/Generate').then((m) => ({ default: m.GeneratePage })))
 const TodayPage = lazy(() => import('./pages/Today').then((m) => ({ default: m.TodayPage })))
@@ -58,6 +62,10 @@ function OAuthResultHandler() {
     handled.current = true
 
     if (result === 'success') {
+      const provider = params.get('provider')
+      if (provider === 'github' || provider === 'google') {
+        saveLastAuth({ method: provider })
+      }
       refreshSession()
         .then(() => {
           alert.success('Signed in. Welcome to Sawari.')
@@ -91,6 +99,7 @@ function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/setup" element={<SetupPage />} />
               <Route path="/generate" element={<GeneratePage />} />
 

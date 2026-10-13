@@ -26,6 +26,32 @@ const envSchema = z.object({
   GITHUB_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+  /* --- outbound email (Resend) ---
+     Without RESEND_API_KEY mail is logged instead of sent, so dev and tests
+     never hit the network. MAIL_FROM defaults to the Resend test sender. */
+  RESEND_API_KEY: z.string().optional(),
+  MAIL_FROM: z.string().min(3).default('Sawari <onboarding@resend.dev>'),
+  MAIL_ENABLED: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => value !== 'false'),
+
+  /* --- AI generation (DeepSeek, OpenAI-compatible) --- */
+  DEEPSEEK_API_KEY: z.string().optional(),
+  DEEPSEEK_BASE_URL: z.url().default('https://api.deepseek.com'),
+  DEEPSEEK_MODEL: z.string().default('deepseek-chat'),
+
+  /* --- background jobs (Mongo-backed queue) --- */
+  QUEUE_POLL_MS: z.coerce.number().int().positive().default(2000),
+  QUEUE_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
+
+  /* --- reminder scheduler (session reminders + weekly summary) --- */
+  SCHEDULER_ENABLED: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => value !== 'false'),
+  SCHEDULER_POLL_MS: z.coerce.number().int().positive().default(60_000),
 })
 
 export type Env = z.infer<typeof envSchema>
@@ -49,3 +75,9 @@ export const isOAuthConfigured = {
   github: Boolean(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET),
   google: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
 } as const
+
+/** Mail is only sent when a key is present and sending is not switched off. */
+export const isMailConfigured = Boolean(env.RESEND_API_KEY) && env.MAIL_ENABLED
+
+/** AI generation is only attempted when a DeepSeek key is present. */
+export const isAiConfigured = Boolean(env.DEEPSEEK_API_KEY)

@@ -71,5 +71,29 @@ export const listLearningPathsQuery = listQuerySchema({
   subject: z.string().trim().max(120).optional(),
 })
 
+/** Query for AI session generation: `?regenerate=true` bypasses the cache. */
+export const sessionQuerySchema = z.object({
+  regenerate: z.enum(['true', 'false']).optional(),
+})
+
 export type CreateLearningPathInput = z.infer<typeof createLearningPathSchema>
 export type UpdateLearningPathInput = z.infer<typeof updateLearningPathSchema>
+
+export const timelineEstimateValidator = z.strictObject({
+  subject: z.string().trim().min(1).max(120),
+  outcome: z.string().max(500).optional(),
+  experience: z.enum(EXPERIENCE_LEVELS).nullable().optional(),
+  weeklyHours: z.enum(WEEKLY_HOURS).optional(),
+  intensity: z.enum(INTENSITIES).optional(),
+})
+
+export type TimelineEstimateInput = z.infer<typeof timelineEstimateValidator>
+
+export const reviewPracticeValidator = z.strictObject({
+  prompt: z.string().trim().min(3).max(1000),
+  userAnswer: z.string().trim().min(2).max(4000),
+  modelAnswer: z.string().max(4000).optional(),
+  topic: z.string().max(200).optional(),
+})
+
+export type ReviewPracticeInput = z.infer<typeof reviewPracticeValidator>

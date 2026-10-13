@@ -6,6 +6,7 @@
 /* ------------------------------------------------------------------ */
 
 import type {
+  AppNotification,
   AssessmentResult,
   ExperienceLevel,
   GoalReason,
@@ -17,8 +18,10 @@ import type {
   Project,
   ProjectFeedback,
   ProjectTask,
+  SessionContent,
   WeeklyHours,
 } from '../types'
+import { advanceSections } from './sections'
 
 const API_BASE =
   (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:4000/api/v1'
@@ -128,6 +131,19 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 export const authApi = {
   register: (input: RegisterInput) =>
     request<ApiUser>('/auth/register', { method: 'POST', body: input }),
+  verifyEmail: (code: string) =>
+    request<ApiUser>('/auth/verify-email', { method: 'POST', body: { code } }),
+  resendVerificationCode: () =>
+    request<{ message: string }>('/auth/resend-code', { method: 'POST' }),
+  forgotPassword: (email: string) =>
+    request<{ message: string }>('/auth/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (token: string, password: string) =>
+    request<{ message: string }>('/auth/reset-password', { method: 'POST', body: { token, password } }),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ message: string }>('/auth/change-password', {
+      method: 'POST',
+      body: { currentPassword, newPassword },
+    }),
   login: (input: LoginInput) => request<ApiUser>('/auth/login', { method: 'POST', body: input }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   me: (signal?: AbortSignal) => request<ApiUser>('/me', { signal }),
@@ -157,6 +173,10 @@ export interface ApiLearningPath {
   countedSessions: string[]
   assessmentResults: Record<string, AssessmentResult>
   adaptationNote: string | null
+  generationStatus?: 'idle' | 'queued' | 'generating' | 'ready' | 'failed'
+  generationError?: string | null
+  generationStartedAt?: string | null
+  generationFinishedAt?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -193,7 +213,7 @@ export interface UpdateLearningPathInput {
 
 /** Maps the API shape into the frontend domain shape. */
 export function mapApiLearningPath(api: ApiLearningPath): LearningPath {
-  return {
+  return advanceSections({
     id: api.id,
     subject: api.subject,
     goal: api.goal,
@@ -211,18 +231,94 @@ export function mapApiLearningPath(api: ApiLearningPath): LearningPath {
     countedSessions: api.countedSessions ?? [],
     assessmentResults: api.assessmentResults ?? {},
     adaptationNote: api.adaptationNote ?? null,
-  }
+    generationStatus: api.generationStatus ?? 'ready',
+    generationError: api.generationError ?? null,
+    generationStartedAt: api.generationStartedAt ?? null,
+    generationFinishedAt: api.generationFinishedAt ?? null,
+  })
 }
 
 export const learningPathsApi = {
   list: (signal?: AbortSignal) =>
     request<ApiLearningPath[]>('/learning-paths', { signal }),
-  get: (id: string) => request<ApiLearningPath>(`/learning-paths/${id}`),
+  get: (id: string, signal?: AbortSignal) =>
+    request<ApiLearningPath>(`/learning-paths/${id}`, { signal }),
   create: (input: CreateLearningPathInput) =>
     request<ApiLearningPath>('/learning-paths', { method: 'POST', body: input }),
   update: (id: string, patch: UpdateLearningPathInput) =>
     request<ApiLearningPath>(`/learning-paths/${id}`, { method: 'PATCH', body: patch }),
   remove: (id: string) => request<void>(`/learning-paths/${id}`, { method: 'DELETE' }),
+  /** Re-queues path building when generation has failed. */
+  retry: (id: string) =>
+    request<ApiLearningPath>(`/learning-paths/${id}/retry`, { method: 'POST' }),
+  /** Asks the server to (re)design the path outline with AI. */
+  outline: (id: string) =>
+    request<ApiLearningPath>(`/learning-paths/${id}/outline`, { method: 'POST' }),
+}
+
+/* ------------------------------------------------------------------ */
+/*  AI health                                                          */
+/* ------------------------------------------------------------------ */
+
+export interface AiHealthResponse {
+  available: boolean
+  model: string
+  latencyMs: number
+  error?: string
+}
+
+export interface EstimateTimelineInput {
+  subject: string
+  outcome?: string | null
+  experience?: string | null
+  weeklyHours?: string | null
+  intensity?: string | null
+}
+
+export interface AiTimelineEstimate {
+  recommendedMonths: number
+  fastMonths: number
+  relaxedMonths: number
+  reason: string
+}
+
+export interface ReviewPracticeInput {
+  prompt: string
+  userAnswer: string
+  modelAnswer?: string
+  topic?: string
+}
+
+export interface PracticeReviewResult {
+  status: 'correct' | 'close' | 'needs_improvement'
+  acceptable: boolean
+  score: number
+  feedback: string
+  improvements: string
+}
+
+export const aiApi = {
+  health: (signal?: AbortSignal) => request<AiHealthResponse>('/ai/health', { signal }),
+  estimateTimeline: (input: EstimateTimelineInput, signal?: AbortSignal) =>
+    request<AiTimelineEstimate>('/ai/timeline', { method: 'POST', body: input, signal }),
+  reviewPractice: (input: ReviewPracticeInput, signal?: AbortSignal) =>
+    request<PracticeReviewResult>('/ai/review-practice', { method: 'POST', body: input, signal }),
+}
+
+/* ------------------------------------------------------------------ */
+/*  Session content (AI-generated, cached server-side per section)     */
+/* ------------------------------------------------------------------ */
+
+export const sessionsApi = {
+  /** Returns cached content, or generates + caches it on first request. */
+  getOrGenerate: (pathId: string, sectionId: string, regenerate = false) =>
+    request<SessionContent>(
+      `/learning-paths/${pathId}/sections/${sectionId}/session${regenerate ? '?regenerate=true' : ''}`,
+      { method: 'POST' },
+    ),
+  /** Every already-generated section for a path, keyed by section id. */
+  list: (pathId: string) =>
+    request<Record<string, SessionContent>>(`/learning-paths/${pathId}/sessions`),
 }
 
 /* ------------------------------------------------------------------ */
@@ -308,4 +404,91 @@ export const projectsApi = {
   update: (id: string, patch: UpdateProjectInput) =>
     request<ApiProject>(`/projects/${id}`, { method: 'PATCH', body: patch }),
   remove: (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' }),
+}
+
+/* ------------------------------------------------------------------ */
+/*  Notifications                                                      */
+/* ------------------------------------------------------------------ */
+
+export interface ApiNotification {
+  id: string
+  kind: AppNotification['kind']
+  title: string
+  body: string
+  read: boolean
+  link: string | null
+  createdAt: string
+}
+
+/** Turns an ISO timestamp into the short relative label the drawer shows. */
+export function formatNotificationTime(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+
+  const now = new Date()
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  const daysAgo = Math.round((startOfDay(now) - startOfDay(date)) / 86_400_000)
+
+  if (daysAgo <= 0) return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+  if (daysAgo === 1) return 'Yesterday'
+  if (daysAgo < 7) return date.toLocaleDateString(undefined, { weekday: 'short' })
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+/** Maps the API shape into the frontend domain shape. */
+export function mapApiNotification(api: ApiNotification): AppNotification {
+  return {
+    id: api.id,
+    title: api.title,
+    body: api.body,
+    time: formatNotificationTime(api.createdAt),
+    read: api.read,
+    kind: api.kind,
+    link: api.link,
+  }
+}
+
+export interface TestEmailResponse {
+  delivered: boolean
+  recipient: string
+  subject: string
+  inAppNotificationId: string
+  error?: string
+  message: string
+}
+
+export const notificationsApi = {
+  list: (signal?: AbortSignal) => request<ApiNotification[]>('/notifications', { signal }),
+  markRead: (id: string) =>
+    request<ApiNotification>(`/notifications/${id}/read`, { method: 'POST' }),
+  markAllRead: () =>
+    request<{ unreadCount: number }>('/notifications/read-all', { method: 'POST' }),
+  sendTestEmail: (input?: { targetEmail?: string }) =>
+    request<TestEmailResponse>('/notifications/test-email', { method: 'POST', body: input ?? {} }),
+}
+
+/* ------------------------------------------------------------------ */
+/*  Settings (reminder preferences)                                    */
+/* ------------------------------------------------------------------ */
+
+export interface ApiSettings {
+  dailyReminder: boolean
+  weeklySummary: boolean
+  timezone: string
+  reminderTime: string
+  reminderDays: string[]
+}
+
+export interface UpdateSettingsInput {
+  dailyReminder?: boolean
+  weeklySummary?: boolean
+  timezone?: string
+  reminderTime?: string
+  reminderDays?: string[]
+}
+
+export const settingsApi = {
+  get: (signal?: AbortSignal) => request<ApiSettings>('/settings', { signal }),
+  update: (patch: UpdateSettingsInput) =>
+    request<ApiSettings>('/settings', { method: 'PATCH', body: patch }),
 }

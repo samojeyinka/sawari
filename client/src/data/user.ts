@@ -5,6 +5,7 @@ export const mockUser: User = {
   name: 'Sam Carter',
   firstName: 'Sam',
   email: 'sam@sawari.app',
+  emailVerified: true,
   joined: 'Joined March 2026',
   timezone: '(GMT+01:00) Lagos',
 }

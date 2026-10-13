@@ -1,12 +1,14 @@
 import mongoose, { type Document, type Model, Schema, type Types } from 'mongoose'
 import {
   EXPERIENCE_LEVELS,
+  GENERATION_STATUSES,
   GOAL_REASONS,
   INTENSITIES,
   LEARNING_FORMATS,
   SECTION_STATUSES,
   WEEKLY_HOURS,
   type ExperienceLevel,
+  type GenerationStatus,
   type GoalReason,
   type Intensity,
   type LearningFormat,
@@ -58,6 +60,10 @@ export interface LearningPathDocument extends Document {
   countedSessions: string[]
   assessmentResults: Record<string, AssessmentResult>
   adaptationNote: string | null
+  generationStatus: GenerationStatus
+  generationError: string | null
+  generationStartedAt: Date | null
+  generationFinishedAt: Date | null
   createdAt: Date
   updatedAt: Date
 }
@@ -117,6 +123,14 @@ const learningPathSchema = new Schema<LearningPathDocument, LearningPathModel>(
     countedSessions: { type: [String], default: [] },
     assessmentResults: { type: Map, of: assessmentResultSchema, default: {} },
     adaptationNote: { type: String, default: null },
+    generationStatus: {
+      type: String,
+      enum: GENERATION_STATUSES,
+      default: 'ready',
+    },
+    generationError: { type: String, default: null },
+    generationStartedAt: { type: Date, default: null },
+    generationFinishedAt: { type: Date, default: null },
   },
   {
     timestamps: true,

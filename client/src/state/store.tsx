@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react'
 import type {
   ActivityKind,
   AppNotification,
+  GenerationStatus,
   LearningPath,
   Project,
   RecentlyDone,
@@ -12,7 +13,8 @@ import type {
 } from '../types'
 import type { AlertVariant } from '../components/ui/Alert'
 import type { RegisterInput } from '../lib/api'
-import { baseSessionContent, buildGeneratedSession, mockSettings } from '../data'
+import { advanceSections } from '../lib/sections'
+import { mockSettings } from '../data'
 import { fallbackFeedback } from '../data/projects'
 
 /* ------------------------------------------------------------------ */
@@ -35,6 +37,21 @@ const emptySetup: SetupAnswers = {
   targetDate: '',
 }
 
+export const DRAFT_SETUP_KEY = 'sawari_draft_setup'
+
+export function loadDraftSetup(): SetupAnswers {
+  try {
+    const raw = localStorage.getItem(DRAFT_SETUP_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<SetupAnswers>
+      return { ...emptySetup, ...parsed }
+    }
+  } catch {
+    // Ignore storage parse error
+  }
+  return emptySetup
+}
+
 export type AuthStatus = 'checking' | 'authenticated' | 'guest'
 export type DataStatus = 'idle' | 'loading' | 'ready'
 
@@ -45,6 +62,8 @@ export interface AppState {
   paths: LearningPath[]
   activePathId: string
   customContent: Record<string, SessionContent>
+  contentLoading: Record<string, boolean>
+  contentErrors: Record<string, string>
   projects: Project[]
   notifications: AppNotification[]
   recent: RecentlyDone[]
@@ -62,6 +81,7 @@ type Action =
   | { type: 'data/loaded'; paths: LearningPath[]; projects: Project[]; content: Record<string, SessionContent> }
   | { type: 'path/add'; path: LearningPath; content: Record<string, SessionContent> }
   | { type: 'path/replace'; path: LearningPath }
+  | { type: 'path/status'; id: string; status: GenerationStatus; error?: string | null }
   | { type: 'path/activate'; id: string }
   | { type: 'path/delete'; id: string }
   | { type: 'path/preferences'; pathId: string; patch: Partial<Pick<LearningPath, 'weeklyHours' | 'intensity' | 'formats' | 'targetDate' | 'goal'>> }
@@ -71,9 +91,19 @@ type Action =
   | { type: 'project/toggleTask'; projectId: string; taskId: string }
   | { type: 'project/submit'; projectId: string }
   | { type: 'project/review'; projectId: string }
+  | { type: 'notif/loaded'; notifications: AppNotification[] }
   | { type: 'notif/read'; id: string }
   | { type: 'notif/readAll' }
+  | { type: 'content/loading'; sectionId: string }
+  | { type: 'content/loaded'; content: Record<string, SessionContent> }
+  | { type: 'content/error'; sectionId: string; error: string }
   | { type: 'settings/preferences'; patch: Partial<Settings['preferences']> }
+  | {
+      type: 'settings/loaded'
+      timezone: string
+      schedule: Pick<Settings['schedule'], 'days' | 'time'>
+      notifications: Pick<Settings['notifications'], 'dailyReminder' | 'weeklySummary'>
+    }
   | { type: 'settings/schedule'; patch: Partial<Settings['schedule']> }
   | { type: 'settings/notifications'; patch: Partial<Settings['notifications']> }
   | { type: 'settings/ai'; patch: Partial<Settings['ai']> }
@@ -86,11 +116,13 @@ export const initialState: AppState = {
   paths: [],
   activePathId: '',
   customContent: {},
+  contentLoading: {},
+  contentErrors: {},
   projects: [],
   notifications: [],
   recent: [],
   settings: mockSettings,
-  setup: emptySetup,
+  setup: loadDraftSetup(),
 }
 
 const activityKey = (pathId: string, sectionId: string, kind: ActivityKind) =>
@@ -169,11 +201,24 @@ export function reducer(state: AppState, action: Action): AppState {
         setup: emptySetup,
       }
 
-    case 'setup/patch':
-      return { ...state, setup: { ...state.setup, ...action.patch } }
+    case 'setup/patch': {
+      const nextSetup = { ...state.setup, ...action.patch }
+      try {
+        localStorage.setItem(DRAFT_SETUP_KEY, JSON.stringify(nextSetup))
+      } catch {
+        // Ignore quota errors
+      }
+      return { ...state, setup: nextSetup }
+    }
 
-    case 'setup/reset':
+    case 'setup/reset': {
+      try {
+        localStorage.removeItem(DRAFT_SETUP_KEY)
+      } catch {
+        // Ignore
+      }
       return { ...state, setup: emptySetup }
+    }
 
     case 'data/loading':
       return state.dataStatus === 'loading' ? state : { ...state, dataStatus: 'loading' }
@@ -192,7 +237,12 @@ export function reducer(state: AppState, action: Action): AppState {
       }
     }
 
-    case 'path/add':
+    case 'path/add': {
+      try {
+        localStorage.removeItem(DRAFT_SETUP_KEY)
+      } catch {
+        // Ignore
+      }
       return {
         ...state,
         paths: [...state.paths, action.path],
@@ -200,11 +250,26 @@ export function reducer(state: AppState, action: Action): AppState {
         customContent: { ...state.customContent, ...action.content },
         setup: emptySetup,
       }
+    }
 
     case 'path/replace':
       return {
         ...state,
         paths: state.paths.map((p) => (p.id === action.path.id ? action.path : p)),
+      }
+
+    case 'path/status':
+      return {
+        ...state,
+        paths: state.paths.map((p) =>
+          p.id === action.id
+            ? {
+                ...p,
+                generationStatus: action.status,
+                generationError: action.error !== undefined ? action.error : p.generationError,
+              }
+            : p,
+        ),
       }
 
     case 'path/activate':
@@ -223,7 +288,9 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'path/activity': {
       const path = state.paths.find((p) => p.id === action.pathId)
       if (!path) return state
-      const next = applyActivity(path, action.sectionId, action.kind, action.minutes)
+      const next = advanceSections(
+        applyActivity(path, action.sectionId, action.kind, action.minutes),
+      )
       if (next === path) return state
 
       const labels: Record<ActivityKind, string> = {
@@ -261,7 +328,7 @@ export function reducer(state: AppState, action: Action): AppState {
           ? `Path updated: ${title} is in good shape. Tomorrow opens with a two minute recap, then moves on.`
           : `Path updated: tomorrow now opens with a review of ${title}, and new material moves back a day.`
 
-      const updated: LearningPath = {
+      const updated: LearningPath = advanceSections({
         ...withActivity,
         assessmentResults: {
           ...withActivity.assessmentResults,
@@ -273,7 +340,7 @@ export function reducer(state: AppState, action: Action): AppState {
           },
         },
         adaptationNote: note,
-      }
+      })
 
       const item: RecentlyDone = {
         id: activityKey(action.pathId, action.sectionId, 'check'),
@@ -338,6 +405,9 @@ export function reducer(state: AppState, action: Action): AppState {
         ),
       }
 
+    case 'notif/loaded':
+      return { ...state, notifications: action.notifications }
+
     case 'notif/read':
       return {
         ...state,
@@ -349,12 +419,55 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'notif/readAll':
       return { ...state, notifications: state.notifications.map((n) => ({ ...n, read: true })) }
 
+    case 'content/loading':
+      return {
+        ...state,
+        contentLoading: { ...state.contentLoading, [action.sectionId]: true },
+        contentErrors: { ...state.contentErrors, [action.sectionId]: '' },
+      }
+
+    case 'content/loaded': {
+      const nextLoading = { ...state.contentLoading }
+      const nextErrors = { ...state.contentErrors }
+      for (const key of Object.keys(action.content)) {
+        delete nextLoading[key]
+        delete nextErrors[key]
+      }
+      return {
+        ...state,
+        customContent: { ...state.customContent, ...action.content },
+        contentLoading: nextLoading,
+        contentErrors: nextErrors,
+      }
+    }
+
+    case 'content/error': {
+      const nextLoading = { ...state.contentLoading }
+      delete nextLoading[action.sectionId]
+      return {
+        ...state,
+        contentLoading: nextLoading,
+        contentErrors: { ...state.contentErrors, [action.sectionId]: action.error },
+      }
+    }
+
     case 'settings/preferences':
       return {
         ...state,
         settings: {
           ...state.settings,
           preferences: { ...state.settings.preferences, ...action.patch },
+        },
+      }
+
+    case 'settings/loaded':
+      return {
+        ...state,
+        user: state.user ? { ...state.user, timezone: action.timezone } : state.user,
+        settings: {
+          ...state.settings,
+          schedule: { ...state.settings.schedule, ...action.schedule },
+          notifications: { ...state.settings.notifications, ...action.notifications },
         },
       }
 
@@ -408,21 +521,6 @@ export function setupFromPath(path: LearningPath): SetupAnswers {
   }
 }
 
-/**
- * Session content is generated client-side (there is no AI content API yet),
- * keyed by section id. Sections that ship their own content (demo paths) are
- * left to `baseSessionContent`.
- */
-export function contentForPath(path: LearningPath): Record<string, SessionContent> {
-  const answers = setupFromPath(path)
-  const content: Record<string, SessionContent> = {}
-  for (const section of path.sections) {
-    if (baseSessionContent[section.id]) continue
-    content[section.id] = buildGeneratedSession(answers, section.title, section.order)
-  }
-  return content
-}
-
 /* ------------------------------- context ------------------------------- */
 
 export interface Store {
@@ -431,13 +529,19 @@ export interface Store {
   unreadCount: number
   login: (email: string, password: string) => Promise<User>
   register: (input: RegisterInput) => Promise<User>
+  verifyEmail: (code: string) => Promise<User>
+  resendVerificationCode: () => Promise<void>
+  forgotPassword: (email: string) => Promise<void>
+  resetPassword: (token: string, password: string) => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
   refreshSession: () => Promise<void>
   signOut: () => void
   reloadData: () => Promise<void>
   patchSetup: (patch: Partial<SetupAnswers>) => void
   resetSetup: () => void
   activatePath: (id: string) => void
-  createPath: (subject: string, answers: SetupAnswers) => Promise<void>
+  createPath: (subject: string, answers: SetupAnswers) => Promise<LearningPath>
+  retryPathBuild: (id: string) => Promise<LearningPath>
   deletePath: (id: string) => void
   updatePathPreferences: (
     pathId: string,
@@ -464,6 +568,10 @@ export interface Store {
   reviewProject: (projectId: string) => void
   markRead: (id: string) => void
   markAllRead: () => void
+  /** Loads a section's content from the server (generating it once), caching in state. */
+  ensureSessionContent: (sectionId: string, force?: boolean) => Promise<void>
+  sessionContentError: (sectionId: string) => string | null
+  isSessionContentLoading: (sectionId: string) => boolean
   updatePreferences: (patch: Partial<Settings['preferences']>) => void
   updateSchedule: (patch: Partial<Settings['schedule']>) => void
   updateNotificationSettings: (patch: Partial<Settings['notifications']>) => void

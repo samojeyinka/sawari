@@ -29,6 +29,7 @@ export interface User {
   name: string
   firstName: string
   email: string
+  emailVerified: boolean
   joined: string
   timezone: string
 }
@@ -114,7 +115,10 @@ export interface Assessment {
 
 export interface SessionContent {
   lesson: Lesson
-  resource: Resource
+  /** 1-3 resources per session (e.g. two videos + one article). */
+  resources: Resource[]
+  /** Legacy single-resource shape from older cached rows. */
+  resource?: Resource
   practice: Practice
   assessment: Assessment
 }
@@ -147,6 +151,8 @@ export interface AssessmentResult {
   firstAttempt: boolean
 }
 
+export type GenerationStatus = 'idle' | 'queued' | 'generating' | 'ready' | 'failed'
+
 export interface LearningPath {
   id: string
   subject: string
@@ -165,6 +171,10 @@ export interface LearningPath {
   countedSessions: string[]
   assessmentResults: Record<string, AssessmentResult>
   adaptationNote: string | null
+  generationStatus?: GenerationStatus
+  generationError?: string | null
+  generationStartedAt?: string | null
+  generationFinishedAt?: string | null
 }
 
 /* ----------------------------- projects --------------------------- */
@@ -208,6 +218,7 @@ export interface AppNotification {
   time: string
   read: boolean
   kind: 'session' | 'project' | 'path' | 'account'
+  link?: string | null
 }
 
 export interface RecentlyDone {

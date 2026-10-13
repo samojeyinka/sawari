@@ -1,4 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
+import { checkAiHealth } from '../services/ai/health.js'
+import { enqueue } from '../jobs/queue.js'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import { httpError } from '../lib/AppError.js'
 import {
@@ -32,6 +34,10 @@ const LIST_SELECT = [
   'completedActivities',
   'countedSessions',
   'adaptationNote',
+  'generationStatus',
+  'generationError',
+  'generationStartedAt',
+  'generationFinishedAt',
   'createdAt',
   'updatedAt',
 ] as const
@@ -82,8 +88,74 @@ export const getLearningPath = asyncHandler(
 export const createLearningPath = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const body = req.body as CreateLearningPathInput
-    const path = await LearningPath.create({ ...body, userId: req.user!.id })
+
+    // If explicit sections were sent, preserve them (back-compat / tests)
+    if (body.sections && body.sections.length > 0) {
+      const path = await LearningPath.create({
+        ...body,
+        userId: req.user!.id,
+        generationStatus: 'ready',
+      })
+      res.created(serialize(path.toObject({ flattenMaps: true })))
+      return
+    }
+
+    // AI path: verify DeepSeek is available before accepting
+    const health = await checkAiHealth()
+    if (!health.available) {
+      throw httpError.serviceUnavailable(
+        health.error ?? 'AI generation is currently unavailable.',
+        'ai_unavailable',
+      )
+    }
+
+    const path = await LearningPath.create({
+      ...body,
+      userId: req.user!.id,
+      sections: [],
+      currentSectionId: null,
+      generationStatus: 'queued',
+      generationError: null,
+    })
+
+    await enqueue('build-path', { pathId: path._id.toString(), userId: req.user!.id })
+
     res.created(serialize(path.toObject({ flattenMaps: true })))
+  },
+)
+
+/* ------------------------------ retry ----------------------------- */
+
+export const retryPathGeneration = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const path = await LearningPath.findOne({
+      _id: req.params.id,
+      userId: req.user!.id,
+    })
+    if (!path) throw httpError.notFound('Learning path not found.')
+
+    if (path.generationStatus !== 'failed') {
+      res.ok(serialize(path.toObject({ flattenMaps: true })))
+      return
+    }
+
+    const health = await checkAiHealth()
+    if (!health.available) {
+      throw httpError.serviceUnavailable(
+        health.error ?? 'AI generation is currently unavailable.',
+        'ai_unavailable',
+      )
+    }
+
+    path.generationStatus = 'queued'
+    path.generationError = null
+    path.generationStartedAt = null
+    path.generationFinishedAt = null
+    await path.save()
+
+    await enqueue('build-path', { pathId: path._id.toString(), userId: req.user!.id })
+
+    res.ok(serialize(path.toObject({ flattenMaps: true })))
   },
 )
 

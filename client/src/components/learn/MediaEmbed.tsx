@@ -43,12 +43,12 @@ export function MediaEmbed({ url, title }: { url: string; title: string }) {
     <a
       href={media.watchUrl}
       target="_blank"
-      rel="noreferrer"
+      rel="noopener noreferrer"
       className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-line bg-canvas/70 px-4 py-3.5 transition-colors hover:border-line-strong hover:bg-canvas"
     >
       <span className="inline-flex items-center gap-2.5 text-sm text-ink">
-        <LuPlay className="h-4 w-4 text-accent" />
-        Watch this on {media.label}
+        <LuExternalLink className="h-4 w-4 text-accent" />
+        Open resource on {media.label}
       </span>
       <LuExternalLink className="h-4 w-4 shrink-0 text-muted" />
     </a>

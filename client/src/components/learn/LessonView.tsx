@@ -1,27 +1,44 @@
-import { LuCheck } from 'react-icons/lu'
+import { LuCheck, LuLock } from 'react-icons/lu'
 import type { Lesson, LessonBlock } from '../../types'
 import { Button } from '../ui/Button'
 import { cx } from '../../lib/utils'
+import { formatPacingTime, useActivityPacing } from '../../hooks/useActivityPacing'
+import { DigestionTracker } from './DigestionTracker'
+import { PreviewNotice } from './PreviewNotice'
 
 export function LessonView({
+  activityId,
   lesson,
   done,
+  preview = false,
   onComplete,
 }: {
+  activityId: string
   lesson: Lesson
   done: boolean
+  preview?: boolean
   onComplete: () => void
 }) {
+  const pacing = useActivityPacing({
+    activityId,
+    baseMinutes: lesson.minutes,
+    done,
+    disabled: preview,
+  })
+
   return (
     <article className="mx-auto max-w-3xl animate-rise">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-accent">
         Learn <span className="text-line-strong">·</span>
-        <span className="text-muted">{lesson.minutes} min</span>
+        <span className="text-muted">{lesson.minutes} min base</span>
       </div>
       <h2 className="mt-2 text-2xl font-semibold text-ink">{lesson.title}</h2>
       <p className="mt-3 border-l-2 border-accent/40 pl-4 text-[16px] leading-relaxed text-ink-soft">
         {lesson.intro}
       </p>
+
+      {/* Pacing progress & cognitive absorption indicator */}
+      {!preview && <DigestionTracker pacing={pacing} baseMinutes={lesson.minutes} />}
 
       <div className="mt-6">
         {lesson.blocks.map((block, i) => (
@@ -34,11 +51,24 @@ export function LessonView({
           <span className="inline-flex items-center gap-2 text-sm font-medium text-success">
             <LuCheck className="h-4 w-4" /> Lesson complete
           </span>
+        ) : preview ? (
+          <PreviewNotice />
+        ) : !pacing.isUnlocked ? (
+          <>
+            <Button disabled variant="secondary" className="cursor-not-allowed opacity-60">
+              <LuLock className="h-4 w-4" /> Unlocks in {formatPacingTime(pacing.remainingSeconds)}
+            </Button>
+            <span className="text-[13px] text-muted">
+              Active digestion in progress. Absorbing thoroughly prevents rushing.
+            </span>
+          </>
         ) : (
           <>
-            <Button onClick={onComplete}>Mark lesson complete</Button>
+            <Button onClick={onComplete} variant="primary">
+              <LuCheck className="h-4 w-4" /> Complete lesson & continue
+            </Button>
             <span className="text-[13px] text-muted">
-              Next up: the reading, then practice.
+              Pacing requirement met. Next up: resource reading.
             </span>
           </>
         )}

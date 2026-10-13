@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../state/store'
 import { Drawer } from '../ui/Drawer'
 import { cx } from '../../lib/utils'
@@ -11,6 +12,15 @@ const kindLabel: Record<string, string> = {
 
 export function NotificationsDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { state, markRead, markAllRead } = useApp()
+  const navigate = useNavigate()
+
+  const handleClick = (id: string, link?: string | null) => {
+    markRead(id)
+    if (link) {
+      onClose()
+      navigate(link)
+    }
+  }
 
   return (
     <Drawer open={open} onClose={onClose} side="right" title="Notifications">
@@ -38,7 +48,7 @@ export function NotificationsDrawer({ open, onClose }: { open: boolean; onClose:
           {state.notifications.map((n) => (
             <li key={n.id}>
               <button
-                onClick={() => markRead(n.id)}
+                onClick={() => handleClick(n.id, n.link)}
                 className={cx(
                   'flex w-full gap-3 border-b border-line px-5 py-4 text-left transition-colors hover:bg-canvas',
                   !n.read && 'bg-accent-soft/40',

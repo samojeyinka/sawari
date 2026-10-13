@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { LuCheck, LuInfo, LuMail, LuSend, LuTriangleAlert } from 'react-icons/lu'
 import type { Intensity, LearningFormat, WeeklyHours } from '../types'
 import { useApp } from '../state/store'
+import { notificationsApi, type TestEmailResponse } from '../lib/api'
 import { Page, PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { Chip, Field, Toggle, inputClass } from '../components/ui/ProgressBar'
@@ -50,6 +52,16 @@ const formatOptions: { id: LearningFormat; label: string }[] = [
 ]
 
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+const timezones: { value: string; label: string }[] = [
+  { value: 'UTC', label: '(GMT+00:00) UTC' },
+  { value: 'Europe/London', label: '(GMT+00:00) London' },
+  { value: 'Africa/Lagos', label: '(GMT+01:00) Lagos' },
+  { value: 'Africa/Nairobi', label: '(GMT+03:00) Nairobi' },
+  { value: 'Asia/Kolkata', label: '(GMT+05:30) Mumbai' },
+  { value: 'Asia/Singapore', label: '(GMT+08:00) Singapore' },
+  { value: 'America/New_York', label: '(GMT-05:00) New York' },
+]
 
 export function SettingsPage() {
   const { toast } = useApp()
@@ -114,7 +126,7 @@ function ProfileSection() {
   const user = state.user
   const [name, setName] = useState(user?.name ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
-  const [timezone, setTimezone] = useState(user?.timezone ?? '(GMT+01:00) Lagos')
+  const [timezone, setTimezone] = useState(user?.timezone ?? 'UTC')
 
   if (!user) return null
 
@@ -165,15 +177,13 @@ function ProfileSection() {
             onChange={(e) => setTimezone(e.target.value)}
             className={inputClass}
           >
-            {[
-              '(GMT+01:00) Lagos',
-              '(GMT+00:00) London',
-              '(GMT-05:00) New York',
-              '(GMT+03:00) Nairobi',
-              '(GMT+05:30) Mumbai',
-              '(GMT+08:00) Singapore',
-            ].map((tz) => (
-              <option key={tz}>{tz}</option>
+            {timezones.some((tz) => tz.value === timezone) ? null : (
+              <option value={timezone}>{timezone}</option>
+            )}
+            {timezones.map((tz) => (
+              <option key={tz.value} value={tz.value}>
+                {tz.label}
+              </option>
             ))}
           </select>
         </Field>
@@ -365,8 +375,17 @@ function ScheduleSection() {
 }
 
 function NotificationsSection() {
-  const { state, updateNotificationSettings } = useApp()
+  const { state, updateNotificationSettings, toast } = useApp()
   const settings = state.settings.notifications
+  const user = state.user
+
+  const [testEmail, setTestEmail] = useState(
+    user?.email && !user.email.includes('@example.com')
+      ? user.email
+      : 'samuelojeyinka@gmail.com',
+  )
+  const [sending, setSending] = useState(false)
+  const [result, setResult] = useState<TestEmailResponse | null>(null)
 
   const items: { key: keyof typeof settings; label: string; hint: string }[] = [
     { key: 'dailyReminder', label: 'Daily session reminder', hint: 'At your scheduled time' },
@@ -375,6 +394,37 @@ function NotificationsSection() {
     { key: 'pathUpdates', label: 'Path changes', hint: 'When your plan adapts after a check' },
     { key: 'productNews', label: 'Product news', hint: 'New features, once a month or so' },
   ]
+
+  const handleSendTest = async () => {
+    if (!testEmail || !testEmail.includes('@')) {
+      toast('Please enter a valid email address.')
+      return
+    }
+    setSending(true)
+    setResult(null)
+    try {
+      const res = await notificationsApi.sendTestEmail({ targetEmail: testEmail.trim() })
+      setResult(res)
+      if (res.delivered) {
+        toast(`Test reminder dispatched to ${res.recipient}`)
+      } else {
+        toast(res.message || 'Delivery notice')
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not connect to email service.'
+      setResult({
+        delivered: false,
+        recipient: testEmail,
+        subject: 'Reminder Test',
+        inAppNotificationId: '',
+        error: msg,
+        message: msg,
+      })
+      toast('Email test failed.')
+    } finally {
+      setSending(false)
+    }
+  }
 
   return (
     <div className="max-w-xl space-y-6">
@@ -401,12 +451,100 @@ function NotificationsSection() {
           </div>
         ))}
       </div>
+
+      {/* Resend Outbound Email Testing Card */}
+      <section className="rounded-2xl border border-line bg-canvas/70 p-5">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
+            <LuMail className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="text-sm font-semibold text-ink">Email Delivery & Resend Testing</h3>
+            <p className="text-[12px] text-muted">
+              Verify that session reminders and weekly summaries reach your inbox.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <Field
+            label="Recipient email address"
+            hint="For free Resend accounts without a custom domain, delivery is restricted to the account owner (samuelojeyinka@gmail.com)."
+            htmlFor="testEmail"
+          >
+            <div className="flex gap-2">
+              <input
+                id="testEmail"
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder="samuelojeyinka@gmail.com"
+                className={inputClass}
+              />
+              <Button
+                onClick={handleSendTest}
+                disabled={sending}
+                className="shrink-0"
+              >
+                {sending ? (
+                  'Sending...'
+                ) : (
+                  <>
+                    <LuSend className="h-4 w-4" /> Send test
+                  </>
+                )}
+              </Button>
+            </div>
+          </Field>
+
+          {result && (
+            <div
+              className={cx(
+                'rounded-xl border p-3.5 text-xs animate-rise',
+                result.delivered
+                  ? 'border-success/30 bg-success-soft/70 text-success'
+                  : 'border-danger/30 bg-danger-soft/70 text-danger',
+              )}
+            >
+              <div className="flex items-start gap-2">
+                {result.delivered ? (
+                  <LuCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                ) : (
+                  <LuTriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
+                )}
+                <div>
+                  <p className="font-semibold text-ink">
+                    {result.delivered
+                      ? 'Test Reminder Successfully Delivered!'
+                      : 'Delivery Notice'}
+                  </p>
+                  <p className="mt-0.5 leading-relaxed text-body">{result.message}</p>
+                  {result.delivered && (
+                    <p className="mt-1 text-[11px] text-muted">
+                      Subject: "{result.subject}" · Delivered via Resend to {result.recipient}. Check your inbox!
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-lg border border-line/60 bg-panel/70 p-3 text-[12px] leading-relaxed text-muted">
+            <div className="flex items-start gap-2">
+              <LuInfo className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+              <span>
+                <strong>Resend sandbox note:</strong> With the default <code className="rounded bg-canvas px-1 py-0.5">onboarding@resend.dev</code> sender, emails can only be delivered to <strong className="text-ink">samuelojeyinka@gmail.com</strong>. To send to any learner address, verify your domain in Resend.
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
 
 function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
-  const { state, signOut, toast } = useApp()
+  const { state, signOut, toast, changePassword } = useApp()
   const navigate = useNavigate()
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -419,8 +557,8 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
   const user = state.user
   if (!user) return null
 
-  const savePassword = () => {
-    if (current.length < 4) {
+  const savePassword = async () => {
+    if (current.length === 0) {
       setError('Enter your current password.')
       return
     }
@@ -434,14 +572,18 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
     }
     setError('')
     setBusy(true)
-    window.setTimeout(() => {
-      setBusy(false)
+    try {
+      await changePassword(current, next)
       setPasswordOpen(false)
       setCurrent('')
       setNext('')
       setConfirm('')
       toast('Password updated')
-    }, 800)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update your password.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (

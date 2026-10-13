@@ -1,8 +1,11 @@
 import { Router } from 'express'
+import aiRoutes from './ai.routes.js'
 import authRoutes from './auth.routes.js'
 import learningPathRoutes from './learningPaths.routes.js'
 import meRoutes from './me.routes.js'
+import notificationRoutes from './notifications.routes.js'
 import projectRoutes from './projects.routes.js'
+import settingsRoutes from './settings.routes.js'
 
 const router = Router()
 
@@ -10,9 +13,12 @@ router.get('/health', (_req, res) => {
   res.ok({ status: 'ok', uptime: process.uptime() })
 })
 
+router.use('/ai', aiRoutes)
 router.use('/auth', authRoutes)
 router.use('/me', meRoutes)
+router.use('/settings', settingsRoutes)
 router.use('/learning-paths', learningPathRoutes)
 router.use('/projects', projectRoutes)
+router.use('/notifications', notificationRoutes)
 
 export default router

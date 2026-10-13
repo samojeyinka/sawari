@@ -1,24 +1,108 @@
 import type { ReactNode } from 'react'
+import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LuCheck } from 'react-icons/lu'
+import { LuCheck, LuLoaderCircle, LuTriangleAlert } from 'react-icons/lu'
 import { useApp } from '../state/store'
 import { getSessionActivities, pathPercent, formatHours } from '../data'
 import { kindLabels } from '../components/learn/kinds'
+import { SessionPending } from '../components/learn/SessionPending'
 import { Page } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { greeting, cx } from '../lib/utils'
 
 export function TodayPage() {
-  const { activePath, state, sessionContentFor } = useApp()
+  const {
+    activePath,
+    state,
+    sessionContentFor,
+    ensureSessionContent,
+    sessionContentError,
+  } = useApp()
   const navigate = useNavigate()
+
+  const section = activePath?.sections.find((s) => s.id === activePath.currentSectionId)
+  const content = section ? sessionContentFor(section.id) : null
+  const error = section ? sessionContentError(section.id) : null
+
+  useEffect(() => {
+    if (section && !content && !error) void ensureSessionContent(section.id)
+  }, [section, content, error, ensureSessionContent])
 
   if (!activePath) return <NoPathToday />
 
-  const section = activePath.sections.find((s) => s.id === activePath.currentSectionId)
-  const content = section ? sessionContentFor(section.id) : null
+  const buildStatus = activePath.generationStatus
+  if (buildStatus === 'queued' || buildStatus === 'generating' || buildStatus === 'idle') {
+    return (
+      <Page width="narrow">
+        <div className="rounded-xl border border-line bg-panel p-8 text-center animate-rise">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent">
+            <LuLoaderCircle className="h-6 w-6 animate-spin" />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-ink">Building today&apos;s session…</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">
+            Your {activePath.subject} path is still being designed. This page updates automatically
+            when it is ready — no need to refresh.
+          </p>
+          <div className="mx-auto mt-5 max-w-xs">
+            <ProgressBar value={buildStatus === 'generating' ? 66 : 33} />
+          </div>
+          <Link
+            to="/app/path"
+            className="mt-4 inline-block text-[13px] font-medium text-accent transition-colors hover:text-accent-strong"
+          >
+            Open learning path
+          </Link>
+        </div>
+      </Page>
+    )
+  }
 
-  if (!section || !content) return <NoPathToday />
+  if (buildStatus === 'failed') {
+    return (
+      <Page width="narrow">
+        <div className="rounded-xl border border-line bg-panel p-8 text-center animate-rise">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-danger-soft text-danger">
+            <LuTriangleAlert className="h-6 w-6" />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-ink">Could not design your path</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">
+            Something went wrong while generating your {activePath.subject} sections. You can try
+            again from the path overview.
+          </p>
+          <Link to="/app/path" className="mt-6 inline-block">
+            <Button variant="secondary">Open learning path</Button>
+          </Link>
+        </div>
+      </Page>
+    )
+  }
+
+  if (!section) return <NoPathToday />
+
+  if (error && !content) {
+    return (
+      <Page width="narrow">
+        <div className="rounded-xl border border-line bg-panel p-8 text-center animate-rise">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-danger-soft text-danger">
+            <LuTriangleAlert className="h-6 w-6" />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-ink">Could not load today's session</h2>
+          <p className="mt-2 text-sm text-muted">{error}</p>
+          <div className="mt-6 flex justify-center gap-3">
+            <Button onClick={() => void ensureSessionContent(section.id, true)}>
+              Retry
+            </Button>
+            <Link to="/app/path">
+              <Button variant="secondary">View path</Button>
+            </Link>
+          </div>
+        </div>
+      </Page>
+    )
+  }
+
+  if (!content) return <SessionPending />
 
   const activities = getSessionActivities(activePath.id, section.id, content)
   const doneIds = activities.map((a) => activePath.completedActivities.includes(a.id))
