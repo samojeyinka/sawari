@@ -355,6 +355,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           reviewed: project.reviewed,
           status: project.status,
           submittedAt: project.submittedAt,
+          submissionNote: project.submissionNote,
           feedback: project.feedback,
         })
         .catch(handleSyncError)
@@ -509,8 +510,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   )
 
   const submitProject = useCallback(
-    (projectId: string) => {
-      const next = dispatchNext({ type: 'project/submit', projectId })
+    (projectId: string, note: string) => {
+      const next = dispatchNext({
+        type: 'project/submit',
+        projectId,
+        submittedAt: new Date().toISOString(),
+        note,
+      })
       const project = next.projects.find((p) => p.id === projectId)
       if (project) pushProject(project)
     },
@@ -518,12 +524,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   )
 
   const reviewProject = useCallback(
-    (projectId: string) => {
-      const next = dispatchNext({ type: 'project/review', projectId })
-      const project = next.projects.find((p) => p.id === projectId)
-      if (project) pushProject(project)
+    async (projectId: string) => {
+      const updated = mapApiProject(await projectsApi.review(projectId))
+      dispatchNext({ type: 'project/replace', project: updated })
     },
-    [dispatchNext, pushProject],
+    [dispatchNext],
   )
 
   const markRead = useCallback(

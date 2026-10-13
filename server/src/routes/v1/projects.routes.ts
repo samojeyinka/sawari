@@ -4,9 +4,11 @@ import {
   deleteProject,
   getProject,
   listProjects,
+  reviewProject,
   updateProject,
 } from '../../controllers/project.controller.js'
 import { authenticate } from '../../middleware/authenticate.js'
+import { authLimiter } from '../../middleware/rateLimiter.js'
 import { validate } from '../../middleware/validate.js'
 import { idParamSchema } from '../../validators/common.js'
 import {
@@ -28,6 +30,7 @@ router.patch(
   validate(updateProjectSchema),
   updateProject,
 )
+router.post('/:id/review', authLimiter, validate(idParamSchema, 'params'), reviewProject)
 router.delete('/:id', validate(idParamSchema, 'params'), deleteProject)
 
 export default router

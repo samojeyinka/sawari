@@ -15,7 +15,6 @@ import type { AlertVariant } from '../components/ui/Alert'
 import type { ApiBillingStatus, RegisterInput } from '../lib/api'
 import { advanceSections } from '../lib/sections'
 import { mockSettings } from '../data'
-import { fallbackFeedback } from '../data/projects'
 
 /* ------------------------------------------------------------------ */
 /*  Store: one slice of app state, one reducer, a handful of actions.  */
@@ -90,8 +89,7 @@ type Action =
   | { type: 'path/assessment'; pathId: string; sectionId: string; assessmentId: string; title: string; score: number; total: number; minutes: number }
   | { type: 'project/replace'; project: Project }
   | { type: 'project/toggleTask'; projectId: string; taskId: string }
-  | { type: 'project/submit'; projectId: string }
-  | { type: 'project/review'; projectId: string }
+  | { type: 'project/submit'; projectId: string; submittedAt: string; note: string }
   | { type: 'notif/loaded'; notifications: AppNotification[] }
   | { type: 'notif/read'; id: string }
   | { type: 'notif/readAll' }
@@ -389,21 +387,12 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         projects: state.projects.map((p) =>
           p.id === action.projectId
-            ? { ...p, submitted: true, reviewed: false, submittedAt: 'Just now' }
-            : p,
-        ),
-      }
-
-    case 'project/review':
-      return {
-        ...state,
-        projects: state.projects.map((p) =>
-          p.id === action.projectId
             ? {
                 ...p,
-                reviewed: true,
-                status: 'completed',
-                feedback: p.feedback ?? fallbackFeedback,
+                submitted: true,
+                reviewed: false,
+                submittedAt: action.submittedAt,
+                submissionNote: action.note,
               }
             : p,
         ),
@@ -571,8 +560,8 @@ export interface Store {
     minutes: number,
   ) => void
   toggleTask: (projectId: string, taskId: string) => void
-  submitProject: (projectId: string) => void
-  reviewProject: (projectId: string) => void
+  submitProject: (projectId: string, note: string) => void
+  reviewProject: (projectId: string) => Promise<void>
   markRead: (id: string) => void
   markAllRead: () => void
   /** Loads a section's content from the server (generating it once), caching in state. */

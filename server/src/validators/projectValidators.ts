@@ -40,6 +40,7 @@ export const updateProjectSchema = z.strictObject({
   submitted: z.boolean().optional(),
   reviewed: z.boolean().optional(),
   submittedAt: z.string().max(40).nullable().optional(),
+  submissionNote: z.string().max(2000).nullable().optional(),
   feedback: projectFeedbackSchema.nullable().optional(),
 })
 

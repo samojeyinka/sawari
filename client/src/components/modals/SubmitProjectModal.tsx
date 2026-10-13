@@ -35,7 +35,7 @@ export function SubmitProjectModal({
       <div className="space-y-4">
         <p className="text-sm leading-relaxed text-body">
           We will review it against the rubric for this project. You get strengths to keep and
-          specific things to improve. Usually takes a couple of minutes.
+          specific things to improve. Takes under a minute.
         </p>
         <div>
           <label htmlFor="submit-note" className="mb-2 block text-sm font-medium text-ink">

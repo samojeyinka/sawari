@@ -30,6 +30,7 @@ export interface ProjectDocument extends Document {
   submitted: boolean
   reviewed: boolean
   submittedAt: string | null
+  submissionNote: string | null
   feedback: ProjectFeedback | null
   createdAt: Date
   updatedAt: Date
@@ -72,6 +73,7 @@ const projectSchema = new Schema<ProjectDocument, ProjectModel>(
     submitted: { type: Boolean, default: false },
     reviewed: { type: Boolean, default: false },
     submittedAt: { type: String, default: null },
+    submissionNote: { type: String, default: null, maxlength: 2000 },
     feedback: { type: feedbackSchema, default: null },
   },
   { timestamps: true },

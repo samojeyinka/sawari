@@ -5,6 +5,9 @@ import { pageMeta, parsePagination, parseSelect, parseSort } from '../lib/queryF
 import { serialize } from '../lib/serialize.js'
 import { LearningPath } from '../models/LearningPath.js'
 import { Project } from '../models/Project.js'
+import { reviewProjectSubmission } from '../services/ai/index.js'
+import { AiRequestError, AiUnavailableError } from '../services/ai/deepseek.js'
+import { resolveUserKey } from '../services/userKey.js'
 import type {
   CreateProjectInput,
   UpdateProjectInput,
@@ -26,6 +29,7 @@ const LIST_SELECT = [
   'submitted',
   'reviewed',
   'submittedAt',
+  'submissionNote',
   'feedback',
   'createdAt',
   'updatedAt',
@@ -99,6 +103,50 @@ export const updateProject = asyncHandler(
     ).lean()
     if (!project) throw httpError.notFound('Project not found.')
     res.ok(serialize(project))
+  },
+)
+
+/* ------------------------------ review ---------------------------- */
+
+export const reviewProject = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const project = await Project.findOne({ _id: req.params.id, userId: req.user!.id })
+    if (!project) throw httpError.notFound('Project not found.')
+    if (!project.submitted) {
+      throw httpError.badRequest('Submit the project before requesting a review.')
+    }
+
+    let review
+    try {
+      review = await reviewProjectSubmission(
+        {
+          title: project.title,
+          description: project.description,
+          objectives: project.objectives,
+          tasks: project.tasks.map((task) => ({
+            title: task.title,
+            done: project.completedTaskIds.includes(task.id),
+          })),
+          submissionNote: project.submissionNote ?? undefined,
+        },
+        await resolveUserKey(req.user!.id),
+      )
+    } catch (error) {
+      if (error instanceof AiUnavailableError) {
+        throw httpError.serviceUnavailable('AI review is unavailable right now. Try again in a bit.')
+      }
+      if (error instanceof AiRequestError) {
+        throw httpError.badGateway('AI review failed. Try again in a bit.')
+      }
+      throw error
+    }
+
+    project.feedback = review
+    project.reviewed = true
+    project.status = 'completed'
+    await project.save()
+
+    res.ok(serialize(project.toObject({ flattenMaps: true })))
   },
 )
 
