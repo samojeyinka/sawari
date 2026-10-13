@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button'
 import { Chip, Field, Toggle, inputClass } from '../components/ui/ProgressBar'
 import { monoLabel } from '../components/layout/nav'
 import { AiProviderSection } from '../components/settings/AiProviderSection'
+import { ConfirmModal } from '../components/modals/ConfirmModal'
 import { Modal } from '../components/ui/Modal'
 import { cx, initials } from '../lib/utils'
 
@@ -106,25 +107,76 @@ export function SettingsPage() {
       </div>
 
       <p className="mt-10 border-t border-on-band/10 pt-5 text-[13px] text-on-band-dim">
-        Most changes save to your account straight away. Your profile name and email stay on
-        this device for now.
+        Every change here saves to your account straight away.
       </p>
     </Page>
   )
 }
 
 function ProfileSection() {
-  const { state, updateProfile, toast } = useApp()
+  const { state, updateProfile, requestEmailChange, confirmEmailChange, toast } = useApp()
   const user = state.user
   const [name, setName] = useState(user?.name ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
   const [timezone, setTimezone] = useState(user?.timezone ?? 'UTC')
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
+  const [codeSentTo, setCodeSentTo] = useState<string | null>(null)
+  const [code, setCode] = useState('')
+  const [codeBusy, setCodeBusy] = useState(false)
+  const [codeError, setCodeError] = useState('')
 
   if (!user) return null
 
-  const save = () => {
-    updateProfile({ name: name.trim() || user.name, email: email.trim() || user.email, timezone })
-    toast('Profile saved')
+  const save = async () => {
+    setSaveError('')
+    const trimmedName = name.trim() || user.name
+    const trimmedEmail = email.trim() || user.email
+    if (!trimmedName) {
+      setSaveError('Enter your name.')
+      return
+    }
+    if (!trimmedEmail.includes('@')) {
+      setSaveError('Enter a valid email address.')
+      return
+    }
+    setSaving(true)
+    try {
+      await updateProfile({ name: trimmedName, timezone })
+      if (trimmedEmail.toLowerCase() !== user.email.toLowerCase()) {
+        const pending = await requestEmailChange(trimmedEmail)
+        setCodeSentTo(pending)
+        setCode('')
+        setCodeError('')
+      } else {
+        setCodeSentTo(null)
+      }
+      toast('Profile saved')
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Could not save your profile.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const confirmCode = async () => {
+    if (code.trim().length !== 6) {
+      setCodeError('Enter the 6-digit code.')
+      return
+    }
+    setCodeError('')
+    setCodeBusy(true)
+    try {
+      const updated = await confirmEmailChange(code.trim())
+      setEmail(updated.email)
+      setCodeSentTo(null)
+      setCode('')
+      toast('Email updated')
+    } catch (err) {
+      setCodeError(err instanceof Error ? err.message : 'Could not confirm the code.')
+    } finally {
+      setCodeBusy(false)
+    }
   }
 
   return (
@@ -181,7 +233,40 @@ function ProfileSection() {
         </Field>
       </div>
 
-      <Button onClick={save}>Save profile</Button>
+      {codeSentTo && (
+        <div className="border border-on-band/15 bg-panel p-4">
+          <p className={cx(monoLabel, 'text-accent-bright')}>confirm new email</p>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-on-band-muted">
+            We sent a 6-digit code to {codeSentTo}. Enter it below to move your account there.
+          </p>
+          <div className="mt-3 flex flex-col gap-2.5 sm:flex-row">
+            <input
+              id="email-change-code"
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value.replace(/\D/g, ''))
+                if (codeError) setCodeError('')
+              }}
+              placeholder="000000"
+              autoComplete="one-time-code"
+              className={cx(inputClass, 'font-mono tracking-[0.3em] sm:max-w-56')}
+            />
+            <Button onClick={() => void confirmCode()} disabled={codeBusy} className="shrink-0">
+              {codeBusy ? 'Confirming…' : 'Confirm email'}
+            </Button>
+          </div>
+          {codeError && <p className="mt-2 text-[13px] text-danger-bright">{codeError}</p>}
+        </div>
+      )}
+
+      {saveError && <p className="text-[13px] text-danger-bright">{saveError}</p>}
+
+      <Button onClick={() => void save()} disabled={saving}>
+        {saving ? 'Saving…' : 'Save profile'}
+      </Button>
     </div>
   )
 }
@@ -523,8 +608,10 @@ function NotificationsSection() {
 }
 
 function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
-  const { state, signOut, toast, changePassword } = useApp()
+  const { state, signOut, toast, changePassword, requestAccountDeletion } = useApp()
   const [passwordOpen, setPasswordOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteBusy, setDeleteBusy] = useState(false)
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -572,6 +659,20 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
     }
   }
 
+  const handleDeleteRequest = async () => {
+    setDeleteBusy(true)
+    try {
+      await requestAccountDeletion()
+      setDeleteOpen(false)
+      toast('Check your email for the confirmation link')
+    } catch (err) {
+      setDeleteOpen(false)
+      toast(err instanceof Error ? err.message : 'Could not start deletion.')
+    } finally {
+      setDeleteBusy(false)
+    }
+  }
+
   return (
     <div className="max-w-xl space-y-6">
       <Heading title="Account" description="Your login, plan and the buttons that end things." />
@@ -607,6 +708,9 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
             }}
           >
             Sign out
+          </Button>
+          <Button variant="danger" onClick={() => setDeleteOpen(true)}>
+            Delete account
           </Button>
         </div>
       </div>
@@ -656,6 +760,17 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
           </Field>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={() => void handleDeleteRequest()}
+        title="Delete your account?"
+        body="We will email you a confirmation link. Your paths, projects and progress are kept for 30 days afterwards in case you change your mind."
+        confirmLabel="Send confirmation email"
+        busy={deleteBusy}
+        danger
+      />
 
     </div>
   )

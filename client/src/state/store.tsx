@@ -574,7 +574,12 @@ export interface Store {
   updatePreferences: (patch: Partial<Settings['preferences']>) => void
   updateSchedule: (patch: Partial<Settings['schedule']>) => void
   updateNotificationSettings: (patch: Partial<Settings['notifications']>) => void
-  updateProfile: (patch: Partial<User>) => void
+  updateProfile: (patch: { name?: string; timezone?: string }) => Promise<void>
+  requestEmailChange: (email: string) => Promise<string>
+  confirmEmailChange: (code: string) => Promise<User>
+  requestAccountDeletion: () => Promise<void>
+  confirmAccountDeletion: (token: string) => Promise<void>
+  restoreAccount: (token: string) => Promise<User>
   toast: (text: string, variant?: AlertVariant) => void
   sessionContentFor: (sectionId: string) => SessionContent | null
   refreshBilling: () => Promise<void>

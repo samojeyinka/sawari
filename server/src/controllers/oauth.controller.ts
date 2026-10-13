@@ -24,6 +24,11 @@ export const oauthCallback = asyncHandler(
       user = await User.findOne({ email: profile.email })
     }
 
+    if (user?.deletedAt) {
+      res.redirect(`${env.FRONTEND_URL}/login?oauth=deleted`)
+      return
+    }
+
     if (!user) {
       const { firstName, lastName } = splitName(profile.name)
       user = await User.create({

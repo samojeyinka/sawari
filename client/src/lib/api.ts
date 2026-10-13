@@ -150,6 +150,21 @@ export const authApi = {
   me: (signal?: AbortSignal) => request<ApiUser>('/me', { signal }),
   updateMe: (patch: { firstName?: string; lastName?: string | null; activePathId?: string | null }) =>
     request<ApiUser>('/me', { method: 'PATCH', body: patch }),
+  requestAccountDeletion: () =>
+    request<{ message: string }>('/me/delete-request', { method: 'POST' }),
+  confirmAccountDeletion: (token: string) =>
+    request<{ message: string }>('/me/delete-confirm', { method: 'POST', body: { token } }),
+  restoreAccount: (token: string) =>
+    request<ApiUser>('/me/restore', { method: 'POST', body: { token } }),
+  requestRestoreLink: (email: string) =>
+    request<{ message: string }>('/me/restore-request', { method: 'POST', body: { email } }),
+  requestEmailChange: (email: string) =>
+    request<{ message: string; pendingEmail: string }>('/me/email-change-request', {
+      method: 'POST',
+      body: { email },
+    }),
+  confirmEmailChange: (code: string) =>
+    request<ApiUser>('/me/email-change-confirm', { method: 'POST', body: { code } }),
   /** Absolute URL that starts a social sign-in flow (full-page navigation). */
   oauthUrl: (provider: 'github' | 'google') => `${API_BASE}/auth/${provider}`,
 }
