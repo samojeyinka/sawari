@@ -58,6 +58,51 @@ interface Envelope<T> {
   meta?: unknown
 }
 
+/** Human headings for the error codes the server actually sends. */
+const ERROR_CODE_TITLES: Record<string, string> = {
+  network_error: 'No connection',
+  rate_limited: 'Too many requests',
+  validation_failed: 'Check your input',
+  email_unverified: 'Verify your email',
+  ai_unavailable: 'AI unavailable',
+  mail_unconfigured: 'Email is not configured',
+  account_deleted: 'Account deleted',
+  internal_error: 'Server error',
+}
+
+/**
+ * Short heading for an API error so its `code` reaches the UI instead of
+ * being silently swallowed. Falls back to the raw code.
+ */
+export function apiErrorTitle(error: unknown): string | undefined {
+  if (!(error instanceof ApiError) || !error.code) return undefined
+  return ERROR_CODE_TITLES[error.code] ?? error.code
+}
+
+/**
+ * Turns any thrown value into a user-facing message, reading the ApiError
+ * `details` payload (field errors, detail message) before its bare message.
+ */
+export function apiErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    const fields = (error.details as { fields?: Record<string, string[]> } | undefined)?.fields
+    if (fields) {
+      const parts = Object.values(fields).flat().filter(Boolean)
+      if (parts.length) return parts.join(' ')
+    }
+    if (typeof error.details === 'string' && error.details.trim()) {
+      return error.details.trim()
+    }
+    const detailMessage = (error.details as { message?: unknown } | undefined)?.message
+    if (typeof detailMessage === 'string' && detailMessage.trim()) return detailMessage.trim()
+    if (error.message) return error.message
+    if (error.code) return `${fallback} (${error.code})`
+    return fallback
+  }
+  if (error instanceof Error && error.message) return error.message
+  return fallback
+}
+
 export interface ApiUser {
   id: string
   firstName: string

@@ -18,6 +18,7 @@ import type { AlertVariant } from '../components/ui/Alert'
 import { findTemplateMatch } from '../data'
 import {
   ApiError,
+  apiErrorMessage,
   authApi,
   billingApi,
   learningPathsApi,
@@ -81,6 +82,13 @@ function mapSettingsLoaded(apiSettings: ApiSettings) {
   }
 }
 
+/** Only the keys of `shape`, read back out of `source` (for targeted rollbacks). */
+function previousSlice<T extends object>(source: T, shape: Partial<T>): Partial<T> {
+  const slice: Partial<T> = {}
+  for (const key of Object.keys(shape) as (keyof T)[]) slice[key] = source[key]
+  return slice
+}
+
 /** First token becomes firstName, the rest becomes lastName (or null). */
 function splitDisplayName(full: string): { firstName: string; lastName: string | null } {
   const parts = full.trim().split(/\s+/)
@@ -141,14 +149,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatchNext])
 
+  /**
+   * Shared failure path for optimistic mutations: surface the error (with its
+   * code/details), re-sync server truth, and — if that re-sync also fails —
+   * run `rollback` so the UI never keeps a change the server rejected.
+   */
   const handleSyncError = useCallback(
-    (error: unknown) => {
+    (error: unknown, rollback?: () => void) => {
       if (error instanceof ApiError && error.isUnauthorized) {
         dispatchNext({ type: 'auth/signOut' })
         return
       }
       alert.fromError(error, 'Could not save your changes.')
-      void reloadData().catch(() => undefined)
+      void reloadData().catch(() => {
+        rollback?.()
+      })
     },
     [alert, dispatchNext, reloadData],
   )
@@ -378,7 +393,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   /** Persists a path's progress fields (sections + stats + activity bookkeeping). */
   const pushPathProgress = useCallback(
-    (path: LearningPath) => {
+    (path: LearningPath, previous?: LearningPath | null) => {
       void learningPathsApi
         .update(path.id, {
           sections: path.sections,
@@ -389,13 +404,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
           assessmentResults: path.assessmentResults,
           adaptationNote: path.adaptationNote,
         })
-        .catch(handleSyncError)
+        .catch((error) =>
+          handleSyncError(
+            error,
+            previous
+              ? () => dispatchNext({ type: 'path/replace', path: previous })
+              : undefined,
+          ),
+        )
     },
-    [handleSyncError],
+    [dispatchNext, handleSyncError],
   )
 
   const pushProject = useCallback(
-    (project: Project) => {
+    (project: Project, previous?: Project | null) => {
       void projectsApi
         .update(project.id, {
           completedTaskIds: project.completedTaskIds,
@@ -406,16 +428,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
           submissionNote: project.submissionNote,
           feedback: project.feedback,
         })
-        .catch(handleSyncError)
+        .catch((error) =>
+          handleSyncError(
+            error,
+            previous ? () => dispatchNext({ type: 'project/replace', project: previous }) : undefined,
+          ),
+        )
     },
-    [handleSyncError],
+    [dispatchNext, handleSyncError],
   )
 
   /** Persists reminder/notification preferences to the server (best-effort). */
   const persistSettings = useCallback(
-    (patch: UpdateSettingsInput) => {
+    (patch: UpdateSettingsInput, rollback?: () => void) => {
       if (Object.keys(patch).length === 0) return
-      void settingsApi.update(patch).catch(handleSyncError)
+      void settingsApi.update(patch).catch((error) => handleSyncError(error, rollback))
     },
     [handleSyncError],
   )
@@ -432,11 +459,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const updated = await authApi.updateMe(apiPatch)
       dispatch({ type: 'auth/setUser', user: mapApiUser(updated) })
       if (patch.timezone !== undefined) {
+        const previousTimezone = stateRef.current.user?.timezone
         dispatch({ type: 'profile/update', patch: { timezone: patch.timezone } })
-        persistSettings({ timezone: patch.timezone })
+        persistSettings(
+          { timezone: patch.timezone },
+          previousTimezone && previousTimezone !== patch.timezone
+            ? () => dispatchNext({ type: 'profile/update', patch: { timezone: previousTimezone } })
+            : undefined,
+        )
       }
     },
-    [persistSettings],
+    [dispatchNext, persistSettings],
   )
 
   const createPath = useCallback(
@@ -475,11 +508,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ...(scheduledDays.length > 0 ? { days: scheduledDays } : {}),
           ...(scheduledTime ? { time: scheduledTime } : {}),
         }
+        const previousSchedule = previousSlice(stateRef.current.settings.schedule, schedulePatch)
         dispatchNext({ type: 'settings/schedule', patch: schedulePatch })
-        persistSettings({
-          ...(scheduledDays.length > 0 ? { reminderDays: scheduledDays } : {}),
-          ...(scheduledTime ? { reminderTime: scheduledTime } : {}),
-        })
+        persistSettings(
+          {
+            ...(scheduledDays.length > 0 ? { reminderDays: scheduledDays } : {}),
+            ...(scheduledTime ? { reminderTime: scheduledTime } : {}),
+          },
+          () => dispatchNext({ type: 'settings/schedule', patch: previousSchedule }),
+        )
       }
       return path
     },
@@ -497,8 +534,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deletePath = useCallback(
     (id: string) => {
+      const previous = stateRef.current.paths.find((p) => p.id === id)
       dispatchNext({ type: 'path/delete', id })
-      void learningPathsApi.remove(id).catch(handleSyncError)
+      void learningPathsApi.remove(id).catch((error) =>
+        handleSyncError(
+          error,
+          previous ? () => dispatchNext({ type: 'path/undelete', path: previous }) : undefined,
+        ),
+      )
     },
     [dispatchNext, handleSyncError],
   )
@@ -508,6 +551,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       pathId: string,
       patch: Partial<Pick<LearningPath, 'weeklyHours' | 'intensity' | 'formats' | 'targetDate' | 'goal'>>,
     ) => {
+      const previous = previousSlice(
+        stateRef.current.paths.find((p) => p.id === pathId) ?? ({} as LearningPath),
+        patch,
+      )
       dispatchNext({ type: 'path/preferences', pathId, patch })
       const apiPatch: UpdateLearningPathInput = {}
       if (patch.goal !== undefined) apiPatch.goal = patch.goal
@@ -516,7 +563,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (patch.formats !== undefined) apiPatch.formats = patch.formats
       if (patch.targetDate !== undefined) apiPatch.targetDate = patch.targetDate || null
       if (Object.keys(apiPatch).length === 0) return
-      void learningPathsApi.update(pathId, apiPatch).catch(handleSyncError)
+      void learningPathsApi.update(pathId, apiPatch).catch((error) =>
+        handleSyncError(error, () => dispatchNext({ type: 'path/preferences', pathId, patch: previous })),
+      )
     },
     [dispatchNext, handleSyncError],
   )
@@ -534,7 +583,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
       if (next === before) return
       const path = next.paths.find((p) => p.id === pathId)
-      if (path) pushPathProgress(path)
+      if (path) pushPathProgress(path, before.paths.find((p) => p.id === pathId))
     },
     [dispatchNext, pushPathProgress],
   )
@@ -562,7 +611,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
       if (next === before) return
       const path = next.paths.find((p) => p.id === pathId)
-      if (path) pushPathProgress(path)
+      if (path) pushPathProgress(path, before.paths.find((p) => p.id === pathId))
     },
     [dispatchNext, pushPathProgress],
   )
@@ -573,13 +622,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const next = dispatchNext({ type: 'project/toggleTask', projectId, taskId })
       if (next === before) return
       const project = next.projects.find((p) => p.id === projectId)
-      if (project) pushProject(project)
+      if (project) pushProject(project, before.projects.find((p) => p.id === projectId))
     },
     [dispatchNext, pushProject],
   )
 
   const submitProject = useCallback(
     (projectId: string, note: string) => {
+      const before = stateRef.current
       const next = dispatchNext({
         type: 'project/submit',
         projectId,
@@ -587,7 +637,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         note,
       })
       const project = next.projects.find((p) => p.id === projectId)
-      if (project) pushProject(project)
+      if (project) pushProject(project, before.projects.find((p) => p.id === projectId))
     },
     [dispatchNext, pushProject],
   )
@@ -602,15 +652,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const markRead = useCallback(
     (id: string) => {
+      const previous = stateRef.current.notifications
       dispatchNext({ type: 'notif/read', id })
-      void notificationsApi.markRead(id).catch(handleSyncError)
+      void notificationsApi.markRead(id).catch((error) =>
+        handleSyncError(error, () => dispatchNext({ type: 'notif/loaded', notifications: previous })),
+      )
     },
     [dispatchNext, handleSyncError],
   )
 
   const markAllRead = useCallback(() => {
+    const previous = stateRef.current.notifications
     dispatchNext({ type: 'notif/readAll' })
-    void notificationsApi.markAllRead().catch(handleSyncError)
+    void notificationsApi.markAllRead().catch((error) =>
+      handleSyncError(error, () => dispatchNext({ type: 'notif/loaded', notifications: previous })),
+    )
   }, [dispatchNext, handleSyncError])
 
   // Sections whose content request is already in flight (avoid duplicates).
@@ -632,13 +688,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const content = await sessionsApi.getOrGenerate(path.id, sectionId, force)
         dispatchNext({ type: 'content/loaded', content: { [sectionId]: content } })
       } catch (error) {
-        const message =
-          error instanceof ApiError && error.message
-            ? error.message
-            : error instanceof Error
-              ? error.message
-              : 'Could not generate session content.'
-        dispatchNext({ type: 'content/error', sectionId, error: message })
+        dispatchNext({
+          type: 'content/error',
+          sectionId,
+          error: apiErrorMessage(error, 'Could not generate session content.'),
+        })
       } finally {
         contentInFlight.current.delete(sectionId)
       }
@@ -692,31 +746,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
       sessionContentError: (sectionId) => state.contentErrors[sectionId] || null,
       isSessionContentLoading: (sectionId) => Boolean(state.contentLoading[sectionId]),
       updatePreferences: (patch) => {
-        dispatch({ type: 'settings/preferences', patch })
+        const previous = previousSlice(stateRef.current.settings.preferences, patch)
+        dispatchNext({ type: 'settings/preferences', patch })
         const apiPatch: UpdateSettingsInput = {}
         if (patch.weeklyHours !== undefined) apiPatch.weeklyHours = patch.weeklyHours
         if (patch.intensity !== undefined) apiPatch.intensity = patch.intensity
         if (patch.formats !== undefined) apiPatch.formats = patch.formats
         if (patch.sessionLength !== undefined) apiPatch.sessionLength = patch.sessionLength
-        persistSettings(apiPatch)
+        persistSettings(apiPatch, () =>
+          dispatchNext({ type: 'settings/preferences', patch: previous }),
+        )
       },
       updateSchedule: (patch) => {
-        dispatch({ type: 'settings/schedule', patch })
+        const previous = previousSlice(stateRef.current.settings.schedule, patch)
+        dispatchNext({ type: 'settings/schedule', patch })
         const apiPatch: UpdateSettingsInput = {}
         if (patch.days) apiPatch.reminderDays = patch.days
         if (patch.time) apiPatch.reminderTime = patch.time
         if (patch.restDay !== undefined) apiPatch.restDay = patch.restDay
-        persistSettings(apiPatch)
+        persistSettings(apiPatch, () => dispatchNext({ type: 'settings/schedule', patch: previous }))
       },
       updateNotificationSettings: (patch) => {
-        dispatch({ type: 'settings/notifications', patch })
+        const previous = previousSlice(stateRef.current.settings.notifications, patch)
+        dispatchNext({ type: 'settings/notifications', patch })
         const apiPatch: UpdateSettingsInput = {}
         if (patch.dailyReminder !== undefined) apiPatch.dailyReminder = patch.dailyReminder
         if (patch.weeklySummary !== undefined) apiPatch.weeklySummary = patch.weeklySummary
         if (patch.projectFeedback !== undefined) apiPatch.projectFeedback = patch.projectFeedback
         if (patch.pathUpdates !== undefined) apiPatch.pathUpdates = patch.pathUpdates
         if (patch.productNews !== undefined) apiPatch.productNews = patch.productNews
-        persistSettings(apiPatch)
+        persistSettings(apiPatch, () =>
+          dispatchNext({ type: 'settings/notifications', patch: previous }),
+        )
       },
       updateProfile,
       requestEmailChange,
@@ -730,6 +791,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [
     state,
+    dispatchNext,
     activePath,
     unreadCount,
     login,

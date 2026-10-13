@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { Alert, type AlertVariant } from '../components/ui/Alert'
-import { ApiError } from '../lib/api'
+import { apiErrorMessage, apiErrorTitle } from '../lib/api'
 import { AlertContext, type AlertApi, type AlertOptions } from './alertContext'
 
 /* ------------------------------------------------------------------ */
@@ -28,20 +28,6 @@ interface AlertRecord {
 }
 
 const DEFAULT_DURATION = 5000
-
-/** Turns any thrown value into a readable, user-facing message. */
-function messageFromError(error: unknown, fallback: string): string {
-  if (error instanceof ApiError) {
-    const fields = (error.details as { fields?: Record<string, string[]> } | undefined)?.fields
-    if (fields) {
-      const parts = Object.values(fields).flat().filter(Boolean)
-      if (parts.length) return parts.join(' ')
-    }
-    return error.message
-  }
-  if (error instanceof Error) return error.message
-  return fallback
-}
 
 export function AlertProvider({ children }: { children: ReactNode }) {
   const [alerts, setAlerts] = useState<AlertRecord[]>([])
@@ -85,8 +71,13 @@ export function AlertProvider({ children }: { children: ReactNode }) {
       error: withVariant('error'),
       warning: withVariant('warning'),
       info: withVariant('info'),
+      // The title carries the API error's code so failures are diagnosable
+      // from the UI, not just a generic message.
       fromError: (error, fallback = 'Something went wrong. Please try again.') =>
-        withVariant('error')(messageFromError(error, fallback), { duration: 6500 }),
+        withVariant('error')(apiErrorMessage(error, fallback), {
+          title: apiErrorTitle(error),
+          duration: 6500,
+        }),
       dismiss,
       clear: () => setAlerts([]),
     }

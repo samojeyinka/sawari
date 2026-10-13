@@ -2,14 +2,21 @@ import { createContext, useContext } from 'react'
 import type {
   ActivityKind,
   AppNotification,
+  ExperienceLevel,
   GenerationStatus,
+  GoalReason,
+  Intensity,
+  LearningFormat,
   LearningPath,
   Project,
   RecentlyDone,
   SessionContent,
   SetupAnswers,
   Settings,
+  TimeWindow,
   User,
+  Weekday,
+  WeeklyHours,
 } from '../types'
 import type { AlertVariant } from '../components/ui/Alert'
 import type { ApiBillingStatus, RegisterInput } from '../lib/api'
@@ -37,18 +44,98 @@ const emptySetup: SetupAnswers = {
 }
 
 export const DRAFT_SETUP_KEY = 'sawari_draft_setup'
+/** Bump when SetupAnswers changes shape so old drafts are dropped, never merged. */
+const DRAFT_SETUP_VERSION = 1
+
+const EXPERIENCE_LEVELS: ExperienceLevel[] = ['beginner', 'some', 'comfortable', 'advanced']
+const GOAL_REASONS: GoalReason[] = ['career', 'school', 'growth', 'career-change', 'project', 'other']
+const WEEKLY_HOURS: WeeklyHours[] = ['2', '5', '10', '15+']
+const LEARNING_FORMATS: LearningFormat[] = [
+  'videos',
+  'articles',
+  'books',
+  'exercises',
+  'projects',
+  'quizzes',
+]
+const INTENSITIES: Intensity[] = ['relaxed', 'balanced', 'intensive']
+const WEEKDAYS: Weekday[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+const TIME_WINDOWS: TimeWindow[] = ['morning', 'afternoon', 'evening', 'anytime']
+
+const isOneOf = <T extends string>(value: unknown, allowed: readonly T[]): value is T =>
+  typeof value === 'string' && (allowed as readonly string[]).includes(value)
+
+const draftString = (value: unknown): string => (typeof value === 'string' ? value : '')
+
+/**
+ * Field-by-field validation of a stored draft: anything not provably right
+ * falls back to the default instead of being merged into app state.
+ */
+function sanitizeSetup(raw: Record<string, unknown>): SetupAnswers {
+  const days = Array.isArray(raw.days)
+    ? raw.days.filter((day): day is Weekday => isOneOf(day, WEEKDAYS))
+    : []
+  const formats = Array.isArray(raw.formats)
+    ? raw.formats.filter((format): format is LearningFormat => isOneOf(format, LEARNING_FORMATS))
+    : []
+  return {
+    subject: draftString(raw.subject),
+    experience: isOneOf(raw.experience, EXPERIENCE_LEVELS) ? raw.experience : null,
+    reason: isOneOf(raw.reason, GOAL_REASONS) ? raw.reason : null,
+    outcome: draftString(raw.outcome),
+    weeklyHours: isOneOf(raw.weeklyHours, WEEKLY_HOURS) ? raw.weeklyHours : null,
+    days,
+    timeWindow: isOneOf(raw.timeWindow, TIME_WINDOWS) ? raw.timeWindow : null,
+    formats,
+    intensity: isOneOf(raw.intensity, INTENSITIES) ? raw.intensity : null,
+    targetDate: draftString(raw.targetDate),
+  }
+}
+
+function clearDraftSetup(): void {
+  try {
+    localStorage.removeItem(DRAFT_SETUP_KEY)
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function saveDraftSetup(answers: SetupAnswers): void {
+  try {
+    localStorage.setItem(DRAFT_SETUP_KEY, JSON.stringify({ version: DRAFT_SETUP_VERSION, answers }))
+  } catch {
+    // Ignore quota errors
+  }
+}
 
 export function loadDraftSetup(): SetupAnswers {
+  let raw: string | null
   try {
-    const raw = localStorage.getItem(DRAFT_SETUP_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<SetupAnswers>
-      return { ...emptySetup, ...parsed }
-    }
+    raw = localStorage.getItem(DRAFT_SETUP_KEY)
   } catch {
-    // Ignore storage parse error
+    return emptySetup
   }
-  return emptySetup
+  if (!raw) return emptySetup
+
+  try {
+    const envelope = JSON.parse(raw) as { version?: unknown; answers?: unknown } | null
+    if (
+      !envelope ||
+      typeof envelope !== 'object' ||
+      envelope.version !== DRAFT_SETUP_VERSION ||
+      !envelope.answers ||
+      typeof envelope.answers !== 'object'
+    ) {
+      // Pre-versioned, foreign or corrupt payload: drop it rather than merge it.
+      clearDraftSetup()
+      return emptySetup
+    }
+    return sanitizeSetup(envelope.answers as Record<string, unknown>)
+  } catch {
+    // Unparseable JSON: the draft is worthless.
+    clearDraftSetup()
+    return emptySetup
+  }
 }
 
 export type AuthStatus = 'checking' | 'authenticated' | 'guest'
@@ -80,6 +167,7 @@ type Action =
   | { type: 'data/loading' }
   | { type: 'data/loaded'; paths: LearningPath[]; projects: Project[]; content: Record<string, SessionContent> }
   | { type: 'path/add'; path: LearningPath; content: Record<string, SessionContent> }
+  | { type: 'path/undelete'; path: LearningPath }
   | { type: 'path/replace'; path: LearningPath }
   | { type: 'path/status'; id: string; status: GenerationStatus; error?: string | null }
   | { type: 'path/activate'; id: string }
@@ -206,20 +294,12 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'setup/patch': {
       const nextSetup = { ...state.setup, ...action.patch }
-      try {
-        localStorage.setItem(DRAFT_SETUP_KEY, JSON.stringify(nextSetup))
-      } catch {
-        // Ignore quota errors
-      }
+      saveDraftSetup(nextSetup)
       return { ...state, setup: nextSetup }
     }
 
     case 'setup/reset': {
-      try {
-        localStorage.removeItem(DRAFT_SETUP_KEY)
-      } catch {
-        // Ignore
-      }
+      clearDraftSetup()
       return { ...state, setup: emptySetup }
     }
 
@@ -236,16 +316,14 @@ export function reducer(state: AppState, action: Action): AppState {
         paths: action.paths,
         projects: action.projects,
         activePathId,
-        customContent: action.content,
+        // Merge (never replace): a background reloadData must not drop the
+        // session-content cache the user is already reading.
+        customContent: { ...state.customContent, ...action.content },
       }
     }
 
     case 'path/add': {
-      try {
-        localStorage.removeItem(DRAFT_SETUP_KEY)
-      } catch {
-        // Ignore
-      }
+      clearDraftSetup()
       return {
         ...state,
         paths: [...state.paths, action.path],
@@ -254,6 +332,15 @@ export function reducer(state: AppState, action: Action): AppState {
         setup: emptySetup,
       }
     }
+
+    case 'path/undelete':
+      // Rollback target for a delete that failed to sync.
+      if (state.paths.some((p) => p.id === action.path.id)) return state
+      return {
+        ...state,
+        paths: [...state.paths, action.path],
+        activePathId: state.activePathId || action.path.id,
+      }
 
     case 'path/replace':
       return {
