@@ -10,7 +10,15 @@ import {
   LuTriangleAlert,
 } from 'react-icons/lu'
 import { useApp } from '../state/store'
-import { aiApi, billingApi, learningPathsApi, mapApiLearningPath, type ApiBillingStatus } from '../lib/api'
+import {
+  aiApi,
+  apiErrorMessage,
+  apiErrorTitle,
+  billingApi,
+  learningPathsApi,
+  mapApiLearningPath,
+  type ApiBillingStatus,
+} from '../lib/api'
 import { Logo } from '../components/ui/Logo'
 import { Button } from '../components/ui/Button'
 import { ProgressBar } from '../components/ui/ProgressBar'
@@ -22,6 +30,13 @@ const PHASES = [
   'Designing your path',
   'Ready',
 ]
+
+/** Inline failure text: keeps the API error's code/details visible. */
+function failureText(error: unknown, fallback: string): string {
+  const title = apiErrorTitle(error)
+  const message = apiErrorMessage(error, fallback)
+  return title ? `${title}: ${message}` : message
+}
 
 export function GeneratePage() {
   const { state, createPath, retryPathBuild } = useApp()
@@ -71,8 +86,7 @@ export function GeneratePage() {
       }
     } catch (err) {
       setPreflightStatus('unavailable')
-      const message = err instanceof Error ? err.message : 'Could not contact the AI service.'
-      setPreflightError(message)
+      setPreflightError(failureText(err, 'Could not contact the AI service.'))
     }
   }, [createPath, navigate, setup])
 
@@ -125,8 +139,7 @@ export function GeneratePage() {
       const path = await retryPathBuild(activePathId)
       setPathStatus(path.generationStatus ?? 'queued')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Retry failed.'
-      setPathError(message)
+      setPathError(failureText(err, 'Retry failed.'))
     } finally {
       setIsRetrying(false)
     }

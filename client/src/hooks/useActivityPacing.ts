@@ -73,6 +73,17 @@ export function useActivityPacing({
     [storageKey],
   )
 
+  // Completed activities don't need a persisted gate any more: drop the key
+  // so localStorage can't accumulate one entry per activity forever.
+  useEffect(() => {
+    if (!done) return
+    try {
+      localStorage.removeItem(storageKey)
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [done, storageKey])
+
   // Track tab visibility and window focus
   useEffect(() => {
     const handleVisibility = () => {
