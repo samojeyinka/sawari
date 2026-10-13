@@ -64,10 +64,4 @@ export const mockSettings: Settings = {
     pathUpdates: true,
     productNews: false,
   },
-  ai: {
-    provider: 'openai',
-    mode: 'managed',
-    keyMasked: null,
-    connected: true,
-  },
 }

@@ -237,15 +237,6 @@ export interface Milestone {
   state: 'done' | 'current' | 'next'
 }
 
-export type AiProviderId = 'openai' | 'gemini' | 'deepseek'
-
-export interface AiSettings {
-  provider: AiProviderId
-  mode: 'managed' | 'own'
-  keyMasked: string | null
-  connected: boolean
-}
-
 export interface Settings {
   preferences: {
     weeklyHours: WeeklyHours
@@ -259,11 +250,10 @@ export interface Settings {
     restDay: boolean
   }
   notifications: {
-    dailyReminder: boolean
     weeklySummary: boolean
+    dailyReminder: boolean
     projectFeedback: boolean
     pathUpdates: boolean
     productNews: boolean
   }
-  ai: AiSettings
 }

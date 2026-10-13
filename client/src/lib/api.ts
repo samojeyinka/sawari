@@ -485,6 +485,14 @@ export interface ApiSettings {
   timezone: string
   reminderTime: string
   reminderDays: string[]
+  restDay: boolean
+  projectFeedback: boolean
+  pathUpdates: boolean
+  productNews: boolean
+  weeklyHours: WeeklyHours
+  intensity: Intensity
+  formats: LearningFormat[]
+  sessionLength: number
 }
 
 export interface UpdateSettingsInput {
@@ -493,6 +501,14 @@ export interface UpdateSettingsInput {
   timezone?: string
   reminderTime?: string
   reminderDays?: string[]
+  restDay?: boolean
+  projectFeedback?: boolean
+  pathUpdates?: boolean
+  productNews?: boolean
+  weeklyHours?: WeeklyHours
+  intensity?: Intensity
+  formats?: LearningFormat[]
+  sessionLength?: number
 }
 
 export const settingsApi = {

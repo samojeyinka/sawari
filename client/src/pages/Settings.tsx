@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
 import type { Intensity, LearningFormat, WeeklyHours } from '../types'
 import { useApp } from '../state/store'
 import { notificationsApi, type TestEmailResponse } from '../lib/api'
@@ -8,7 +7,6 @@ import { Button } from '../components/ui/Button'
 import { Chip, Field, Toggle, inputClass } from '../components/ui/ProgressBar'
 import { monoLabel } from '../components/layout/nav'
 import { AiProviderSection } from '../components/settings/AiProviderSection'
-import { ConfirmModal } from '../components/modals/ConfirmModal'
 import { Modal } from '../components/ui/Modal'
 import { cx, initials } from '../lib/utils'
 
@@ -64,7 +62,6 @@ const timezones: { value: string; label: string }[] = [
 ]
 
 export function SettingsPage() {
-  const { toast } = useApp()
   const [active, setActive] = useState<SectionId>('profile')
 
   const nav = (
@@ -92,7 +89,7 @@ export function SettingsPage() {
       <PageHeader
         eyebrow="Settings"
         title="Your account"
-        subtitle="Changes here apply straight away in this browser."
+        subtitle="Changes here apply straight away."
       />
 
       <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
@@ -109,14 +106,8 @@ export function SettingsPage() {
       </div>
 
       <p className="mt-10 border-t border-on-band/10 pt-5 text-[13px] text-on-band-dim">
-        Nothing here talks to a server yet. Every change is stored in local app state so the
-        product feels real while the backend is being built.{' '}
-        <button
-          onClick={() => toast('Settings reset is disabled in the demo')}
-          className="font-medium text-accent-bright transition-colors hover:text-on-band"
-        >
-          Reset demo data
-        </button>
+        Most changes save to your account straight away. Your profile name and email stay on
+        this device for now.
       </p>
     </Page>
   )
@@ -533,9 +524,7 @@ function NotificationsSection() {
 
 function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
   const { state, signOut, toast, changePassword } = useApp()
-  const navigate = useNavigate()
   const [passwordOpen, setPasswordOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -619,17 +608,7 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
           >
             Sign out
           </Button>
-          <Button variant="danger" onClick={() => setDeleteOpen(true)}>
-            Delete account
-          </Button>
         </div>
-      </div>
-
-      <div className="border border-on-band/15 bg-band-deep px-4 py-3.5">
-        <p className="text-[13px] leading-relaxed text-on-band-dim">
-          Demo account with local state. When the backend lands, this screen keeps the same shape
-          and swaps to real calls.
-        </p>
       </div>
 
       <Modal
@@ -678,20 +657,6 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
         </div>
       </Modal>
 
-      <ConfirmModal
-        open={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
-        onConfirm={() => {
-          setDeleteOpen(false)
-          signOut()
-          toast('Account deleted')
-          navigate('/')
-        }}
-        title="Delete your account?"
-        body="This clears your account and local demo data from this browser. Your learning paths go with it."
-        confirmLabel="Delete account"
-        danger
-      />
     </div>
   )
 }

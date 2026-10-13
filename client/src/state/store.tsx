@@ -100,12 +100,12 @@ type Action =
   | {
       type: 'settings/loaded'
       timezone: string
-      schedule: Pick<Settings['schedule'], 'days' | 'time'>
-      notifications: Pick<Settings['notifications'], 'dailyReminder' | 'weeklySummary'>
+      preferences: Settings['preferences']
+      schedule: Settings['schedule']
+      notifications: Settings['notifications']
     }
   | { type: 'settings/schedule'; patch: Partial<Settings['schedule']> }
   | { type: 'settings/notifications'; patch: Partial<Settings['notifications']> }
-  | { type: 'settings/ai'; patch: Partial<Settings['ai']> }
   | { type: 'profile/update'; patch: Partial<User> }
   | { type: 'billing/loaded'; billing: ApiBillingStatus | null }
 
@@ -459,6 +459,7 @@ export function reducer(state: AppState, action: Action): AppState {
         user: state.user ? { ...state.user, timezone: action.timezone } : state.user,
         settings: {
           ...state.settings,
+          preferences: { ...state.settings.preferences, ...action.preferences },
           schedule: { ...state.settings.schedule, ...action.schedule },
           notifications: { ...state.settings.notifications, ...action.notifications },
         },
@@ -477,12 +478,6 @@ export function reducer(state: AppState, action: Action): AppState {
           ...state.settings,
           notifications: { ...state.settings.notifications, ...action.patch },
         },
-      }
-
-    case 'settings/ai':
-      return {
-        ...state,
-        settings: { ...state.settings, ai: { ...state.settings.ai, ...action.patch } },
       }
 
     case 'profile/update':
@@ -571,7 +566,6 @@ export interface Store {
   updatePreferences: (patch: Partial<Settings['preferences']>) => void
   updateSchedule: (patch: Partial<Settings['schedule']>) => void
   updateNotificationSettings: (patch: Partial<Settings['notifications']>) => void
-  updateAi: (patch: Partial<Settings['ai']>) => void
   updateProfile: (patch: Partial<User>) => void
   toast: (text: string, variant?: AlertVariant) => void
   sessionContentFor: (sectionId: string) => SessionContent | null
