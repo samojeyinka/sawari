@@ -68,6 +68,51 @@ test('register → me → duplicate → login → logout', { skip: !hasDb }, asy
   assert.ok(out.headers['set-cookie']?.[0]?.match(/sawari_token=;/))
 })
 
+test('PATCH /me persists activePathId and GET returns it', { skip: !hasDb }, async () => {
+  const reg = await request(app)
+    .post('/api/v1/auth/register')
+    .send({ firstName: 'Iris', email: 'active-path@example.com', password: 'StrongPass1!' })
+  assert.equal(reg.status, 201)
+  const cookie = (reg.headers['set-cookie']?.[0] as string).split(';')[0]
+
+  const initial = await request(app).get('/api/v1/me').set('Cookie', cookie)
+  assert.equal(initial.status, 200)
+  assert.equal(initial.body.data.activePathId, null)
+
+  const patched = await request(app)
+    .patch('/api/v1/me')
+    .set('Cookie', cookie)
+    .send({ activePathId: 'path-abc-123' })
+  assert.equal(patched.status, 200)
+  assert.equal(patched.body.data.activePathId, 'path-abc-123')
+
+  const reloaded = await request(app).get('/api/v1/me').set('Cookie', cookie)
+  assert.equal(reloaded.body.data.activePathId, 'path-abc-123')
+
+  // Clearing works; junk is rejected.
+  const cleared = await request(app)
+    .patch('/api/v1/me')
+    .set('Cookie', cookie)
+    .send({ activePathId: null })
+  assert.equal(cleared.status, 200)
+  assert.equal(cleared.body.data.activePathId, null)
+
+  const tooLong = await request(app)
+    .patch('/api/v1/me')
+    .set('Cookie', cookie)
+    .send({ activePathId: 'x'.repeat(61) })
+  assert.equal(tooLong.status, 422)
+
+  const unknown = await request(app)
+    .patch('/api/v1/me')
+    .set('Cookie', cookie)
+    .send({ nickname: 'Iris' })
+  assert.equal(unknown.status, 422)
+
+  const anon = await request(app).patch('/api/v1/me').send({ activePathId: 'path-abc-123' })
+  assert.equal(anon.status, 401)
+})
+
 test('forgot password → reset → login with the new password', { skip: !hasDb }, async () => {
   const email = 'reset-a@example.com'
   const reg = await request(app)

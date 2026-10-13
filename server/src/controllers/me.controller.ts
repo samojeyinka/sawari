@@ -26,6 +26,7 @@ export const updateMe = asyncHandler(async (req: Request, res: Response, _next: 
 
   if (body.firstName !== undefined) user.firstName = body.firstName
   if (body.lastName !== undefined) user.lastName = body.lastName ?? undefined
+  if (body.activePathId !== undefined) user.activePathId = body.activePathId
 
   await user.save()
   res.ok(toSafeUser(user))

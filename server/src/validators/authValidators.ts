@@ -40,6 +40,7 @@ export const updateMeSchema = z.strictObject({
     .transform((value) => (value.length === 0 ? null : value))
     .nullable()
     .optional(),
+  activePathId: z.string().trim().max(60).nullable().optional(),
 })
 
 export const verifyEmailSchema = z.strictObject({
