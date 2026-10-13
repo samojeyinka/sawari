@@ -334,17 +334,23 @@ export function SetupPage() {
     setAim('')
   }
 
-  const runExtract = () => {
+  const runExtract = async () => {
     if (mode === 'topic' || aim.trim().length < 3) return
     setError('')
     setExtracting(true)
     setExtraction(null)
-    window.setTimeout(() => {
-      const result = extractGoal(mode, aim)
+    try {
+      const result = await aiApi.extractGoal(mode, aim.trim())
       setExtraction(result)
       patchSetup({ subject: result.subject, outcome: result.outcome })
+    } catch {
+      // Offline fallback: keyword match so the flow still works end to end.
+      const result = extractGoal(mode, aim)
+      setExtraction({ ...result, offline: true })
+      patchSetup({ subject: result.subject, outcome: result.outcome })
+    } finally {
       setExtracting(false)
-    }, 700)
+    }
   }
 
   const toggleFormat = (id: LearningFormat) => {
@@ -557,7 +563,9 @@ export function SetupPage() {
                   <div className="mt-6 animate-rise border border-accent-bright/40 bg-accent-bright/10 p-5">
                     <div className="flex items-center justify-between gap-3">
                       <p className={cx(monoNote, 'text-accent-bright')}>{extraction.note}</p>
-                      <span className={cx(monoNote, 'text-accent-bright/70')}>simulated</span>
+                      {extraction.offline && (
+                        <span className={cx(monoNote, 'text-accent-bright/70')}>offline</span>
+                      )}
                     </div>
                     <p className="mt-3 text-[15px] leading-relaxed text-on-band">
                       Your path will be built around{' '}

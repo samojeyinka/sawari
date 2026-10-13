@@ -43,6 +43,18 @@ const resourceSchema = z.object({
 /** One session carries 1-3 resources (e.g. two videos + one article). */
 export const resourcesSchema = z.array(resourceSchema).min(1).max(3)
 
+/* --------------------------- goal extraction ---------------------- */
+
+export const goalExtractionResponseSchema = z.object({
+  subject: z.string().trim().min(2).max(60),
+  outcome: z.string().trim().min(5).max(200),
+  skills: z.array(z.string().trim().min(2).max(60)).min(4).max(8),
+  label: z.string().trim().min(1).max(80),
+  note: z.string().trim().min(1).max(160),
+})
+
+export type GoalExtractionResponse = z.infer<typeof goalExtractionResponseSchema>
+
 /* ------------------------------ timeline -------------------------- */
 
 export const aiTimelineResponseSchema = z.object({

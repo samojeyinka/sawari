@@ -76,6 +76,14 @@ export const sessionQuerySchema = z.object({
   regenerate: z.enum(['true', 'false']).optional(),
 })
 
+/** Setup goal extraction: turn a niche/build line into subject + skills. */
+export const extractGoalValidator = z.strictObject({
+  mode: z.enum(['admire', 'build']),
+  input: z.string().trim().min(3).max(500),
+})
+
+export type ExtractGoalInput = z.infer<typeof extractGoalValidator>
+
 export type CreateLearningPathInput = z.infer<typeof createLearningPathSchema>
 export type UpdateLearningPathInput = z.infer<typeof updateLearningPathSchema>
 

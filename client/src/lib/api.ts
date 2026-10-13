@@ -297,8 +297,12 @@ export interface PracticeReviewResult {
   improvements: string
 }
 
+import type { GoalExtraction } from './goalExtract'
+
 export const aiApi = {
   health: (signal?: AbortSignal) => request<AiHealthResponse>('/ai/health', { signal }),
+  extractGoal: (mode: 'admire' | 'build', input: string) =>
+    request<GoalExtraction>('/ai/extract-goal', { method: 'POST', body: { mode, input } }),
   estimateTimeline: (input: EstimateTimelineInput, signal?: AbortSignal) =>
     request<AiTimelineEstimate>('/ai/timeline', { method: 'POST', body: input, signal }),
   reviewPractice: (input: ReviewPracticeInput, signal?: AbortSignal) =>

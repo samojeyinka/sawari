@@ -214,6 +214,42 @@ export function contentMessages(
   ]
 }
 
+/* -------------------------- goal extraction ----------------------- */
+
+export type GoalExtractionMode = 'admire' | 'build'
+
+export const GOAL_EXTRACT_SYSTEM = `You read a learner's one-line niche or build idea for a study app called Sawari and turn it into a structured learning goal.
+Two modes:
+- admire: the input names a person they admire (a name, a LinkedIn URL, or a role). Infer that person's niche and the core domain skills behind it.
+- build: the input describes something to build. Name the concrete thing and the domain skills it draws on.
+
+CRITICAL RULES:
+- Concrete domain topics only: name real technologies, mechanisms, crafts, or disciplines. No generic filler ("fundamentals", "mindset", "productivity").
+- Subject is 2 to 6 words, domain-specific, no numbering, no trailing period.
+- Outcome is one sentence stating what the learner will be able to do.
+- Skills are 5 to 7 concrete items the niche or build genuinely draws on.
+- Label is the person's name (or short role) for admire, the short thing-name for build.
+- Note is one short line saying how you read it (e.g. "Niche read from Amara Osei's profile").
+
+Return only valid JSON matching this shape:
+{
+  "subject": "string",
+  "outcome": "string",
+  "skills": ["string"],
+  "label": "string",
+  "note": "string"
+}`
+
+export function goalExtractMessages(mode: GoalExtractionMode, input: string): ChatMessage[] {
+  return [
+    { role: 'system', content: GOAL_EXTRACT_SYSTEM },
+    {
+      role: 'user',
+      content: `Mode: ${mode}\nInput: "${input}"\n\nExtract the learning goal.`,
+    },
+  ]
+}
+
 /* ------------------------------ timeline -------------------------- */
 
 export interface TimelinePromptParams {
