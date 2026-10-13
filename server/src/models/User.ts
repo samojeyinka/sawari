@@ -12,6 +12,8 @@ export interface SafeUser {
   provider: Provider
   activePathId: string | null
   createdAt: string
+  /** True when a local password is set (OAuth accounts may not have one). */
+  hasPassword?: boolean
 }
 
 /** Notification/scheduling preferences, editable from Settings. */
@@ -92,6 +94,9 @@ export interface UserDocument extends Document {
   aiKeySealed?: string | null
   aiKeyLast4?: string | null
   aiKeyVerifiedAt?: Date | null
+  /** Monthly AI-generation budget guard (resets on the 1st use of a new month). */
+  aiMonthlyCount?: number
+  aiMonthlyResetAt?: Date | null
   /** Idempotency guards for the scheduler (never serialized). */
   reminderLastSentAt?: Date | null
   summaryLastSentAt?: Date | null
@@ -174,6 +179,8 @@ const userSchema = new Schema<UserDocument, UserModel>(
     aiKeySealed: { type: String, select: false, default: null },
     aiKeyLast4: { type: String, default: null },
     aiKeyVerifiedAt: { type: Date, default: null },
+    aiMonthlyCount: { type: Number, default: 0, min: 0 },
+    aiMonthlyResetAt: { type: Date, default: null },
     deletedAt: { type: Date, default: null, index: true },
     deleteTokenHash: { type: String, select: false, default: null },
     deleteTokenExpiresAt: { type: Date, default: null },
@@ -211,8 +218,8 @@ export async function hashPassword(plain: string): Promise<string> {
   return hash(plain, 12)
 }
 
-export function toSafeUser(user: UserDocument): SafeUser {
-  return {
+export function toSafeUser(user: UserDocument, opts?: { hasPassword?: boolean }): SafeUser {
+  const safe: SafeUser = {
     id: user._id.toString(),
     firstName: user.firstName,
     lastName: user.lastName?.trim() ? user.lastName : null,
@@ -223,6 +230,12 @@ export function toSafeUser(user: UserDocument): SafeUser {
     activePathId: user.activePathId ?? null,
     createdAt: user.createdAt.toISOString(),
   }
+  const derived =
+    opts?.hasPassword ?? (typeof (user as { passwordHash?: unknown }).passwordHash === 'string'
+      ? Boolean((user as { passwordHash?: string }).passwordHash)
+      : undefined)
+  if (derived !== undefined) safe.hasPassword = derived
+  return safe
 }
 
 /** Minimal view used when an oauth provider has already been linked. */

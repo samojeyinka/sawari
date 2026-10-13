@@ -8,7 +8,6 @@ import {
   WEEKLY_HOURS,
 } from '../domain/index.js'
 import { isoDate, listQuerySchema } from './common.js'
-
 export const sectionSchema = z.strictObject({
   id: z.string().min(1).max(60),
   order: z.number().int().min(0),
@@ -31,7 +30,7 @@ export const statsSchema = z.strictObject({
 export const assessmentResultSchema = z.strictObject({
   score: z.number().min(0),
   total: z.number().min(0),
-  date: z.string().min(1).max(40),
+  date: isoDate,
   firstAttempt: z.boolean().default(true),
 })
 
@@ -43,9 +42,9 @@ export const createLearningPathSchema = z.strictObject({
   reason: z.enum(GOAL_REASONS).nullable().default(null),
   weeklyHours: z.enum(WEEKLY_HOURS),
   intensity: z.enum(INTENSITIES),
-  formats: z.array(z.enum(LEARNING_FORMATS)).default([]),
+  formats: z.array(z.enum(LEARNING_FORMATS)).max(6).default([]),
   targetDate: isoDate.nullable().default(null),
-  sections: z.array(sectionSchema).optional(),
+  sections: z.array(sectionSchema).max(50).optional(),
 })
 
 /** Everything the client may change afterwards (progress + plan tuning). */
@@ -56,14 +55,17 @@ export const updateLearningPathSchema = z.strictObject({
   reason: z.enum(GOAL_REASONS).nullable().optional(),
   weeklyHours: z.enum(WEEKLY_HOURS).optional(),
   intensity: z.enum(INTENSITIES).optional(),
-  formats: z.array(z.enum(LEARNING_FORMATS)).optional(),
+  formats: z.array(z.enum(LEARNING_FORMATS)).max(6).optional(),
   targetDate: isoDate.nullable().optional(),
-  sections: z.array(sectionSchema).optional(),
+  sections: z.array(sectionSchema).max(50).optional(),
   stats: statsSchema.optional(),
   currentSectionId: z.string().max(60).nullable().optional(),
-  completedActivities: z.array(z.string().max(80)).optional(),
-  countedSessions: z.array(z.string().max(80)).optional(),
-  assessmentResults: z.record(z.string().max(80), assessmentResultSchema).optional(),
+  completedActivities: z.array(z.string().max(80)).max(2000).optional(),
+  countedSessions: z.array(z.string().max(80)).max(500).optional(),
+  assessmentResults: z
+    .record(z.string().max(80), assessmentResultSchema)
+    .refine((value) => Object.keys(value).length <= 200, 'Too many assessment results.')
+    .optional(),
   adaptationNote: z.string().max(2000).nullable().optional(),
 })
 

@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express'
-import { env } from '../config/env.js'
+import { env, isMailConfigured } from '../config/env.js'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import { httpError } from '../lib/AppError.js'
 import { pageMeta, parsePagination } from '../lib/queryFilters.js'
@@ -60,19 +60,37 @@ export const markAllNotificationsRead = asyncHandler(
   },
 )
 
+/* ------------------------------ dismiss --------------------------- */
+
+export const deleteNotification = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const deleted = await Notification.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user!.id,
+    }).lean()
+    if (!deleted) throw httpError.notFound('Notification not found.')
+    res.noContent()
+  },
+)
+
 /* -------------------------- send test email ----------------------- */
 
 export const sendTestNotificationEmail = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
+    // Fail closed when mail is unconfigured instead of claiming delivery.
+    if (!isMailConfigured) {
+      throw httpError.serviceUnavailable(
+        'Email delivery is not configured on this server.',
+        'mail_unconfigured',
+      )
+    }
+
     const user = await User.findById(req.user!.id)
     if (!user) throw httpError.notFound('User not found.')
 
-    const requestedTarget = (req.body as { targetEmail?: string })?.targetEmail?.trim()
-    // When using sandbox Resend without verified domain, test emails to other domains bounce.
-    // Defaulting to samuelojeyinka@gmail.com ensures real inbox receipt.
-    const recipient =
-      requestedTarget ||
-      (user.email.includes('@example.com') ? 'samuelojeyinka@gmail.com' : user.email)
+    // The test always goes to the caller's own account email — never to an
+    // arbitrary address (this endpoint must not be usable as a spam relay).
+    const recipient = user.email
 
     const path = await LearningPath.findOne({ userId: user._id }).sort({ createdAt: -1 })
     const section = path

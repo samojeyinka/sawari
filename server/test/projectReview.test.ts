@@ -34,6 +34,8 @@ async function registerUser(email: string): Promise<string> {
     .post('/api/v1/auth/register')
     .send({ firstName: 'Rev', email, password: 'StrongPass1!' })
   assert.equal(res.status, 201)
+  // Writes require a verified email: verify directly (email delivery is stubbed).
+  await User.updateOne({ email }, { $set: { emailVerified: true } })
   return (res.headers['set-cookie']?.[0] as string).split(';')[0]
 }
 

@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { env, isAiConfigured, isMailConfigured, isOAuthConfigured, isPaypalConfigured } from '../../config/env.js'
 import aiRoutes from './ai.routes.js'
 import authRoutes from './auth.routes.js'
 import billingRoutes from './billing.routes.js'
@@ -11,7 +12,15 @@ import settingsRoutes from './settings.routes.js'
 const router = Router()
 
 router.get('/health', (_req, res) => {
-  res.ok({ status: 'ok', uptime: process.uptime() })
+  res.ok({
+    status: 'ok',
+    uptime: process.uptime(),
+    mailConfigured: isMailConfigured,
+    aiConfigured: isAiConfigured,
+    oauth: isOAuthConfigured,
+    billingConfigured: isPaypalConfigured,
+    env: env.NODE_ENV,
+  })
 })
 
 router.use('/ai', aiRoutes)

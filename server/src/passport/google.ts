@@ -13,11 +13,17 @@ export function createGoogleStrategy(): GoogleStrategy {
     profile: Profile,
     done: VerifyDone,
   ): void => {
+    const email = profile.emails?.[0]?.value?.toLowerCase() ?? null
+    // Google only returns the authenticated user's own email; honor an
+    // explicit email_verified=false if the upstream payload carries one.
+    const jsonVerified = (profile._json as { email_verified?: unknown } | undefined)
+      ?.email_verified
     const normalized: OAuthProfile = {
       id: profile.id,
       provider: 'google',
       providerId: profile.id,
-      email: profile.emails?.[0]?.value?.toLowerCase() ?? null,
+      email,
+      emailVerified: Boolean(email) && jsonVerified !== false,
       name: profile.displayName || 'Google Learner',
       avatar: profile.photos?.[0]?.value ?? null,
     }

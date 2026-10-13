@@ -467,11 +467,6 @@ function NotificationsSection() {
   const settings = state.settings.notifications
   const user = state.user
 
-  const [testEmail, setTestEmail] = useState(
-    user?.email && !user.email.includes('@example.com')
-      ? user.email
-      : 'samuelojeyinka@gmail.com',
-  )
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState<TestEmailResponse | null>(null)
 
@@ -484,14 +479,10 @@ function NotificationsSection() {
   ]
 
   const handleSendTest = async () => {
-    if (!testEmail || !testEmail.includes('@')) {
-      toast('Please enter a valid email address.')
-      return
-    }
     setSending(true)
     setResult(null)
     try {
-      const res = await notificationsApi.sendTestEmail({ targetEmail: testEmail.trim() })
+      const res = await notificationsApi.sendTestEmail()
       setResult(res)
       if (res.delivered) {
         toast(`Test reminder dispatched to ${res.recipient}`)
@@ -502,7 +493,7 @@ function NotificationsSection() {
       const msg = err instanceof Error ? err.message : 'Could not connect to email service.'
       setResult({
         delivered: false,
-        recipient: testEmail,
+        recipient: user?.email ?? '',
         subject: 'Reminder Test',
         inAppNotificationId: '',
         error: msg,
@@ -550,16 +541,16 @@ function NotificationsSection() {
         <div className="mt-4 space-y-3">
           <Field
             label="Recipient email address"
-            hint="For free Resend accounts without a custom domain, delivery is restricted to the account owner (samuelojeyinka@gmail.com)."
+            hint={`The test reminder always goes to your account email (${user?.email ?? '…'}).`}
             htmlFor="testEmail"
           >
             <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 id="testEmail"
                 type="email"
-                value={testEmail}
-                onChange={(e) => setTestEmail(e.target.value)}
-                placeholder="samuelojeyinka@gmail.com"
+                value={user?.email ?? ''}
+                disabled
+                readOnly
                 className={cx(inputClass, 'min-w-0 flex-1')}
               />
               <Button

@@ -11,9 +11,8 @@ export const notificationListQuerySchema = listQuerySchema({
 /** `POST /notifications/:id/read` */
 export const notificationIdParamSchema = idParamSchema
 
-/** `POST /notifications/test-email` */
-export const sendTestEmailSchema = z.object({
-  targetEmail: z.string().email().optional(),
-})
+/** `POST /notifications/test-email` — strict empty body: the test always goes
+    to the caller's own account email. No arbitrary recipient (anti-spam). */
+export const sendTestEmailSchema = z.strictObject({})
 
 export type SendTestEmailInput = z.infer<typeof sendTestEmailSchema>

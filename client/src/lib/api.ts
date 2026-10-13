@@ -68,6 +68,8 @@ export interface ApiUser {
   provider: 'local' | 'github' | 'google'
   activePathId: string | null
   createdAt: string
+  /** Present when the server knows; false for OAuth accounts with no password yet. */
+  hasPassword?: boolean
 }
 
 export interface RegisterInput {
@@ -144,6 +146,11 @@ export const authApi = {
     request<{ message: string }>('/auth/change-password', {
       method: 'POST',
       body: { currentPassword, newPassword },
+    }),
+  setPassword: (newPassword: string) =>
+    request<{ message: string }>('/auth/set-password', {
+      method: 'POST',
+      body: { newPassword },
     }),
   login: (input: LoginInput) => request<ApiUser>('/auth/login', { method: 'POST', body: input }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
@@ -489,8 +496,10 @@ export const notificationsApi = {
     request<ApiNotification>(`/notifications/${id}/read`, { method: 'POST' }),
   markAllRead: () =>
     request<{ unreadCount: number }>('/notifications/read-all', { method: 'POST' }),
-  sendTestEmail: (input?: { targetEmail?: string }) =>
-    request<TestEmailResponse>('/notifications/test-email', { method: 'POST', body: input ?? {} }),
+  dismiss: (id: string) =>
+    request<void>(`/notifications/${id}`, { method: 'DELETE' }),
+  sendTestEmail: () =>
+    request<TestEmailResponse>('/notifications/test-email', { method: 'POST', body: {} }),
 }
 
 /* ------------------------------------------------------------------ */

@@ -17,6 +17,12 @@ export const isoDate = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).')
   .refine((value) => !Number.isNaN(Date.parse(value)), 'Invalid date.')
 
+/** Full ISO timestamp (`new Date().toISOString()`), e.g. submission times. */
+export const isoDateTime = z
+  .string()
+  .max(40)
+  .refine((value) => !Number.isNaN(Date.parse(value)), 'Invalid date.')
+
 /**
  * Non-strict query schema: unlike request bodies, query strings may carry
  * extra keys, so we strip the unknown ones instead of rejecting the request.

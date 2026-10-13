@@ -18,10 +18,20 @@ export const oauthCallback = asyncHandler(
       throw httpError.unauthorized('OAuth sign-in did not complete.')
     }
 
-    // Exact provider match first, then existing account with the same email.
+    // Exact provider match first, then existing account with the same email —
+    // but an email match is only safe when the provider asserts the email is
+    // verified. Otherwise anyone who controls a provider account with someone
+    // else's email could take over the local account. Unverified matches must
+    // link from inside a logged-in session instead.
     let user = await User.findOne({ provider: profile.provider, providerId: profile.providerId })
+    let emailMatched = false
     if (!user && profile.email) {
       user = await User.findOne({ email: profile.email })
+      emailMatched = Boolean(user)
+    }
+    if (user && emailMatched && !profile.emailVerified) {
+      res.redirect(`${env.FRONTEND_URL}/login?oauth=unverified-email&provider=${profile.provider}`)
+      return
     }
 
     if (user?.deletedAt) {
@@ -38,16 +48,17 @@ export const oauthCallback = asyncHandler(
         firstName,
         lastName,
         avatar: profile.avatar ?? undefined,
-        emailVerified: Boolean(profile.email),
+        emailVerified: Boolean(profile.emailVerified),
       })
     } else {
-      // Link the provider to the matched account.
+      // Link the provider to the matched account (exact-provider and
+      // verified-email matches only — unverified email matches bail out above).
       if (user.providerId !== profile.providerId) {
         user.provider = profile.provider
         user.providerId = profile.providerId
       }
       if (profile.avatar) user.avatar = profile.avatar
-      if (profile.email && !user.emailVerified) user.emailVerified = true
+      if (profile.emailVerified && !user.emailVerified) user.emailVerified = true
     }
 
     user.lastLoggedInAt = new Date()

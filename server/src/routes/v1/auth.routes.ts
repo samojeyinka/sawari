@@ -10,6 +10,7 @@ import {
   register,
   resendVerificationCode,
   resetPassword,
+  setPassword,
   verifyEmail,
 } from '../../controllers/auth.controller.js'
 import { oauthCallback } from '../../controllers/oauth.controller.js'
@@ -22,6 +23,7 @@ import {
   loginSchema,
   registerSchema,
   resetPasswordSchema,
+  setPasswordSchema,
   verifyEmailSchema,
 } from '../../validators/authValidators.js'
 
@@ -47,6 +49,7 @@ router.post('/resend-code', authenticate, authLimiter, resendVerificationCode)
 router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), forgotPassword)
 router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword)
 router.post('/change-password', authenticate, authLimiter, validate(changePasswordSchema), changePassword)
+router.post('/set-password', authenticate, authLimiter, validate(setPasswordSchema), setPassword)
 router.post('/login', authLimiter, validate(loginSchema), login)
 router.post('/logout', logout)
 
