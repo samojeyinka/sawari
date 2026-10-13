@@ -60,6 +60,10 @@ export function PracticeView({
       setError('Please type your response first before checking with AI.')
       return
     }
+    if (text.trim().length > 4000) {
+      setError('Keep your answer under 4000 characters.')
+      return
+    }
     setError('')
     setChecking(true)
     try {
@@ -192,6 +196,7 @@ export function PracticeView({
           <textarea
             id="practice-answer"
             value={text}
+            maxLength={4000}
             disabled={preview}
             onChange={(e) => {
               setText(e.target.value)

@@ -1,6 +1,5 @@
 /* ------------------------------------------------------------------ */
-/*  Core domain types for the Sawari frontend prototype.               */
-/*  Everything here is mock data shaped to be swapped for an API later. */
+/*  Core domain types for the Sawari frontend (server-backed).         */
 /* ------------------------------------------------------------------ */
 
 export type ExperienceLevel = 'beginner' | 'some' | 'comfortable' | 'advanced'
@@ -193,6 +192,7 @@ export interface ProjectFeedback {
 
 export interface Project {
   id: string
+  pathId: string | null
   title: string
   description: string
   status: 'active' | 'completed' | 'available'

@@ -350,6 +350,7 @@ export function LoginPage() {
                   <input
                     id="forgot-email"
                     type="email"
+                    maxLength={254}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
@@ -397,6 +398,7 @@ export function LoginPage() {
                     <input
                       id="login-first"
                       type="text"
+                      maxLength={80}
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       autoComplete="given-name"
@@ -410,6 +412,7 @@ export function LoginPage() {
                     <input
                       id="login-last"
                       type="text"
+                      maxLength={80}
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       autoComplete="family-name"
@@ -431,6 +434,7 @@ export function LoginPage() {
                 <input
                   id="login-email"
                   type="email"
+                  maxLength={254}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
@@ -458,6 +462,7 @@ export function LoginPage() {
                   <input
                     id="login-password"
                     type={showPassword ? 'text' : 'password'}
+                    maxLength={128}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete={isSignup ? 'new-password' : 'current-password'}

@@ -15,6 +15,7 @@ export const fallbackFeedback: ProjectFeedback = {
 
 export const mockProjects: Project[] = [
   {
+    pathId: null,
     id: 'prj-launch',
     title: 'Plan a Product Launch',
     description: 'Create a complete project plan for launching a new product.',
@@ -74,6 +75,7 @@ export const mockProjects: Project[] = [
     feedback: null,
   },
   {
+    pathId: null,
     id: 'prj-office',
     title: 'Office Move Plan',
     description: 'Move a 20 person team to a new office over one weekend without losing a day of work.',
@@ -110,6 +112,7 @@ export const mockProjects: Project[] = [
     },
   },
   {
+    pathId: null,
     id: 'prj-vendor',
     title: 'Vendor Selection Brief',
     description: 'Choose a supplier for a recurring service and justify the decision to a budget holder.',
@@ -137,6 +140,7 @@ export const mockProjects: Project[] = [
     },
   },
   {
+    pathId: null,
     id: 'prj-sprint',
     title: 'Sprint Improvement Plan',
     description: 'Run a two week improvement sprint for an existing team and measure what changed.',
@@ -164,6 +168,7 @@ export const mockProjects: Project[] = [
     feedback: null,
   },
   {
+    pathId: null,
     id: 'prj-closure',
     title: 'Project Closure Report',
     description: 'Close a finished project properly: outcomes, handover, and lessons worth keeping.',

@@ -94,6 +94,7 @@ export function RestoreAccountPage() {
           <input
             id="restore-email"
             type="email"
+            maxLength={254}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"

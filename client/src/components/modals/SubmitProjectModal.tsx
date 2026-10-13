@@ -45,6 +45,7 @@ export function SubmitProjectModal({
             id="submit-note"
             rows={4}
             value={note}
+            maxLength={2000}
             onChange={(e) => setNote(e.target.value)}
             placeholder="What you found hard, what you would do differently, where you took a shortcut."
             className={cx(inputClass, 'resize-y leading-relaxed')}

@@ -35,7 +35,9 @@ const router = Router()
  */
 function requireOAuth(provider: 'github' | 'google') {
   return (_req: Request, res: Response, next: NextFunction): void => {
-    if (!env[provider === 'github' ? 'GITHUB_CLIENT_ID' : 'GOOGLE_CLIENT_ID']) {
+    const id = env[provider === 'github' ? 'GITHUB_CLIENT_ID' : 'GOOGLE_CLIENT_ID']
+    const secret = env[provider === 'github' ? 'GITHUB_CLIENT_SECRET' : 'GOOGLE_CLIENT_SECRET']
+    if (!id || !secret) {
       res.redirect(`${env.FRONTEND_URL}?oauth=unavailable&provider=${provider}`)
       return
     }
@@ -53,9 +55,10 @@ router.post('/set-password', authenticate, authLimiter, validate(setPasswordSche
 router.post('/login', authLimiter, validate(loginSchema), login)
 router.post('/logout', logout)
 
-router.get('/github', requireOAuth('github'), passport.authenticate('github'))
+router.get('/github', authLimiter, requireOAuth('github'), passport.authenticate('github'))
 router.get(
   '/github/callback',
+  authLimiter,
   requireOAuth('github'),
   passport.authenticate('github', {
     session: false,
@@ -64,9 +67,10 @@ router.get(
   oauthCallback,
 )
 
-router.get('/google', requireOAuth('google'), passport.authenticate('google'))
+router.get('/google', authLimiter, requireOAuth('google'), passport.authenticate('google'))
 router.get(
   '/google/callback',
+  authLimiter,
   requireOAuth('google'),
   passport.authenticate('google', {
     session: false,

@@ -38,6 +38,12 @@ export function AssessmentPage() {
     return <Navigate to={`/app/session/${section.id}`} replace />
   }
 
+  // Legacy or hand-made rows can carry an empty question list; bounce back
+  // to the session instead of crashing on `questions[0]`.
+  if (questions.length === 0) {
+    return <Navigate to={`/app/session/${section.id}`} replace />
+  }
+
   const question = questions[index]
   const selected = answers[index]
   const answeredCount = answers.filter((a) => a !== null).length
