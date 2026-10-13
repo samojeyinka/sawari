@@ -2,6 +2,9 @@ import { env } from '../config/env.js'
 import { sessionReminder } from '../mail/templates/sessionReminder.js'
 import { weeklySummary } from '../mail/templates/weeklySummary.js'
 import { LearningPath } from '../models/LearningPath.js'
+import { Notification } from '../models/Notification.js'
+import { Project } from '../models/Project.js'
+import { SessionContentModel } from '../models/SessionContent.js'
 import { toReminderPreferences, User, type UserDocument } from '../models/User.js'
 import { createNotification } from '../services/notifications.js'
 import type { ReminderDay } from '../domain/index.js'
@@ -131,10 +134,42 @@ async function sendWeeklySummary(user: UserDocument): Promise<boolean> {
   return true
 }
 
+/* ------------------------------ purge ----------------------------- */
+
+/** Soft-deleted accounts age out after this long, then vanish for good. */
+const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000
+
+/** Hard-deletes accounts past the restore window with all their data. */
+export async function purgeExpiredDeletions(now: Date = new Date()): Promise<number> {
+  const expired = await User.find({ deletedAt: { $lt: new Date(now.getTime() - PURGE_AFTER_MS) } })
+    .select('_id')
+    .lean()
+  if (expired.length === 0) return 0
+
+  const userIds = expired.map((u) => u._id)
+  const paths = await LearningPath.find({ userId: { $in: userIds } }).select('_id').lean()
+  const pathIds = paths.map((p) => p._id)
+  await Promise.all([
+    SessionContentModel.deleteMany({ pathId: { $in: pathIds } }),
+    LearningPath.deleteMany({ userId: { $in: userIds } }),
+    Project.deleteMany({ userId: { $in: userIds } }),
+    Notification.deleteMany({ user: { $in: userIds } }),
+    User.deleteMany({ _id: { $in: userIds } }),
+  ])
+  return userIds.length
+}
+
 /* ------------------------------ tick ------------------------------ */
 
 export async function runSchedulerTick(now: Date = new Date()): Promise<void> {
+  try {
+    await purgeExpiredDeletions(now)
+  } catch (error) {
+    console.error('[scheduler] purge failed:', error)
+  }
+
   const users = await User.find({
+    deletedAt: null,
     $or: [
       { 'preferences.dailyReminder': { $ne: false } },
       { 'preferences.weeklySummary': { $ne: false } },

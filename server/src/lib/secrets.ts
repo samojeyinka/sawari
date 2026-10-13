@@ -59,3 +59,17 @@ export function fingerprintSecret(plain: string): string {
   const clean = plain.trim()
   return clean.length <= 8 ? '••••' : `…${clean.slice(-4)}`
 }
+
+/** SHA-256 hex digest for short-lived codes/tokens (verification, email change). */
+export function hashSecret(value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex')
+}
+
+/** Constant-time comparison for hex digests (false on any shape mismatch). */
+export function safeEqualHex(a: unknown, b: unknown): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false
+  const aBuf = Buffer.from(a, 'hex')
+  const bBuf = Buffer.from(b, 'hex')
+  if (aBuf.length === 0 || aBuf.length !== bBuf.length) return false
+  return crypto.timingSafeEqual(aBuf, bBuf)
+}

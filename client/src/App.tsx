@@ -19,6 +19,12 @@ import { RouteFallback } from './components/ui/RouteFallback'
 /* Landing stays eager so the entry paint is instant; every other screen
    loads as its own chunk. */
 const LoginPage = lazy(() => import('./pages/Login').then((m) => ({ default: m.LoginPage })))
+const DeleteAccountPage = lazy(() =>
+  import('./pages/DeleteAccount').then((m) => ({ default: m.DeleteAccountPage })),
+)
+const RestoreAccountPage = lazy(() =>
+  import('./pages/RestoreAccount').then((m) => ({ default: m.RestoreAccountPage })),
+)
 const ResetPasswordPage = lazy(() =>
   import('./pages/ResetPassword').then((m) => ({ default: m.ResetPasswordPage })),
 )
@@ -80,6 +86,8 @@ function OAuthResultHandler() {
 
     if (result === 'unavailable') {
       alert.warning(`${providerName(params.get('provider'))} sign in is not available right now.`)
+    } else if (result === 'deleted') {
+      alert.error('That account was deleted. Restore it within 30 days from your email link.')
     } else {
       alert.error('That sign in did not complete. Please try again.')
     }
@@ -99,6 +107,8 @@ function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/delete-account" element={<DeleteAccountPage />} />
+              <Route path="/restore-account" element={<RestoreAccountPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/setup" element={<SetupPage />} />
               <Route path="/generate" element={<GeneratePage />} />

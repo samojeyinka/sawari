@@ -78,6 +78,16 @@ export interface UserDocument extends Document {
   proPaidAt?: Date | null
   paypalOrderId?: string | null
   paypalCaptureId?: string | null
+  /** Soft deletion: restorable within 30 days, purged after. */
+  deletedAt?: Date | null
+  deleteTokenHash?: string | null
+  deleteTokenExpiresAt?: Date | null
+  restoreTokenHash?: string | null
+  restoreTokenExpiresAt?: Date | null
+  /** Pending email change (code is hashed, sent to the NEW address). */
+  pendingEmail?: string | null
+  emailChangeCodeHash?: string | null
+  emailChangeExpiresAt?: Date | null
   /** User-supplied DeepSeek key (AES-256-GCM sealed; also unlocks more). */
   aiKeySealed?: string | null
   aiKeyLast4?: string | null
@@ -164,6 +174,14 @@ const userSchema = new Schema<UserDocument, UserModel>(
     aiKeySealed: { type: String, select: false, default: null },
     aiKeyLast4: { type: String, default: null },
     aiKeyVerifiedAt: { type: Date, default: null },
+    deletedAt: { type: Date, default: null, index: true },
+    deleteTokenHash: { type: String, select: false, default: null },
+    deleteTokenExpiresAt: { type: Date, default: null },
+    restoreTokenHash: { type: String, select: false, default: null },
+    restoreTokenExpiresAt: { type: Date, default: null },
+    pendingEmail: { type: String, default: null, lowercase: true, trim: true, maxlength: 254 },
+    emailChangeCodeHash: { type: String, select: false, default: null },
+    emailChangeExpiresAt: { type: Date, default: null },
     avatar: { type: String, default: null },
     provider: { type: String, enum: ['local', 'github', 'google'], required: true, default: 'local' },
     providerId: { type: String },

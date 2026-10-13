@@ -42,7 +42,7 @@ function requireOAuth(provider: 'github' | 'google') {
 }
 
 router.post('/register', authLimiter, validate(registerSchema), register)
-router.post('/verify-email', authenticate, validate(verifyEmailSchema), verifyEmail)
+router.post('/verify-email', authenticate, authLimiter, validate(verifyEmailSchema), verifyEmail)
 router.post('/resend-code', authenticate, authLimiter, resendVerificationCode)
 router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), forgotPassword)
 router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword)

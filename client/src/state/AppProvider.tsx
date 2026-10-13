@@ -81,6 +81,12 @@ function mapSettingsLoaded(apiSettings: ApiSettings) {
   }
 }
 
+/** First token becomes firstName, the rest becomes lastName (or null). */
+function splitDisplayName(full: string): { firstName: string; lastName: string | null } {
+  const parts = full.trim().split(/\s+/)
+  return { firstName: parts[0] ?? '', lastName: parts.length > 1 ? parts.slice(1).join(' ') : null }
+}
+
 /** Shapes the backend user into the frontend `User` type. */
 function mapApiUser(apiUser: ApiUser): User {
   const fullName = [apiUser.firstName, apiUser.lastName].filter(Boolean).join(' ').trim()
@@ -322,6 +328,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await authApi.changePassword(currentPassword, newPassword)
   }, [])
 
+  const requestEmailChange = useCallback(async (email: string) => {
+    const { pendingEmail } = await authApi.requestEmailChange(email)
+    return pendingEmail
+  }, [])
+
+  const confirmEmailChange = useCallback(async (code: string) => {
+    const user = mapApiUser(await authApi.confirmEmailChange(code))
+    dispatch({ type: 'auth/setUser', user })
+    return user
+  }, [])
+
+  const requestAccountDeletion = useCallback(async () => {
+    await authApi.requestAccountDeletion()
+  }, [])
+
+  const confirmAccountDeletion = useCallback(async (token: string) => {
+    await authApi.confirmAccountDeletion(token)
+    dispatch({ type: 'auth/signOut' })
+  }, [])
+
+  const restoreAccount = useCallback(async (token: string) => {
+    const user = mapApiUser(await authApi.restoreAccount(token))
+    dispatch({ type: 'auth/setUser', user })
+    return user
+  }, [])
+
   const refreshBilling = useCallback(async () => {
     const billing = await billingApi.status().catch(() => null)
     dispatch({ type: 'billing/loaded', billing })
@@ -386,6 +418,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       void settingsApi.update(patch).catch(handleSyncError)
     },
     [handleSyncError],
+  )
+
+  const updateProfile = useCallback(
+    async (patch: { name?: string; timezone?: string }) => {
+      const apiPatch: { firstName?: string; lastName?: string | null } = {}
+      if (patch.name !== undefined) {
+        const { firstName, lastName } = splitDisplayName(patch.name)
+        if (!firstName) throw new Error('Enter your name.')
+        apiPatch.firstName = firstName
+        apiPatch.lastName = lastName
+      }
+      const updated = await authApi.updateMe(apiPatch)
+      dispatch({ type: 'auth/setUser', user: mapApiUser(updated) })
+      if (patch.timezone !== undefined) {
+        dispatch({ type: 'profile/update', patch: { timezone: patch.timezone } })
+        persistSettings({ timezone: patch.timezone })
+      }
+    },
+    [persistSettings],
   )
 
   const createPath = useCallback(
@@ -667,10 +718,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (patch.productNews !== undefined) apiPatch.productNews = patch.productNews
         persistSettings(apiPatch)
       },
-      updateProfile: (patch) => {
-        dispatch({ type: 'profile/update', patch })
-        if (patch.timezone !== undefined) persistSettings({ timezone: patch.timezone })
-      },
+      updateProfile,
+      requestEmailChange,
+      confirmEmailChange,
+      requestAccountDeletion,
+      confirmAccountDeletion,
+      restoreAccount,
       toast,
       sessionContentFor: (sectionId) => state.customContent[sectionId] ?? null,
       refreshBilling,
@@ -702,6 +755,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     markAllRead,
     ensureSessionContent,
     persistSettings,
+    updateProfile,
+    requestEmailChange,
+    confirmEmailChange,
+    requestAccountDeletion,
+    confirmAccountDeletion,
+    restoreAccount,
     refreshBilling,
     toast,
   ])

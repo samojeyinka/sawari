@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useApp } from '../state/store'
 import { useAlert } from '../state/alertContext'
 import { loadLastAuth, type LastAuth } from '../lib/lastAuth'
-import { authApi } from '../lib/api'
+import { authApi, ApiError } from '../lib/api'
 import { Sweep } from '../components/ui/Sweep'
 import {
   AuthLayout,
@@ -153,6 +153,11 @@ export function LoginPage() {
         navigate(returnTo, { replace: true })
       }
     } catch (error) {
+      if (error instanceof ApiError && error.code === 'account_deleted') {
+        alert.error('This account was deleted. You can restore it within 30 days.')
+        navigate('/restore-account', { replace: true })
+        return
+      }
       alert.fromError(error)
     } finally {
       setBusy(false)

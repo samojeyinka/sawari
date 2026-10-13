@@ -5,6 +5,7 @@ import { httpError } from '../lib/AppError.js'
 import { env } from '../config/env.js'
 import { hashPassword, toSafeUser, User } from '../models/User.js'
 import { setAuthCookie, clearAuthCookie } from '../lib/cookies.js'
+import { hashSecret, safeEqualHex } from '../lib/secrets.js'
 import { renderTemplate } from '../mail/index.js'
 import { createNotification, queueEmail } from '../services/notifications.js'
 import type {
@@ -27,8 +28,14 @@ export const register = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const body = req.body as RegisterInput
 
-    const exists = await User.exists({ email: body.email })
-    if (exists) {
+    const existing = await User.findOne({ email: body.email }).select('deletedAt').lean()
+    if (existing) {
+      if (existing.deletedAt) {
+        throw httpError.conflict(
+          'This email belongs to a deleted account. Restore it within 30 days of deletion.',
+          'account_deleted',
+        )
+      }
       throw httpError.conflict('An account with this email already exists.')
     }
 
@@ -41,7 +48,7 @@ export const register = asyncHandler(
       lastName: body.lastName?.trim() ? body.lastName : undefined,
       email: body.email,
       emailVerified: false,
-      emailVerificationCode: verificationCode,
+      emailVerificationCode: hashSecret(verificationCode),
       emailVerificationExpiresAt: verificationExpiresAt,
       passwordHash,
       provider: 'local',
@@ -50,7 +57,9 @@ export const register = asyncHandler(
 
     setAuthCookie(res, user._id.toString())
 
-    console.log(`[auth] 6-digit verification code for ${user.email}: ${verificationCode}`)
+    if (env.NODE_ENV !== 'production') {
+      console.debug(`[auth] verification code for ${user.email}: ${verificationCode}`)
+    }
 
     // Dispatch 6-digit verification email
     await createNotification({
@@ -84,7 +93,13 @@ export const verifyEmail = asyncHandler(
       return res.ok(toSafeUser(user), { message: 'Email is already verified.' })
     }
 
-    if (!user.emailVerificationCode || user.emailVerificationCode !== body.code.trim()) {
+    const codeMatches =
+      safeEqualHex(user.emailVerificationCode, hashSecret(body.code.trim())) ||
+      // Legacy rows stored the raw code: accept once, then migrate to a hash.
+      (user.emailVerificationCode !== undefined &&
+        /^\d{6}$/.test(user.emailVerificationCode) &&
+        user.emailVerificationCode === body.code.trim())
+    if (!codeMatches) {
       throw httpError.badRequest('Invalid verification code. Please check your email and try again.')
     }
 
@@ -129,11 +144,13 @@ export const resendVerificationCode = asyncHandler(
     }
 
     const verificationCode = crypto.randomInt(100000, 1000000).toString()
-    user.emailVerificationCode = verificationCode
+    user.emailVerificationCode = hashSecret(verificationCode)
     user.emailVerificationExpiresAt = new Date(Date.now() + 15 * 60 * 1000)
     await user.save()
 
-    console.log(`[auth] Resent 6-digit verification code for ${user.email}: ${verificationCode}`)
+    if (env.NODE_ENV !== 'production') {
+      console.debug(`[auth] verification code for ${user.email}: ${verificationCode}`)
+    }
 
     await createNotification({
       userId: user._id.toString(),
@@ -170,7 +187,6 @@ export const forgotPassword = asyncHandler(
       await user.save()
 
       const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${rawToken}`
-      console.log(`[auth] password reset link for ${user.email}: ${resetUrl}`)
 
       await queueEmail(
         user.email,
@@ -253,6 +269,13 @@ export const login = asyncHandler(async (req: Request, res: Response, _next: Nex
   const user = await User.findByCredentials(body.email)
   if (!user || !(await user.comparePassword(body.password))) {
     throw httpError.unauthorized('Invalid email or password.')
+  }
+
+  if (user.deletedAt) {
+    throw httpError.forbidden(
+      'This account was deleted. Restore it within 30 days of deletion via the link we emailed you.',
+      'account_deleted',
+    )
   }
 
   user.lastLoggedInAt = new Date()

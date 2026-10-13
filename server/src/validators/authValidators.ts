@@ -64,10 +64,38 @@ export const changePasswordSchema = z.strictObject({
   newPassword: passwordSchema,
 })
 
+export const deleteConfirmSchema = z.strictObject({
+  token: z.string('Confirmation token is required.').trim().min(32).max(128),
+})
+
+export const restoreAccountSchema = z.strictObject({
+  token: z.string('Restore token is required.').trim().min(32).max(128),
+})
+
+export const restoreRequestSchema = z.strictObject({
+  email: emailSchema,
+})
+
+export const emailChangeRequestSchema = z.strictObject({
+  email: emailSchema,
+})
+
+export const emailChangeConfirmSchema = z.strictObject({
+  code: z
+    .string('Confirmation code is required.')
+    .trim()
+    .regex(/^\d{6}$/, 'Confirmation code must be exactly 6 digits.'),
+})
+
 export type RegisterInput = z.infer<typeof registerSchema>
 export type LoginInput = z.infer<typeof loginSchema>
 export type UpdateMeInput = z.infer<typeof updateMeSchema>
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
-export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
+export type DeleteConfirmInput = z.infer<typeof deleteConfirmSchema>
+export type RestoreAccountInput = z.infer<typeof restoreAccountSchema>
+export type RestoreRequestInput = z.infer<typeof restoreRequestSchema>
+export type EmailChangeRequestInput = z.infer<typeof emailChangeRequestSchema>
+export type EmailChangeConfirmInput = z.infer<typeof emailChangeConfirmSchema>
