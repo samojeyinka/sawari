@@ -3,8 +3,8 @@
 Learn anything. Make it yours.
 
 A complete frontend for a personalized learning platform. React + TypeScript + Tailwind CSS,
-frontend only: every screen runs from centralized mock data and local state, shaped so a real
-API can replace it later without touching the UI.
+backed by the Sawari API in `../server`: screens load paths, projects and settings from the
+server through `src/lib/api.ts`, with local state only as a cache.
 
 ## Run it
 
@@ -51,7 +51,6 @@ scripts/        smoke test (puppeteer-core)
 
 ## Notes
 
-- No backend, no API calls, no real authentication or AI provider connections.
-- The AI provider screen simulates key storage: saved keys are shown masked and never in full.
-- Primary demo path is Project Management; Spanish and Photography show the platform is not
-  limited to one subject. The setup flow also generates paths for new subjects from templates.
+- Backend lives in `../server`; auth, AI key storage and email run server-side.
+- The AI provider screen stores keys via the API: saved keys are shown masked and never in full.
+- Paths are AI-built per learner; there is no bundled starter catalogue or guest example path.

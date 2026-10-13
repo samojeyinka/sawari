@@ -290,14 +290,17 @@ export function SetupPage() {
           return mode === 'admire'
             ? 'Find their skills first.'
             : 'Describe it, then find the skills.'
-        return setup.subject.trim().length >= 2 ? null : 'Tell us what you want to learn.'
+        if (setup.subject.trim().length < 2) return 'Tell us what you want to learn.'
+        if (setup.subject.trim().length > 120) return 'Keep the subject under 120 characters.'
+        if (aim.trim().length > 500) return 'Keep that description under 500 characters.'
+        return null
       case 1:
         return setup.experience ? null : 'Pick the option closest to you.'
       case 2:
         if (!setup.reason) return 'Why are you learning this?'
-        return setup.outcome.trim().length >= 5
-          ? null
-          : 'Describe what you want to be able to do.'
+        if (setup.outcome.trim().length < 5) return 'Describe what you want to be able to do.'
+        if (setup.outcome.trim().length > 500) return 'Keep your goal under 500 characters.'
+        return null
       case 3:
         return setup.weeklyHours ? null : 'Choose how much time you have.'
       case 4:
@@ -469,6 +472,7 @@ export function SetupPage() {
                       <input
                         id="subject"
                         value={setup.subject}
+                        maxLength={120}
                         onChange={(e) => patchSetup({ subject: e.target.value })}
                         placeholder="Project Management"
                         autoFocus
@@ -502,6 +506,7 @@ export function SetupPage() {
                       <input
                         id="linkedin"
                         value={aim}
+                        maxLength={500}
                         onChange={(e) => {
                           setAim(e.target.value)
                           setExtraction(null)
@@ -536,6 +541,7 @@ export function SetupPage() {
                         id="build"
                         rows={3}
                         value={aim}
+                        maxLength={500}
                         onChange={(e) => {
                           setAim(e.target.value)
                           setExtraction(null)
@@ -631,6 +637,7 @@ export function SetupPage() {
                     id="outcome"
                     rows={3}
                     value={setup.outcome}
+                    maxLength={500}
                     onChange={(e) => patchSetup({ outcome: e.target.value })}
                     placeholder="Run a project from planning through delivery without second guessing myself."
                     className={cx(setupInput, 'resize-y leading-relaxed')}

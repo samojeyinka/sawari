@@ -292,7 +292,7 @@ export function ProjectWorkspacePage() {
                 return (
                   <li key={sectionId}>
                     <Link
-                      to="/app/path"
+                      to={`/app/session/${sectionId}`}
                       className="block rounded-lg border border-line px-3 py-2.5 text-sm font-medium text-ink transition-colors hover:border-line-strong hover:bg-canvas"
                     >
                       {section ? section.title : 'Learning section'}

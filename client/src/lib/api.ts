@@ -391,6 +391,7 @@ export interface CreateProjectInput {
 export interface UpdateProjectInput {
   title?: string
   description?: string
+  pathId?: string | null
   status?: Project['status']
   level?: string
   estHours?: number
@@ -410,6 +411,7 @@ export interface UpdateProjectInput {
 export function mapApiProject(api: ApiProject): Project {
   return {
     id: api.id,
+    pathId: api.pathId ?? null,
     title: api.title,
     description: api.description,
     status: api.status,

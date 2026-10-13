@@ -29,6 +29,7 @@ export const createProjectSchema = z.strictObject({
 export const updateProjectSchema = z.strictObject({
   title: z.string().trim().min(1).max(160).optional(),
   description: z.string().max(2000).optional(),
+  pathId: objectId.nullable().optional(),
   status: z.enum(PROJECT_STATUSES).optional(),
   level: z.string().max(80).optional(),
   estHours: z.number().min(0).optional(),

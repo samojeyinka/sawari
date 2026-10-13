@@ -648,8 +648,8 @@ export function LandingPage() {
               Whatever you want to learn, it is already here.
             </h2>
             <p className={body}>
-              Eight starter paths ship with Sawari, and the agent builds the ninth from whatever
-              free material already exists for it.
+              There is no catalogue to browse. Tell the agent what you want to learn and it builds
+              your path from free material that already exists for it.
             </p>
           </div>
           <div className="flex flex-col justify-center gap-px overflow-hidden border-t border-on-band/10 py-10 lg:border-t-0 lg:pl-12">
@@ -667,7 +667,7 @@ export function LandingPage() {
             'flex flex-col items-center justify-center gap-4 py-24 text-center',
           )}
         >
-          <p className={eyebrow}>Two minutes, no account</p>
+          <p className={eyebrow}>Free to start · sign in to save your path</p>
           <h2 className={cx(display, 'text-[32px] leading-[1.1] sm:text-[46px]')}>
             What do you want to learn?
           </h2>
@@ -680,10 +680,10 @@ export function LandingPage() {
               <Sweep tone="accent" />
               <span className="relative">Build my learning path</span>
             </Link>
-            <Link to="/login" className={btnGhost}>
+            <a href="#how" className={btnGhost}>
               <Sweep tone="soft" />
-              <span className="relative">See an example path</span>
-            </Link>
+              <span className="relative">See how it works</span>
+            </a>
           </div>
         </div>
       </section>

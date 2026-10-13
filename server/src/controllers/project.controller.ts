@@ -96,6 +96,11 @@ export const createProject = asyncHandler(
 export const updateProject = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const body = req.body as UpdateProjectInput
+    // Moving a project is only allowed onto one of the caller's own paths.
+    if (body.pathId !== undefined && body.pathId !== null) {
+      const owned = await LearningPath.exists({ _id: body.pathId, userId: req.user!.id })
+      if (!owned) throw httpError.badRequest('Unknown learning path.')
+    }
     const project = await Project.findOneAndUpdate(
       { _id: req.params.id, userId: req.user!.id },
       { $set: body },

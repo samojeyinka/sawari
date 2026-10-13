@@ -201,6 +201,7 @@ function ProfileSection() {
           <input
             id="profile-name"
             value={name}
+            maxLength={161}
             onChange={(e) => setName(e.target.value)}
             className={inputClass}
           />
@@ -209,6 +210,7 @@ function ProfileSection() {
           <input
             id="profile-email"
             type="email"
+            maxLength={254}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={inputClass}

@@ -69,7 +69,7 @@ export function ResetPasswordPage() {
       title={token ? 'Set a new password.' : 'That link has expired.'}
       blurb={
         token
-          ? 'Pick a strong password you have not used before. You will be signed in with it right after.'
+          ? 'Pick a strong password you have not used before. You will sign in with it on the next screen.'
           : 'Reset links are valid for one hour and can only be used once. Request a fresh one from the sign in page.'
       }
       points={accountPoints}
@@ -92,6 +92,7 @@ export function ResetPasswordPage() {
                 <input
                   id="reset-password"
                   type={showPassword ? 'text' : 'password'}
+                  maxLength={128}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="new-password"
@@ -143,6 +144,7 @@ export function ResetPasswordPage() {
               <input
                 id="reset-confirm"
                 type={showPassword ? 'text' : 'password'}
+                maxLength={128}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 autoComplete="new-password"
