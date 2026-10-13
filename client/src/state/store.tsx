@@ -83,6 +83,7 @@ type Action =
   | { type: 'path/replace'; path: LearningPath }
   | { type: 'path/status'; id: string; status: GenerationStatus; error?: string | null }
   | { type: 'path/activate'; id: string }
+  | { type: 'path/restore'; id: string | null }
   | { type: 'path/delete'; id: string }
   | { type: 'path/preferences'; pathId: string; patch: Partial<Pick<LearningPath, 'weeklyHours' | 'intensity' | 'formats' | 'targetDate' | 'goal'>> }
   | { type: 'path/activity'; pathId: string; sectionId: string; kind: ActivityKind; title: string; minutes: number }
@@ -276,6 +277,13 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'path/activate':
       return { ...state, activePathId: action.id }
+
+    case 'path/restore':
+      // Only honour a saved id that still exists; otherwise keep the fallback.
+      if (!action.id) return state
+      return state.paths.some((p) => p.id === action.id)
+        ? { ...state, activePathId: action.id }
+        : state
 
     case 'path/delete': {
       const paths = state.paths.filter((p) => p.id !== action.id)

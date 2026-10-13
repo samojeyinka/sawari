@@ -113,12 +113,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const reloadData = useCallback(async () => {
-    const [apiPaths, apiProjects, apiNotifications, apiSettings, apiBilling] = await Promise.all([
+    const [apiPaths, apiProjects, apiNotifications, apiSettings, apiBilling, apiMe] = await Promise.all([
       learningPathsApi.list(),
       projectsApi.list(),
       notificationsApi.list().catch(() => []),
       settingsApi.get().catch(() => null),
       billingApi.status().catch(() => null),
+      authApi.me().catch(() => null),
     ])
     dispatchNext({
       type: 'data/loaded',
@@ -126,6 +127,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       projects: apiProjects.map(mapApiProject),
       content: {},
     })
+    dispatchNext({ type: 'path/restore', id: apiMe?.activePathId ?? null })
     dispatchNext({ type: 'notif/loaded', notifications: apiNotifications.map(mapApiNotification) })
     dispatchNext({ type: 'billing/loaded', billing: apiBilling })
     if (apiSettings) {
@@ -166,11 +168,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     void (async () => {
       try {
-        const [apiPaths, apiProjects, apiNotifications, apiSettings] = await Promise.all([
+        const [apiPaths, apiProjects, apiNotifications, apiSettings, apiMe] = await Promise.all([
           learningPathsApi.list(),
           projectsApi.list(),
           notificationsApi.list().catch(() => []),
           settingsApi.get().catch(() => null),
+          authApi.me().catch(() => null),
         ])
         if (cancelled) return
         dispatch({
@@ -179,6 +182,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           projects: apiProjects.map(mapApiProject),
           content: {},
         })
+        dispatch({ type: 'path/restore', id: apiMe?.activePathId ?? null })
         dispatch({
           type: 'notif/loaded',
           notifications: apiNotifications.map(mapApiNotification),
@@ -618,7 +622,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       reloadData,
       patchSetup: (patch) => dispatch({ type: 'setup/patch', patch }),
       resetSetup: () => dispatch({ type: 'setup/reset' }),
-      activatePath: (id) => dispatch({ type: 'path/activate', id }),
+      activatePath: (id) => {
+        dispatch({ type: 'path/activate', id })
+        void authApi.updateMe({ activePathId: id }).catch(() => undefined)
+      },
       createPath,
       retryPathBuild,
       deletePath,

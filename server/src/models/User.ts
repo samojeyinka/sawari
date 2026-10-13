@@ -10,6 +10,7 @@ export interface SafeUser {
   emailVerified: boolean
   avatar: string | null
   provider: Provider
+  activePathId: string | null
   createdAt: string
 }
 
@@ -64,6 +65,8 @@ export interface UserDocument extends Document {
   passwordHash?: string
   lastLoggedInAt?: Date
   preferences?: ReminderPreferences
+  /** Currently selected learning path (restored on load). */
+  activePathId?: string | null
   /** Verification fields */
   emailVerificationCode?: string
   emailVerificationExpiresAt?: Date
@@ -167,6 +170,7 @@ const userSchema = new Schema<UserDocument, UserModel>(
     passwordHash: { type: String, select: false },
     lastLoggedInAt: { type: Date },
     preferences: { type: preferencesSchema, default: () => ({}) },
+    activePathId: { type: String, default: null, maxlength: 60 },
     reminderLastSentAt: { type: Date, default: null },
     summaryLastSentAt: { type: Date, default: null },
   },
@@ -198,6 +202,7 @@ export function toSafeUser(user: UserDocument): SafeUser {
     emailVerified: user.emailVerified,
     avatar: user.avatar?.length ? user.avatar : null,
     provider: user.provider,
+    activePathId: user.activePathId ?? null,
     createdAt: user.createdAt.toISOString(),
   }
 }

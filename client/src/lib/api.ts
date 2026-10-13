@@ -66,6 +66,7 @@ export interface ApiUser {
   emailVerified: boolean
   avatar: string | null
   provider: 'local' | 'github' | 'google'
+  activePathId: string | null
   createdAt: string
 }
 
@@ -147,6 +148,8 @@ export const authApi = {
   login: (input: LoginInput) => request<ApiUser>('/auth/login', { method: 'POST', body: input }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   me: (signal?: AbortSignal) => request<ApiUser>('/me', { signal }),
+  updateMe: (patch: { firstName?: string; lastName?: string | null; activePathId?: string | null }) =>
+    request<ApiUser>('/me', { method: 'PATCH', body: patch }),
   /** Absolute URL that starts a social sign-in flow (full-page navigation). */
   oauthUrl: (provider: 'github' | 'google') => `${API_BASE}/auth/${provider}`,
 }
