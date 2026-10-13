@@ -1,72 +1,61 @@
 import { NavLink } from 'react-router-dom'
-import { LuBell, LuSettings } from 'react-icons/lu'
 import { useApp } from '../../state/store'
 import { Logo } from '../ui/Logo'
 import { PathSwitcher } from './PathSwitcher'
-import { navClass, navItems } from './nav'
-import { initials } from '../../lib/utils'
+import { monoLabel, navClass, navItems } from './nav'
+import { cx, initials } from '../../lib/utils'
 
 export function Sidebar({ onOpenNotifications }: { onOpenNotifications: () => void }) {
   const { state, unreadCount } = useApp()
   const user = state.user
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-canvas lg:flex">
-      <div className="px-5 pb-4 pt-6">
+    <aside className="sticky top-0 hidden h-screen w-[264px] shrink-0 flex-col border-r border-on-band/10 bg-band-deep lg:flex">
+      <div className="flex items-center px-5 py-5">
         <NavLink to="/app/today" aria-label="Sawari home">
           <Logo />
         </NavLink>
       </div>
 
-      <div className="px-4">
+      <div className="px-4 pb-6">
         <PathSwitcher />
       </div>
 
-      <nav className="mt-6 flex-1 space-y-1 px-3">
+      <nav className="flex-1">
         {navItems.map((item) => (
           <NavLink key={item.to} to={item.to} className={({ isActive }) => navClass(isActive)}>
-            <item.icon className="h-[18px] w-[18px] shrink-0" />
             {item.label}
           </NavLink>
         ))}
       </nav>
 
-      <div className="space-y-1 border-t border-line px-3 py-3">
-        <NavLink
-          to="/app/settings"
-          className={({ isActive }) => navClass(isActive)}
-        >
-          <LuSettings className="h-[18px] w-[18px] shrink-0" />
+      <div className="border-t border-on-band/10 py-3">
+        <NavLink to="/app/settings" className={({ isActive }) => navClass(isActive)}>
           Settings
         </NavLink>
-
         <button
+          type="button"
           onClick={onOpenNotifications}
-          className="flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-sm text-body transition-all duration-150 hover:bg-panel/70 hover:text-ink"
+          className="flex w-full items-center justify-between border-l-2 border-transparent px-5 py-2.5 text-[13.5px] text-on-band-dim transition-colors hover:text-on-band"
         >
-          <span className="relative">
-            <LuBell className="h-[18px] w-[18px]" />
-            {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-band">
-                {unreadCount}
-              </span>
-            )}
-          </span>
           Notifications
+          {unreadCount > 0 && (
+            <span className={cx(monoLabel, 'text-accent-bright')}>{unreadCount}</span>
+          )}
         </button>
       </div>
 
       {user && (
         <NavLink
           to="/app/settings"
-          className="mt-auto flex items-center gap-3 border-t border-line px-3 py-3 transition-colors hover:bg-panel/70"
+          className="flex items-center gap-3 border-t border-on-band/10 px-4 py-4 transition-colors hover:bg-on-band/[0.03]"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-semibold text-band">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center bg-accent-bright font-mono text-[11px] uppercase text-band">
             {initials(user.name)}
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-sm font-medium text-ink">{user.name}</span>
-            <span className="block truncate text-xs text-muted">{user.email}</span>
+            <span className="block truncate text-[13.5px] text-on-band">{user.name}</span>
+            <span className={cx(monoLabel, 'block truncate')}>{user.email}</span>
           </span>
         </NavLink>
       )}

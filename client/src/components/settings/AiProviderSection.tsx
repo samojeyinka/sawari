@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { LuCheck, LuEye, LuEyeOff, LuLoaderCircle } from 'react-icons/lu'
 import type { AiProviderId } from '../../types'
 import { useApp } from '../../state/store'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
 import { inputClass } from '../ui/ProgressBar'
+import { monoLabel } from '../layout/nav'
 import { cx } from '../../lib/utils'
 
 const providers: { id: AiProviderId; name: string; hint: string }[] = [
@@ -54,7 +54,7 @@ export function AiProviderSection() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-xl space-y-6">
       <SectionHeading
         title="AI provider"
         description="Sawari uses a model to write session notes and react to your answers. Choose how it runs."
@@ -81,65 +81,69 @@ export function AiProviderSection() {
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => setPricingOpen(true)}>
           Compare the two options
         </Button>
-        <span className="text-[13px] text-muted">Simulated for now. Nothing is billed.</span>
+        <span className="text-[13px] text-on-band-dim">Simulated for now. Nothing is billed.</span>
       </div>
 
       {/* provider */}
-      <div className="border-t border-line pt-6">
-        <h3 className="text-sm font-medium text-ink">Provider</h3>
+      <div className="border-t border-on-band/10 pt-6">
+        <h3 className="text-sm font-medium text-on-band">Provider</h3>
         <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
-          {providers.map((provider) => (
-            <button
-              key={provider.id}
-              onClick={() => updateAi({ provider: provider.id })}
-              className={cx(
-                'rounded-lg border px-4 py-3 text-left transition-all duration-150',
-                ai.provider === provider.id
-                  ? 'border-accent bg-accent-soft/60'
-                  : 'border-line bg-panel hover:border-line-strong hover:bg-canvas',
-              )}
-            >
-              <span className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-ink">{provider.name}</span>
-                {ai.provider === provider.id && (
-                  <LuCheck className="h-4 w-4 text-accent" strokeWidth={3} />
+          {providers.map((provider) => {
+            const selected = ai.provider === provider.id
+            return (
+              <button
+                key={provider.id}
+                onClick={() => updateAi({ provider: provider.id })}
+                aria-pressed={selected}
+                className={cx(
+                  'border px-4 py-3 text-left transition-colors duration-150',
+                  selected
+                    ? 'border-accent-bright/60 bg-accent-bright/10'
+                    : 'border-on-band/20 hover:border-on-band/45 hover:bg-on-band/[0.03]',
                 )}
-              </span>
-              <span className="mt-0.5 block text-[13px] text-muted">{provider.hint}</span>
-            </button>
-          ))}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-on-band">{provider.name}</span>
+                  {selected && (
+                    <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 bg-accent-bright" />
+                  )}
+                </span>
+                <span className="mt-0.5 block text-[13px] text-on-band-dim">{provider.hint}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* key */}
-      <div className="border-t border-line pt-6">
-        <h3 className="text-sm font-medium text-ink">API key</h3>
+      <div className="border-t border-on-band/10 pt-6">
+        <h3 className="text-sm font-medium text-on-band">API key</h3>
 
         {ai.mode === 'managed' ? (
-          <div className="mt-3 rounded-xl border border-line bg-canvas/70 px-4 py-4">
-            <p className="text-sm font-medium text-ink">Managed AI is on</p>
-            <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
+          <div className="mt-3 border border-on-band/15 bg-panel px-4 py-4">
+            <p className="text-sm font-medium text-on-band">Managed AI is on</p>
+            <p className="mt-0.5 text-[13px] leading-relaxed text-on-band-dim">
               Sessions use the Sawari plan. No key needed, limits reset monthly.
             </p>
           </div>
         ) : (
           <div className="mt-3">
             {ai.keyMasked ? (
-              <div className="rounded-xl border border-line bg-panel px-4 py-3.5">
+              <div className="border border-on-band/15 bg-panel px-4 py-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-mono text-sm text-ink">{ai.keyMasked}</p>
-                    <p className="text-[13px] text-muted">
+                  <div className="min-w-0">
+                    <p className="font-mono text-sm text-on-band">{ai.keyMasked}</p>
+                    <p className="text-[13px] text-on-band-dim">
                       Saved in this browser · {providers.find((p) => p.id === ai.provider)?.name}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="secondary" onClick={testConnection} loading={busy}>
-                      Test connection
+                    <Button size="sm" variant="secondary" onClick={testConnection} disabled={busy}>
+                      {busy ? 'Testing…' : 'Test connection'}
                     </Button>
                     <Button size="sm" variant="danger" onClick={removeKey}>
                       Remove
@@ -148,12 +152,12 @@ export function AiProviderSection() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-line bg-panel p-4">
-                <label htmlFor="api-key" className="mb-2 block text-sm font-medium text-ink">
+              <div className="border border-on-band/15 bg-panel p-4">
+                <label htmlFor="api-key" className="mb-2 block text-sm font-medium text-on-band">
                   Paste your {providers.find((p) => p.id === ai.provider)?.name} key
                 </label>
                 <div className="flex flex-col gap-2.5 sm:flex-row">
-                  <div className="relative flex-1">
+                  <div className="relative min-w-0 flex-1">
                     <input
                       id="api-key"
                       type={showKey ? 'text' : 'password'}
@@ -161,23 +165,26 @@ export function AiProviderSection() {
                       onChange={(e) => setKey(e.target.value)}
                       placeholder="sk-..."
                       autoComplete="off"
-                      className={cx(inputClass, 'pr-11 font-mono')}
+                      className={cx(inputClass, 'pr-16 font-mono')}
                     />
                     <button
                       type="button"
                       onClick={() => setShowKey((v) => !v)}
                       aria-label={showKey ? 'Hide key' : 'Show key'}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-ink"
+                      className={cx(
+                        monoLabel,
+                        'absolute right-4 top-1/2 -translate-y-1/2 transition-colors hover:text-on-band',
+                      )}
                     >
-                      {showKey ? <LuEyeOff className="h-4 w-4" /> : <LuEye className="h-4 w-4" />}
+                      {showKey ? 'hide' : 'show'}
                     </button>
                   </div>
-                  <Button onClick={saveKey} loading={busy}>
-                    Save key
+                  <Button onClick={saveKey} disabled={busy} className="shrink-0">
+                    {busy ? 'Saving…' : 'Save key'}
                   </Button>
                 </div>
-                {error && <p className="mt-2 text-[13px] text-danger">{error}</p>}
-                <p className="mt-2 text-[13px] text-muted">
+                {error && <p className="mt-2 text-[13px] text-danger-bright">{error}</p>}
+                <p className="mt-2 text-[13px] text-on-band-dim">
                   Saved keys are shown masked and stay in this browser. Nothing leaves the page
                   yet.
                 </p>
@@ -195,8 +202,8 @@ export function AiProviderSection() {
 function SectionHeading({ title, description }: { title: string; description: string }) {
   return (
     <div>
-      <h2 className="text-lg font-semibold text-ink">{title}</h2>
-      <p className="mt-1 text-sm leading-relaxed text-muted">{description}</p>
+      <h2 className="font-display text-[20px] font-light tracking-[-0.015em] text-on-band">{title}</h2>
+      <p className="mt-1 text-sm leading-relaxed text-on-band-muted">{description}</p>
     </div>
   )
 }
@@ -217,27 +224,29 @@ function ModeCard({
   return (
     <button
       onClick={onClick}
+      aria-pressed={selected}
       className={cx(
-        'rounded-xl border p-4 text-left transition-all duration-150',
+        'border p-4 text-left transition-colors duration-150',
         selected
-          ? 'border-accent bg-accent-soft/50 shadow-[0_0_0_1px_var(--color-accent)]'
-          : 'border-line bg-panel hover:border-line-strong hover:bg-canvas',
+          ? 'border-accent-bright/60 bg-accent-bright/10'
+          : 'border-on-band/20 hover:border-on-band/45 hover:bg-on-band/[0.03]',
       )}
     >
       <span className="flex items-start justify-between gap-3">
-        <span className="text-sm font-semibold text-ink">{title}</span>
+        <span className="text-sm font-medium text-on-band">{title}</span>
         <span
           className={cx(
-            'shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide',
+            monoLabel,
+            'shrink-0 border px-2 py-0.5',
             selected
-              ? 'border-accent/30 bg-accent text-band'
-              : 'border-line bg-canvas text-muted',
+              ? 'border-accent-bright bg-accent-bright text-band'
+              : 'border-on-band/20 text-on-band-dim',
           )}
         >
           {badge}
         </span>
       </span>
-      <span className="mt-1.5 block text-[13px] leading-relaxed text-muted">{body}</span>
+      <span className="mt-1.5 block text-[13px] leading-relaxed text-on-band-dim">{body}</span>
     </button>
   )
 }
@@ -266,11 +275,11 @@ function PricingModal({ open, onClose }: { open: boolean; onClose: () => void })
       description="Switch whenever you like. Nothing is billed in this prototype."
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-line p-5">
-          <p className="text-sm font-semibold text-ink">Your own API key</p>
-          <p className="mt-1 text-2xl font-semibold text-ink">
+        <div className="border border-on-band/15 p-5">
+          <p className="text-sm font-medium text-on-band">Your own API key</p>
+          <p className="mt-1 font-display text-[24px] font-light text-on-band">
             Free
-            <span className="text-sm font-normal text-muted"> + your provider costs</span>
+            <span className="font-sans text-sm font-normal text-on-band-dim"> + your provider costs</span>
           </p>
           <ul className="mt-4 space-y-2.5">
             {[
@@ -279,8 +288,8 @@ function PricingModal({ open, onClose }: { open: boolean; onClose: () => void })
               'Usage is billed to your provider account',
               'Good if you already pay for a model',
             ].map((line) => (
-              <li key={line} className="flex gap-2.5 text-sm text-body">
-                <LuCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+              <li key={line} className="flex gap-2.5 text-sm text-on-band-muted">
+                <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 bg-success-bright" />
                 {line}
               </li>
             ))}
@@ -300,17 +309,15 @@ function PricingModal({ open, onClose }: { open: boolean; onClose: () => void })
           </div>
         </div>
 
-        <div className="rounded-xl border border-accent/40 bg-accent-soft/40 p-5">
+        <div className="border border-accent-bright/40 bg-accent-bright/10 p-5">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-ink">Managed AI</p>
+            <p className="text-sm font-medium text-on-band">Managed AI</p>
             {ai.mode === 'managed' && (
-              <span className="rounded-md bg-accent px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-band">
-                Current
-              </span>
+              <span className={cx(monoLabel, 'bg-accent-bright px-2 py-0.5 text-band')}>Current</span>
             )}
           </div>
-          <p className="mt-1 text-2xl font-semibold text-ink">
-            $8<span className="text-sm font-normal text-muted"> / month</span>
+          <p className="mt-1 font-display text-[24px] font-light text-on-band">
+            $8<span className="font-sans text-sm font-normal text-on-band-dim"> / month</span>
           </p>
           <ul className="mt-4 space-y-2.5">
             {[
@@ -319,22 +326,21 @@ function PricingModal({ open, onClose }: { open: boolean; onClose: () => void })
               'Built for daily sessions and reviews',
               'Cancel any time, keep your path',
             ].map((line) => (
-              <li key={line} className="flex gap-2.5 text-sm text-body">
-                <LuCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+              <li key={line} className="flex gap-2.5 text-sm text-on-band-muted">
+                <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 bg-accent-bright" />
                 {line}
               </li>
             ))}
           </ul>
           <div className="mt-5">
-            <Button className="w-full" onClick={chooseManaged} loading={busy}>
+            <Button className="w-full" onClick={chooseManaged} disabled={busy}>
               {busy ? 'Setting up' : 'Choose managed AI'}
             </Button>
           </div>
         </div>
       </div>
 
-      <p className="mt-4 flex items-center gap-1.5 text-[13px] text-muted">
-        {busy && <LuLoaderCircle className="h-3.5 w-3.5 animate-spin" />}
+      <p className="mt-4 text-[13px] leading-relaxed text-on-band-dim">
         Managed AI keeps session notes and reviews inside Sawari. Your own key sends them straight
         to your provider.
       </p>

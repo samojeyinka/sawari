@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { LuLoaderCircle } from 'react-icons/lu'
+import { Sweep } from './Sweep'
 import { cx } from '../../lib/utils'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger'
@@ -13,18 +14,17 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<Variant, string> = {
-  primary:
-    'bg-ink text-band hover:bg-ink-soft border border-transparent shadow-[0_1px_2px_rgba(0,0,0,0.12)]',
-  secondary: 'bg-panel text-ink border border-line hover:border-line-strong hover:bg-canvas',
-  ghost: 'bg-transparent text-body border border-transparent hover:bg-canvas hover:text-ink',
-  accent: 'bg-accent text-band border border-transparent hover:bg-accent-strong',
-  danger: 'bg-panel text-danger border border-line hover:border-danger/40 hover:bg-danger-soft',
+  primary: 'group relative overflow-hidden bg-on-band text-band hover:bg-white',
+  secondary: 'border border-on-band/20 text-on-band hover:border-on-band/45',
+  ghost: 'text-on-band-dim hover:text-on-band',
+  accent: 'bg-accent-bright text-band hover:bg-accent-bright/85',
+  danger: 'border border-danger-bright/40 text-danger-bright hover:bg-danger-bright/10',
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'h-8 px-3 text-[13px] gap-1.5',
-  md: 'h-10 px-4 text-sm gap-2',
-  lg: 'h-12 px-6 text-[15px] gap-2',
+  sm: 'h-9 px-3.5 text-[13px] gap-1.5',
+  md: 'h-11 px-5 text-[14px] gap-2',
+  lg: 'h-12 px-6 text-[14.5px] gap-2',
 }
 
 export function Button({
@@ -39,8 +39,8 @@ export function Button({
   return (
     <button
       className={cx(
-        'inline-flex items-center justify-center rounded-lg font-medium transition-all duration-150',
-        'active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center font-medium transition-colors duration-150',
+        'disabled:pointer-events-none disabled:opacity-50',
         variants[variant],
         sizes[size],
         className,
@@ -48,8 +48,9 @@ export function Button({
       disabled={disabled || loading}
       {...rest}
     >
-      {loading && <LuLoaderCircle className="h-4 w-4 animate-spin" />}
-      {children}
+      {variant === 'primary' && <Sweep />}
+      {loading && <LuLoaderCircle className="relative h-4 w-4 animate-spin" />}
+      <span className="relative inline-flex items-center gap-2">{children}</span>
     </button>
   )
 }

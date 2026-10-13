@@ -1,8 +1,13 @@
-import { LuLoaderCircle, LuRefreshCw, LuSparkles, LuTriangleAlert } from 'react-icons/lu'
 import type { GenerationStatus } from '../../types'
 import { Page } from '../layout/PageHeader'
-import { Button } from '../ui/Button'
+import { monoLabel } from '../layout/nav'
+import { Sweep } from '../ui/Sweep'
 import { ProgressBar } from '../ui/ProgressBar'
+import { cx } from '../../lib/utils'
+
+const primaryBtn =
+  'group relative inline-flex h-12 items-center justify-center overflow-hidden bg-on-band px-7 ' +
+  'text-[14.5px] font-medium text-band transition-colors disabled:pointer-events-none disabled:opacity-50'
 
 /** Full-page state for a path the AI worker is still designing. Updates live. */
 export function PathBuilding({
@@ -15,24 +20,22 @@ export function PathBuilding({
   const generating = status === 'generating'
   return (
     <Page width="narrow">
-      <div className="animate-rise rounded-xl border border-line bg-panel px-6 py-16 text-center">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent">
-          <LuLoaderCircle className="h-6 w-6 animate-spin" />
-        </span>
-        <h1 className="mt-4 text-xl font-semibold text-ink">Building your {subject} path…</h1>
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">
+      <div className="animate-rise border border-on-band/15 bg-panel px-8 py-16 text-center">
+        <p className={cx(monoLabel, 'text-accent-bright')}>
+          {generating ? 'designing sections' : 'queued'}
+        </p>
+        <h1 className="mt-4 font-display text-[28px] font-light tracking-[-0.025em] text-on-band">
+          Building your {subject} path…
+        </h1>
+        <p className="mx-auto mt-3 max-w-sm text-[14.5px] leading-relaxed text-on-band-muted">
           {generating
             ? 'DeepSeek AI is designing your sections right now.'
             : 'Your brief is queued — design starts in a moment.'}{' '}
           This page updates automatically when it is ready. No need to refresh.
         </p>
-        <div className="mx-auto mt-6 max-w-xs">
+        <div className="mx-auto mt-7 max-w-xs">
           <ProgressBar value={generating ? 66 : 33} />
         </div>
-        <p className="mt-3 inline-flex items-center gap-1.5 text-[13px] text-muted">
-          <LuSparkles className="h-3.5 w-3.5 text-accent" />
-          {generating ? 'Designing sections' : 'Queued'}
-        </p>
       </div>
     </Page>
   )
@@ -52,27 +55,23 @@ export function PathBuildFailed({
 }) {
   return (
     <Page width="narrow">
-      <div className="animate-rise rounded-xl border border-line bg-panel px-6 py-16 text-center">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-danger-soft text-danger">
-          <LuTriangleAlert className="h-6 w-6" />
-        </span>
-        <h1 className="mt-4 text-xl font-semibold text-ink">
+      <div className="animate-rise border border-danger-bright/40 bg-panel px-8 py-16 text-center">
+        <p className={cx(monoLabel, 'text-danger-bright')}>failed</p>
+        <h1 className="mt-4 font-display text-[28px] font-light tracking-[-0.025em] text-on-band">
           Could not design your {subject} path
         </h1>
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">
+        <p className="mx-auto mt-3 max-w-sm text-[14.5px] leading-relaxed text-on-band-muted">
           Something went wrong while generating your sections. Your answers are saved — try again.
         </p>
         {error && (
-          <p className="mx-auto mt-3 max-w-md rounded-lg border border-line bg-canvas/60 px-4 py-2.5 text-xs text-muted">
+          <p className="mx-auto mt-5 max-w-md border border-on-band/15 bg-band-deep px-4 py-3 text-left font-mono text-[11px] leading-relaxed text-on-band-dim">
             {error}
           </p>
         )}
-        <div className="mt-6 flex justify-center">
-          <Button onClick={onRetry} loading={retrying}>
-            <LuRefreshCw className="mr-2 h-4 w-4" />
-            Try again
-          </Button>
-        </div>
+        <button type="button" onClick={onRetry} disabled={retrying} className={cx(primaryBtn, 'mt-7')}>
+          <Sweep />
+          <span className="relative">{retrying ? 'Trying again…' : 'Try again'}</span>
+        </button>
       </div>
     </Page>
   )

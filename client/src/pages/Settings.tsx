@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LuCheck, LuInfo, LuMail, LuSend, LuTriangleAlert } from 'react-icons/lu'
 import type { Intensity, LearningFormat, WeeklyHours } from '../types'
 import { useApp } from '../state/store'
 import { notificationsApi, type TestEmailResponse } from '../lib/api'
 import { Page, PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { Chip, Field, Toggle, inputClass } from '../components/ui/ProgressBar'
+import { monoLabel } from '../components/layout/nav'
 import { AiProviderSection } from '../components/settings/AiProviderSection'
 import { ConfirmModal } from '../components/modals/ConfirmModal'
 import { Modal } from '../components/ui/Modal'
@@ -68,16 +68,17 @@ export function SettingsPage() {
   const [active, setActive] = useState<SectionId>('profile')
 
   const nav = (
-    <nav className="flex gap-1 overflow-x-auto border-b border-line lg:flex-col lg:gap-0.5 lg:border-b-0">
+    <nav className="flex gap-1 overflow-x-auto border-b border-on-band/10 lg:flex-col lg:gap-0.5 lg:border-b-0">
       {sections.map((section) => (
         <button
           key={section.id}
           onClick={() => setActive(section.id)}
+          aria-current={active === section.id ? 'page' : undefined}
           className={cx(
-            'whitespace-nowrap rounded-lg px-3.5 py-2.5 text-left text-sm transition-colors duration-150',
+            'whitespace-nowrap border px-3.5 py-2.5 text-left text-sm transition-colors duration-150',
             active === section.id
-              ? 'bg-canvas font-medium text-ink lg:bg-panel lg:border lg:border-line lg:shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
-              : 'text-muted hover:text-ink',
+              ? 'border-on-band/15 bg-on-band/[0.04] font-medium text-on-band'
+              : 'border-transparent text-on-band-dim hover:text-on-band',
           )}
         >
           {section.label}
@@ -107,12 +108,12 @@ export function SettingsPage() {
         </div>
       </div>
 
-      <p className="mt-10 border-t border-line pt-5 text-[13px] text-muted">
+      <p className="mt-10 border-t border-on-band/10 pt-5 text-[13px] text-on-band-dim">
         Nothing here talks to a server yet. Every change is stored in local app state so the
         product feels real while the backend is being built.{' '}
         <button
           onClick={() => toast('Settings reset is disabled in the demo')}
-          className="font-medium text-accent hover:text-accent-strong"
+          className="font-medium text-accent-bright transition-colors hover:text-on-band"
         >
           Reset demo data
         </button>
@@ -143,12 +144,12 @@ function ProfileSection() {
       />
 
       <div className="flex items-center gap-4">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ink text-lg font-semibold text-band">
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center bg-on-band text-lg font-medium text-band">
           {initials(name || user.name)}
         </span>
-        <div>
-          <p className="text-sm font-medium text-ink">{name || user.name}</p>
-          <p className="text-[13px] text-muted">{user.joined}</p>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-on-band">{name || user.name}</p>
+          <p className="text-[13px] text-on-band-dim">{user.joined}</p>
         </div>
       </div>
 
@@ -223,56 +224,67 @@ function PreferencesSection() {
       />
 
       <div>
-        <p className="mb-2.5 text-sm font-medium text-ink">Time each week</p>
+        <p className="mb-2.5 text-sm font-medium text-on-band">Time each week</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {hoursOptions.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => setWeekly(option.id)}
-              className={cx(
-                'rounded-lg border px-3 py-2.5 text-sm transition-all',
-                weekly === option.id
-                  ? 'border-accent bg-accent-soft font-medium text-accent-strong'
-                  : 'border-line text-body hover:border-line-strong hover:bg-canvas',
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <p className="mb-2.5 text-sm font-medium text-ink">Intensity</p>
-        <div className="space-y-2">
-          {intensityOptions.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => setIntensity(option.id)}
-              className={cx(
-                'flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-all',
-                intensity === option.id
-                  ? 'border-accent bg-accent-soft/60'
-                  : 'border-line hover:border-line-strong hover:bg-canvas',
-              )}
-            >
-              <span>
-                <span className="block text-sm font-medium text-ink">{option.label}</span>
-                <span className="block text-[13px] text-muted">{option.hint}</span>
-              </span>
-              <span
+          {hoursOptions.map((option) => {
+            const selected = weekly === option.id
+            return (
+              <button
+                key={option.id}
+                onClick={() => setWeekly(option.id)}
+                aria-pressed={selected}
                 className={cx(
-                  'h-4 w-4 shrink-0 rounded-full border-2 transition-all',
-                  intensity === option.id ? 'border-accent bg-accent' : 'border-line-strong',
+                  'border px-3 py-2.5 text-sm transition-colors',
+                  selected
+                    ? 'border-accent-bright/60 bg-accent-bright/10 font-medium text-on-band'
+                    : 'border-on-band/20 text-on-band-muted hover:border-on-band/45 hover:text-on-band',
                 )}
-              />
-            </button>
-          ))}
+              >
+                {option.label}
+              </button>
+            )
+          })}
         </div>
       </div>
 
       <div>
-        <p className="mb-2.5 text-sm font-medium text-ink">Formats</p>
+        <p className="mb-2.5 text-sm font-medium text-on-band">Intensity</p>
+        <div className="space-y-2">
+          {intensityOptions.map((option) => {
+            const selected = intensity === option.id
+            return (
+              <button
+                key={option.id}
+                onClick={() => setIntensity(option.id)}
+                aria-pressed={selected}
+                className={cx(
+                  'flex w-full items-center justify-between gap-3 border px-4 py-3 text-left transition-colors',
+                  selected
+                    ? 'border-accent-bright/60 bg-accent-bright/10'
+                    : 'border-on-band/20 hover:border-on-band/45 hover:bg-on-band/[0.03]',
+                )}
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-on-band">{option.label}</span>
+                  <span className="block text-[13px] text-on-band-dim">{option.hint}</span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={cx(
+                    'flex h-4 w-4 shrink-0 items-center justify-center border transition-colors',
+                    selected ? 'border-accent-bright' : 'border-on-band/30',
+                  )}
+                >
+                  {selected && <span className="h-2 w-2 bg-accent-bright" />}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-2.5 text-sm font-medium text-on-band">Formats</p>
         <div className="flex flex-wrap gap-2">
           {formatOptions.map((format) => (
             <Chip
@@ -328,7 +340,7 @@ function ScheduleSection() {
       />
 
       <div>
-        <p className="mb-2.5 text-sm font-medium text-ink">Learning days</p>
+        <p className="mb-2.5 text-sm font-medium text-on-band">Learning days</p>
         <div className="flex flex-wrap gap-2">
           {days.map((day) => (
             <Chip
@@ -342,7 +354,7 @@ function ScheduleSection() {
           ))}
         </div>
         {selected.length === 0 && (
-          <p className="mt-2 text-[13px] text-danger">Pick at least one day.</p>
+          <p className="mt-2 text-[13px] text-danger-bright">Pick at least one day.</p>
         )}
       </div>
 
@@ -359,10 +371,10 @@ function ScheduleSection() {
         </select>
       </Field>
 
-      <div className="flex items-center justify-between gap-4 rounded-lg border border-line px-4 py-3.5">
-        <div>
-          <p className="text-sm font-medium text-ink">Remind me on rest days</p>
-          <p className="text-[13px] text-muted">A nudge, never a guilt trip.</p>
+      <div className="flex items-center justify-between gap-4 border border-on-band/15 px-4 py-3.5">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-on-band">Remind me on rest days</p>
+          <p className="text-[13px] text-on-band-dim">A nudge, never a guilt trip.</p>
         </div>
         <Toggle checked={restDay} onChange={setRestDay} label="Remind me on rest days" />
       </div>
@@ -433,15 +445,15 @@ function NotificationsSection() {
         description="Choose what earns a notification. Everything else waits for you."
       />
 
-      <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+      <div className="divide-y divide-on-band/10 border border-on-band/15">
         {items.map((item) => (
           <div
             key={item.key}
             className="flex items-center justify-between gap-4 bg-panel px-4 py-3.5"
           >
             <div className="min-w-0">
-              <p className="text-sm font-medium text-ink">{item.label}</p>
-              <p className="text-[13px] text-muted">{item.hint}</p>
+              <p className="text-sm font-medium text-on-band">{item.label}</p>
+              <p className="text-[13px] text-on-band-dim">{item.hint}</p>
             </div>
             <Toggle
               checked={settings[item.key]}
@@ -452,19 +464,12 @@ function NotificationsSection() {
         ))}
       </div>
 
-      {/* Resend Outbound Email Testing Card */}
-      <section className="rounded-2xl border border-line bg-canvas/70 p-5">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
-            <LuMail className="h-4 w-4" />
-          </span>
-          <div>
-            <h3 className="text-sm font-semibold text-ink">Email Delivery & Resend Testing</h3>
-            <p className="text-[12px] text-muted">
-              Verify that session reminders and weekly summaries reach your inbox.
-            </p>
-          </div>
-        </div>
+      {/* Resend outbound email testing */}
+      <section className="border border-on-band/15 bg-band-deep p-5">
+        <h3 className="text-sm font-medium text-on-band">Email delivery &amp; Resend testing</h3>
+        <p className={cx(monoLabel, 'mt-1')}>
+          Verify that reminders and summaries reach your inbox
+        </p>
 
         <div className="mt-4 space-y-3">
           <Field
@@ -472,27 +477,21 @@ function NotificationsSection() {
             hint="For free Resend accounts without a custom domain, delivery is restricted to the account owner (samuelojeyinka@gmail.com)."
             htmlFor="testEmail"
           >
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 id="testEmail"
                 type="email"
                 value={testEmail}
                 onChange={(e) => setTestEmail(e.target.value)}
                 placeholder="samuelojeyinka@gmail.com"
-                className={inputClass}
+                className={cx(inputClass, 'min-w-0 flex-1')}
               />
               <Button
                 onClick={handleSendTest}
                 disabled={sending}
                 className="shrink-0"
               >
-                {sending ? (
-                  'Sending...'
-                ) : (
-                  <>
-                    <LuSend className="h-4 w-4" /> Send test
-                  </>
-                )}
+                {sending ? 'Sending…' : 'Send test'}
               </Button>
             </div>
           </Field>
@@ -500,42 +499,31 @@ function NotificationsSection() {
           {result && (
             <div
               className={cx(
-                'rounded-xl border p-3.5 text-xs animate-rise',
+                'border p-3.5 animate-rise',
                 result.delivered
-                  ? 'border-success/30 bg-success-soft/70 text-success'
-                  : 'border-danger/30 bg-danger-soft/70 text-danger',
+                  ? 'border-success-bright/40 bg-success-bright/10'
+                  : 'border-danger-bright/40 bg-danger-bright/10',
               )}
             >
-              <div className="flex items-start gap-2">
-                {result.delivered ? (
-                  <LuCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                ) : (
-                  <LuTriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
-                )}
-                <div>
-                  <p className="font-semibold text-ink">
-                    {result.delivered
-                      ? 'Test Reminder Successfully Delivered!'
-                      : 'Delivery Notice'}
-                  </p>
-                  <p className="mt-0.5 leading-relaxed text-body">{result.message}</p>
-                  {result.delivered && (
-                    <p className="mt-1 text-[11px] text-muted">
-                      Subject: "{result.subject}" · Delivered via Resend to {result.recipient}. Check your inbox!
-                    </p>
-                  )}
-                </div>
-              </div>
+              <p className={cx(monoLabel, result.delivered ? 'text-success-bright' : 'text-danger-bright')}>
+                {result.delivered ? 'test reminder delivered' : 'delivery notice'}
+              </p>
+              <p className="mt-1 text-[13px] leading-relaxed text-on-band-muted">{result.message}</p>
+              {result.delivered && (
+                <p className={cx(monoLabel, 'mt-2')}>
+                  Subject: &quot;{result.subject}&quot; · via Resend to {result.recipient}
+                </p>
+              )}
             </div>
           )}
 
-          <div className="rounded-lg border border-line/60 bg-panel/70 p-3 text-[12px] leading-relaxed text-muted">
-            <div className="flex items-start gap-2">
-              <LuInfo className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-              <span>
-                <strong>Resend sandbox note:</strong> With the default <code className="rounded bg-canvas px-1 py-0.5">onboarding@resend.dev</code> sender, emails can only be delivered to <strong className="text-ink">samuelojeyinka@gmail.com</strong>. To send to any learner address, verify your domain in Resend.
-              </span>
-            </div>
+          <div className="border border-on-band/10 bg-panel px-4 py-3">
+            <p className="text-[12.5px] leading-relaxed text-on-band-dim">
+              <span className="font-medium text-on-band-muted">Resend sandbox note:</span> With the
+              default <code className="bg-on-band/10 px-1 py-0.5 font-mono text-[11.5px]">onboarding@resend.dev</code> sender,
+              emails can only be delivered to <span className="font-medium text-on-band">samuelojeyinka@gmail.com</span>.
+              To send to any learner address, verify your domain in Resend.
+            </p>
           </div>
         </div>
       </section>
@@ -590,7 +578,7 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
     <div className="max-w-xl space-y-6">
       <Heading title="Account" description="Your login, plan and the buttons that end things." />
 
-      <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+      <div className="divide-y divide-on-band/10 border border-on-band/15">
         <Row label="Email" value={user.email} />
         <Row
           label="Plan"
@@ -598,7 +586,7 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
           action={
             <button
               onClick={onOpenAi}
-              className="text-[13px] font-medium text-accent hover:text-accent-strong"
+              className="text-[13px] font-medium text-accent-bright transition-colors hover:text-on-band"
             >
               Change
             </button>
@@ -628,8 +616,8 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
         </div>
       </div>
 
-      <div className="rounded-lg border border-line bg-canvas px-4 py-3.5">
-        <p className="text-[13px] leading-relaxed text-muted">
+      <div className="border border-on-band/15 bg-band-deep px-4 py-3.5">
+        <p className="text-[13px] leading-relaxed text-on-band-dim">
           Demo account with local state. When the backend lands, this screen keeps the same shape
           and swaps to real calls.
         </p>
@@ -644,8 +632,8 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
             <Button variant="secondary" onClick={() => setPasswordOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={savePassword} loading={busy}>
-              Update password
+            <Button onClick={savePassword} disabled={busy}>
+              {busy ? 'Updating…' : 'Update password'}
             </Button>
           </>
         }
@@ -702,8 +690,8 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
 function Heading({ title, description }: { title: string; description: string }) {
   return (
     <div>
-      <h2 className="text-lg font-semibold text-ink">{title}</h2>
-      <p className="mt-1 text-sm leading-relaxed text-muted">{description}</p>
+      <h2 className="font-display text-[20px] font-light tracking-[-0.015em] text-on-band">{title}</h2>
+      <p className="mt-1 text-sm leading-relaxed text-on-band-muted">{description}</p>
     </div>
   )
 }
@@ -711,9 +699,9 @@ function Heading({ title, description }: { title: string; description: string })
 function Row({ label, value, action }: { label: string; value: string; action?: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 bg-panel px-4 py-3.5">
-      <span className="text-sm text-muted">{label}</span>
-      <span className="flex items-center gap-3">
-        <span className="text-sm font-medium text-ink">{value}</span>
+      <span className="text-sm text-on-band-dim">{label}</span>
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="truncate text-sm font-medium text-on-band">{value}</span>
         {action}
       </span>
     </div>

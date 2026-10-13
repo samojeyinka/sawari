@@ -1,6 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { LuX } from 'react-icons/lu'
 import { cx } from '../../lib/utils'
 
 interface DrawerProps {
@@ -30,25 +29,29 @@ export function Drawer({ open, onClose, side = 'right', title, children }: Drawe
 
   return createPortal(
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 animate-fade bg-ink/30" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 animate-fade bg-band-deep/70" onClick={onClose} aria-hidden />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
         className={cx(
-          'app-theme absolute top-0 flex h-full w-[88%] max-w-sm flex-col bg-panel',
-          side === 'right' ? 'right-0 border-l animate-slide-right' : 'left-0 border-r animate-slide-left',
-          'border-line shadow-[0_0_40px_rgba(0,0,0,0.12)]',
+          'app-theme absolute top-0 flex h-full w-[88%] max-w-sm flex-col bg-band-deep',
+          side === 'right'
+            ? 'right-0 animate-slide-right border-l'
+            : 'left-0 animate-slide-left border-r',
+          'border-on-band/15',
         )}
       >
-        <div className="flex items-center justify-between border-b border-line px-5 py-4">
-          <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
+        <div className="flex items-center justify-between gap-4 border-b border-on-band/10 px-5 py-4">
+          <h2 className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim">
+            {title}
+          </h2>
           <button
+            type="button"
             onClick={onClose}
-            aria-label="Close"
-            className="rounded-lg p-1.5 text-muted transition-colors hover:bg-canvas hover:text-ink"
+            className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim transition-colors hover:text-on-band"
           >
-            <LuX className="h-5 w-5" />
+            Close
           </button>
         </div>
         <div className="thin-scroll flex-1 overflow-y-auto">{children}</div>

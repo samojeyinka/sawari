@@ -1,29 +1,26 @@
-import type { IconType } from 'react-icons'
-import {
-  LuChartNoAxesColumnIncreasing,
-  LuFolderKanban,
-  LuHouse,
-  LuRoute,
-} from 'react-icons/lu'
-
 export interface NavItem {
   to: string
   label: string
-  icon: IconType
+  /** Short label for the mobile bottom bar. */
+  short: string
 }
 
 export const navItems: NavItem[] = [
-  { to: '/app/today', label: 'Today', icon: LuHouse },
-  { to: '/app/path', label: 'Learning path', icon: LuRoute },
-  { to: '/app/projects', label: 'Projects', icon: LuFolderKanban },
-  { to: '/app/progress', label: 'Progress', icon: LuChartNoAxesColumnIncreasing },
+  { to: '/app/today', label: 'Today', short: 'Today' },
+  { to: '/app/path', label: 'Learning path', short: 'Path' },
+  { to: '/app/projects', label: 'Projects', short: 'Projects' },
+  { to: '/app/progress', label: 'Progress', short: 'Progress' },
 ]
 
+/** Mono micro-label used for every eyebrow, tag and meta line in the app. */
+export const monoLabel = 'font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim'
+
+/** A left accent rule marks the current page — no pills, no icons. */
 export function navClass(isActive: boolean): string {
   return [
-    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-150',
+    'flex items-center justify-between border-l-2 px-5 py-2.5 text-[13.5px] transition-colors',
     isActive
-      ? 'bg-panel font-medium text-ink border border-line shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
-      : 'border border-transparent text-body hover:bg-panel/70 hover:text-ink',
+      ? 'border-accent-bright text-on-band'
+      : 'border-transparent text-on-band-dim hover:text-on-band',
   ].join(' ')
 }

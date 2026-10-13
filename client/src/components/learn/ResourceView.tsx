@@ -1,10 +1,11 @@
-import { LuCheck, LuLock } from 'react-icons/lu'
 import type { Resource } from '../../types'
 import { Button } from '../ui/Button'
+import { monoLabel } from '../layout/nav'
 import { formatPacingTime, useActivityPacing } from '../../hooks/useActivityPacing'
 import { DigestionTracker } from './DigestionTracker'
 import { PreviewNotice } from './PreviewNotice'
 import { ResourceBlock } from './ResourceBlock'
+import { cx } from '../../lib/utils'
 
 export function ResourceView({
   activityId,
@@ -39,34 +40,21 @@ export function ResourceView({
       {!preview && <DigestionTracker pacing={pacing} baseMinutes={totalMinutes} />}
 
       {/* Action / Completion bar */}
-      <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-line pt-5">
+      <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-on-band/10 pt-6">
         {done ? (
-          <span className="inline-flex items-center gap-2 text-sm font-medium text-success">
-            <LuCheck className="h-4 w-4" /> {allVideo ? 'Marked as watched' : 'Marked as read'}
+          <span className={cx(monoLabel, 'text-success-bright')}>
+            {allVideo ? 'marked as watched' : 'marked as read'}
           </span>
         ) : preview ? (
           <PreviewNotice />
         ) : !pacing.isUnlocked ? (
-          <>
-            <Button disabled variant="secondary" className="cursor-not-allowed opacity-60">
-              <LuLock className="h-4 w-4" /> Unlocks in {formatPacingTime(pacing.remainingSeconds)}
-            </Button>
-            <span className="text-[13px] text-muted">
-              {allVideo
-                ? 'Absorb the videos. Unlocks after digestion time.'
-                : 'Read the sources and reflect on key concepts.'}
-            </span>
-          </>
+          <Button disabled variant="secondary">
+            Unlocks in {formatPacingTime(pacing.remainingSeconds)}
+          </Button>
         ) : (
-          <>
-            <Button onClick={onComplete} variant="primary">
-              <LuCheck className="h-4 w-4" />{' '}
-              {allVideo ? 'Finish watching & continue' : 'Finish reading & continue'}
-            </Button>
-            <span className="text-[13px] text-muted">
-              Pacing requirement met. Next up: hands-on practice.
-            </span>
-          </>
+          <Button onClick={onComplete} variant="primary">
+            {allVideo ? 'Finish watching & continue' : 'Finish reading & continue'}
+          </Button>
         )}
       </div>
     </article>

@@ -1,6 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { LuX } from 'react-icons/lu'
 import { cx } from '../../lib/utils'
 
 interface ModalProps {
@@ -49,7 +48,7 @@ export function Modal({
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div
-        className="absolute inset-0 animate-fade bg-ink/30"
+        className="absolute inset-0 animate-fade bg-band-deep/70"
         onClick={onClose}
         aria-hidden
       />
@@ -59,32 +58,37 @@ export function Modal({
         aria-label={title}
         className={cx(
           'app-theme relative w-full bg-panel animate-pop',
-          'max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-xl',
-          'shadow-[0_16px_48px_rgba(0,0,0,0.16)]',
-          'border border-line sm:border',
+          'max-h-[92vh] overflow-y-auto',
+          'border border-on-band/20',
           sizes[size],
         )}
       >
         {(title || !hideClose) && (
-          <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
+          <div className="flex items-start justify-between gap-4 border-b border-on-band/10 px-5 py-4 sm:px-6">
             <div>
-              {title && <h2 className="text-[17px] font-semibold text-ink">{title}</h2>}
-              {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+              {title && (
+                <h2 className="text-[17px] font-medium tracking-[-0.01em] text-on-band">{title}</h2>
+              )}
+              {description && (
+                <p className="mt-1.5 text-[13.5px] leading-relaxed text-on-band-dim">
+                  {description}
+                </p>
+              )}
             </div>
             {!hideClose && (
               <button
+                type="button"
                 onClick={onClose}
-                aria-label="Close"
-                className="-mr-1 rounded-lg p-1.5 text-muted transition-colors hover:bg-canvas hover:text-ink"
+                className="shrink-0 font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim transition-colors hover:text-on-band"
               >
-                <LuX className="h-5 w-5" />
+                Close
               </button>
             )}
           </div>
         )}
         <div className="px-5 py-5 sm:px-6">{children}</div>
         {footer && (
-          <div className="flex flex-col-reverse gap-2 border-t border-line px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+          <div className="flex flex-col-reverse gap-2 border-t border-on-band/10 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
             {footer}
           </div>
         )}

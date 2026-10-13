@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { DayPicker, type ChevronProps } from 'react-day-picker'
-import { LuCalendar, LuChevronDown, LuChevronLeft, LuChevronRight } from 'react-icons/lu'
 import { cx } from '../../lib/utils'
-import { inputClass } from './ProgressBar'
 
 function toISO(date: Date): string {
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -17,6 +15,14 @@ function fromISO(iso: string): Date | undefined {
 }
 
 const fmt = new Intl.DateTimeFormat('en', { year: 'numeric', month: 'long', day: 'numeric' })
+
+const monoNote = 'font-mono text-[10.5px] uppercase tracking-[0.08em]'
+
+/** Matches the setup flow's fields: square, hairline, distinct surface. */
+const trigger =
+  'flex w-full items-center justify-between gap-3 border border-on-band/20 bg-band-soft px-4 py-3 ' +
+  'text-left text-[15px] text-on-band transition-colors duration-150 hover:border-on-band/35 ' +
+  'focus:border-accent-bright focus:outline-none focus:ring-2 focus:ring-accent-bright/20'
 
 export function DatePickerField({
   value,
@@ -55,17 +61,17 @@ export function DatePickerField({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className={cx(inputClass, 'flex items-center justify-between gap-2 text-left', !value && 'text-faint')}
+        className={cx(trigger, !value && 'text-on-band-dim')}
       >
         <span className="truncate">{value && selected ? fmt.format(selected) : placeholder}</span>
-        <LuCalendar className="h-4 w-4 shrink-0 text-muted" />
+        <span className={cx(monoNote, 'shrink-0')}>{value ? 'change' : 'pick'}</span>
       </button>
 
       {open && (
         <div
           role="dialog"
           aria-label="Pick a date"
-          className="absolute left-0 top-full z-40 mt-2 animate-rise rounded-xl border border-line bg-panel p-3 shadow-[0_12px_32px_rgba(0,0,0,0.35)]"
+          className="absolute left-0 top-full z-40 mt-2 animate-rise border border-on-band/20 bg-panel p-3 shadow-[0_16px_40px_rgba(0,0,0,0.5)]"
         >
           <DayPicker
             mode="single"
@@ -82,9 +88,11 @@ export function DatePickerField({
   )
 }
 
-function Chevron({ orientation, size = 18 }: ChevronProps) {
-  const cls = 'shrink-0 text-muted'
-  if (orientation === 'left') return <LuChevronLeft size={size} className={cls} />
-  if (orientation === 'right') return <LuChevronRight size={size} className={cls} />
-  return <LuChevronDown size={size} className={cls} />
+/** Month navigation as type, so the flow stays glyph-free. */
+function Chevron({ orientation }: ChevronProps) {
+  return (
+    <span aria-hidden="true" className={cx(monoNote, 'text-[13px] text-on-band-dim')}>
+      {orientation === 'left' ? '←' : orientation === 'right' ? '→' : '↓'}
+    </span>
+  )
 }

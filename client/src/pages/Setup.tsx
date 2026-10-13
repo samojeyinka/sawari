@@ -1,6 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LuArrowLeft, LuLoaderCircle, LuSparkles } from 'react-icons/lu'
 import type {
   ExperienceLevel,
   GoalReason,
@@ -14,9 +13,9 @@ import type {
 import { useApp } from '../state/store'
 import { aiApi, type AiTimelineEstimate } from '../lib/api'
 import { Logo } from '../components/ui/Logo'
-import { Button } from '../components/ui/Button'
 import { ChoiceCard } from '../components/ui/Choice'
-import { Chip, Field, inputClass } from '../components/ui/ProgressBar'
+import { Field } from '../components/ui/ProgressBar'
+import { Sweep } from '../components/ui/Sweep'
 import { DatePickerField } from '../components/ui/DatePickerField'
 import { cx } from '../lib/utils'
 import { extractGoal, type GoalExtraction, type GoalMode } from '../lib/goalExtract'
@@ -30,6 +29,74 @@ const steps = [
   'Intensity',
   'Your timeline',
 ]
+
+/* One clarifying line per step, so a heading never has to be repeated as a
+   field label. */
+const stepHints = [
+  'Anything at all. Name the subject, a person whose skills you want, or something you want to build.',
+  'So the path starts at the right level instead of the beginning.',
+  'The reason shapes what the path puts first.',
+  'Be honest about it. Every session is scheduled from this number.',
+  'Mix as many as you like.',
+  'How much do you want each session to push you?',
+  'We work back from a finish date, and you can change your mind later.',
+]
+
+/* Setup styles its own primitives rather than the shared kit, so the flow can
+   read like the public pages without restyling screens that have not been
+   reviewed yet. Square corners, hairline borders, no icons. */
+const monoNote = 'font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim'
+
+const setupInput =
+  'w-full border border-on-band/20 bg-band-soft px-4 py-3 text-[15px] text-on-band ' +
+  'placeholder:text-on-band-dim transition-colors duration-150 hover:border-on-band/35 ' +
+  'focus:border-accent-bright focus:outline-none focus:ring-2 focus:ring-accent-bright/20'
+
+const setupPrimary =
+  'group relative inline-flex h-12 items-center justify-center overflow-hidden bg-on-band px-7 ' +
+  'text-[14.5px] font-medium text-band transition-colors disabled:pointer-events-none disabled:opacity-50'
+
+const setupGhost =
+  'inline-flex h-12 items-center justify-center border border-on-band/20 px-6 text-[14.5px] ' +
+  'font-medium text-on-band transition-colors hover:border-on-band/45'
+
+const setupSecondary =
+  'group relative inline-flex h-11 items-center justify-center overflow-hidden border ' +
+  'border-on-band/20 px-6 text-[14px] font-medium text-on-band transition-colors ' +
+  'hover:border-on-band/45 disabled:pointer-events-none disabled:opacity-50'
+
+const groupLabel = 'text-[14.5px] font-medium text-on-band'
+const groupHint = 'mt-1 text-[13px] leading-relaxed text-on-band-dim'
+
+/** Small square-cornered choice used for tags and day pickers. */
+function Tag({
+  selected,
+  onClick,
+  children,
+  className,
+}: {
+  selected: boolean
+  onClick: () => void
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className={cx(
+        'border px-3.5 py-2 text-[13.5px] transition-colors',
+        selected
+          ? 'border-accent-bright bg-accent-bright/15 text-accent-bright'
+          : 'border-on-band/15 text-on-band-muted hover:border-on-band/35 hover:text-on-band',
+        className,
+      )}
+    >
+      {children}
+    </button>
+  )
+}
 
 const subjects = [
   'Project Management',
@@ -306,24 +373,49 @@ export function SetupPage() {
 
   return (
     <div className="app-theme min-h-screen bg-band">
-      <header className="border-b border-line">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4 sm:px-8">
+      <header className="border-b border-on-band/10">
+        <div className="mx-auto flex h-[76px] max-w-[1060px] items-center justify-between gap-6 px-5 sm:px-8">
           <Link to="/" aria-label="Sawari home">
             <Logo size="sm" />
           </Link>
-          <span className="text-[13px] text-muted">
-            Step {step + 1} of {steps.length}
+          <span className={monoNote}>
+            step {String(step + 1).padStart(2, '0')} / {String(steps.length).padStart(2, '0')}
           </span>
         </div>
-        <div className="h-1 w-full bg-canvas-deep">
-          <div className="bar-fill h-full bg-accent" style={{ width: `${progress}%` }} />
+        <div className="h-[3px] w-full bg-on-band/10">
+          <div className="bar-fill h-full bg-accent-bright" style={{ width: `${progress}%` }} />
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
+      <main className="mx-auto max-w-[1060px] px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
         <form onSubmit={next} key={step}>
-          <div className="animate-rise">
-            <h1 className="text-2xl font-semibold text-ink sm:text-[28px]">{steps[step]}</h1>
+          <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-20">
+            <aside className="hidden lg:block">
+              <p className={monoNote}>your path</p>
+              <ol className="mt-5">
+                {steps.map((title, i) => (
+                  <li
+                    key={title}
+                    className={cx(
+                      'flex items-baseline gap-3 border-t border-on-band/10 py-2.5 text-[13px]',
+                      i === step ? 'text-on-band' : 'text-on-band-dim',
+                    )}
+                  >
+                    <span className={monoNote}>{String(i + 1).padStart(2, '0')}</span>
+                    {title}
+                  </li>
+                ))}
+              </ol>
+            </aside>
+
+            <div className="animate-rise">
+              <p className={monoNote}>step {String(step + 1).padStart(2, '0')}</p>
+              <h1 className="mt-3 max-w-[620px] font-display text-[28px] font-light leading-[1.15] tracking-[-0.025em] text-on-band sm:text-[34px]">
+                {steps[step]}
+              </h1>
+              <p className="mt-4 max-w-[560px] text-[15px] leading-relaxed text-on-band-muted">
+                {stepHints[step]}
+              </p>
 
             {/* step 0 */}
             {step === 0 && (
@@ -338,14 +430,23 @@ export function SetupPage() {
                         onClick={() => changeMode(option.id)}
                         aria-pressed={active}
                         className={cx(
-                          'rounded-lg border px-3.5 py-3 text-left transition-all duration-150',
+                          'border px-4 py-3.5 text-left transition-colors duration-150',
                           active
-                            ? 'border-accent bg-accent-soft/60'
-                            : 'border-line bg-panel hover:border-line-strong hover:bg-canvas',
+                            ? 'border-accent-bright bg-accent-bright/10'
+                            : 'border-on-band/15 hover:border-on-band/35',
                         )}
                       >
-                        <span className="block text-[13px] font-medium text-ink">{option.label}</span>
-                        <span className="mt-0.5 block truncate text-[11px] text-muted">{option.hint}</span>
+                        <span
+                          className={cx(
+                            'block text-[13.5px]',
+                            active ? 'text-accent-bright' : 'text-on-band',
+                          )}
+                        >
+                          {option.label}
+                        </span>
+                        <span className="mt-1 block truncate text-[11.5px] text-on-band-dim">
+                          {option.hint}
+                        </span>
                       </button>
                     )
                   })}
@@ -365,20 +466,20 @@ export function SetupPage() {
                         onChange={(e) => patchSetup({ subject: e.target.value })}
                         placeholder="Project Management"
                         autoFocus
-                        className={cx(inputClass, error && 'border-danger')}
+                        className={cx(setupInput, error && 'border-danger')}
                       />
                     </Field>
-                    <div className="mt-5">
-                      <p className="mb-2.5 text-[13px] font-medium text-muted">Popular right now</p>
+                    <div className="mt-6">
+                      <p className={cx(monoNote, 'mb-3')}>popular right now</p>
                       <div className="flex flex-wrap gap-2">
                         {subjects.map((subject) => (
-                          <Chip
+                          <Tag
                             key={subject}
                             selected={setup.subject === subject}
                             onClick={() => patchSetup({ subject })}
                           >
                             {subject}
-                          </Chip>
+                          </Tag>
                         ))}
                       </div>
                     </div>
@@ -401,18 +502,20 @@ export function SetupPage() {
                         }}
                         placeholder="linkedin.com/in/…"
                         autoFocus
-                        className={inputClass}
+                        className={setupInput}
                       />
                     </Field>
-                    <Button
+                    <button
                       type="button"
-                      className="mt-4"
+                      className={cx(setupSecondary, 'mt-4')}
                       onClick={runExtract}
-                      loading={extracting}
-                      disabled={aim.trim().length < 3}
+                      disabled={extracting || aim.trim().length < 3}
                     >
-                      Find their skills
-                    </Button>
+                      <Sweep tone="soft" />
+                      <span className="relative">
+                        {extracting ? 'Finding their skills…' : 'Find their skills'}
+                      </span>
+                    </button>
                   </div>
                 )}
 
@@ -433,46 +536,44 @@ export function SetupPage() {
                         }}
                         placeholder="A booking website for my photography studio"
                         autoFocus
-                        className={cx(inputClass, 'resize-y leading-relaxed')}
+                        className={cx(setupInput, 'resize-y leading-relaxed')}
                       />
                     </Field>
-                    <Button
+                    <button
                       type="button"
-                      className="mt-4"
+                      className={cx(setupSecondary, 'mt-4')}
                       onClick={runExtract}
-                      loading={extracting}
-                      disabled={aim.trim().length < 3}
+                      disabled={extracting || aim.trim().length < 3}
                     >
-                      Find the skills
-                    </Button>
+                      <Sweep tone="soft" />
+                      <span className="relative">
+                        {extracting ? 'Finding the skills…' : 'Find the skills'}
+                      </span>
+                    </button>
                   </div>
                 )}
 
                 {extraction && mode !== 'topic' && (
-                  <div className="mt-6 animate-rise rounded-xl border border-accent bg-accent-soft/40 p-4">
+                  <div className="mt-6 animate-rise border border-accent-bright/40 bg-accent-bright/10 p-5">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-accent-strong">
-                        {extraction.note}
-                      </p>
-                      <span className="shrink-0 rounded-full border border-accent/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-strong">
-                        Simulated
-                      </span>
+                      <p className={cx(monoNote, 'text-accent-bright')}>{extraction.note}</p>
+                      <span className={cx(monoNote, 'text-accent-bright/70')}>simulated</span>
                     </div>
-                    <p className="mt-2 text-[15px] leading-relaxed text-ink">
+                    <p className="mt-3 text-[15px] leading-relaxed text-on-band">
                       Your path will be built around{' '}
-                      <span className="font-semibold">{extraction.subject}</span>.
+                      <span className="font-medium">{extraction.subject}</span>.
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {extraction.skills.map((skill) => (
                         <span
                           key={skill}
-                          className="rounded-lg border border-line bg-panel px-2.5 py-1 text-[12.5px] text-body"
+                          className="border border-on-band/15 px-2.5 py-1 text-[12.5px] text-on-band-muted"
                         >
                           {skill}
                         </span>
                       ))}
                     </div>
-                    <p className="mt-3 text-[13px] text-muted">Goal · {extraction.outcome}</p>
+                    <p className={cx(monoNote, 'mt-4')}>goal · {extraction.outcome}</p>
                   </div>
                 )}
 
@@ -500,7 +601,7 @@ export function SetupPage() {
             {step === 2 && (
               <div className="mt-7 space-y-7">
                 <div>
-                  <p className="mb-2.5 text-sm font-medium text-ink">Why are you learning this?</p>
+                  <p className={cx(groupLabel, 'mb-3')}>Why are you learning this?</p>
                   <div className="grid gap-2.5 sm:grid-cols-2">
                     {reasons.map((option) => (
                       <ChoiceCard
@@ -524,7 +625,7 @@ export function SetupPage() {
                     value={setup.outcome}
                     onChange={(e) => patchSetup({ outcome: e.target.value })}
                     placeholder="Run a project from planning through delivery without second guessing myself."
-                    className={cx(inputClass, 'resize-y leading-relaxed')}
+                    className={cx(setupInput, 'resize-y leading-relaxed')}
                   />
                 </Field>
                 {error && !error.startsWith('Describe') && (
@@ -535,10 +636,9 @@ export function SetupPage() {
 
             {/* step 3 */}
             {step === 3 && (
-              <div className="mt-7 space-y-8">
+              <div className="mt-8 space-y-8">
                 <div>
-                  <p className="text-sm font-medium text-ink">Time each week</p>
-                  <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                  <div className="grid gap-2.5 sm:grid-cols-2">
                     {hours.map((option) => (
                       <ChoiceCard
                         key={option.id}
@@ -553,25 +653,29 @@ export function SetupPage() {
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-ink">Preferred days</p>
-                  <p className="mt-1 text-[13px] text-muted">
+                  <p className={groupLabel}>Preferred days</p>
+                  <p className={groupHint}>
                     Optional — pick the days you usually study. We schedule sessions for them.
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     {weekdays.map((day) => (
-                      <Chip key={day.id} selected={setup.days.includes(day.id)} onClick={() => toggleDay(day.id)}>
+                      <Tag
+                        key={day.id}
+                        selected={setup.days.includes(day.id)}
+                        onClick={() => toggleDay(day.id)}
+                      >
                         {day.label}
-                      </Chip>
+                      </Tag>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-ink">Best time of day</p>
-                  <p className="mt-1 text-[13px] text-muted">
+                  <p className={groupLabel}>Best time of day</p>
+                  <p className={groupHint}>
                     We put your toughest material in your best hours. (Optional)
                   </p>
-                  <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                  <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
                     {timeWindows.map((option) => (
                       <ChoiceCard
                         key={option.id}
@@ -589,19 +693,19 @@ export function SetupPage() {
             {/* step 4 */}
             {step === 4 && (
               <div className="mt-7">
-                <p className="mb-1 text-[15px] text-body">
+                <p className="mb-1 text-[14.5px] text-on-band-muted">
                   Choose as many as you like. We will mix them.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2.5">
                   {formats.map((format) => (
-                    <Chip
+                    <Tag
                       key={format.id}
                       selected={setup.formats.includes(format.id)}
                       onClick={() => toggleFormat(format.id)}
                       className="px-4 py-2.5"
                     >
                       {format.label}
-                    </Chip>
+                    </Tag>
                   ))}
                 </div>
                 {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
@@ -627,20 +731,14 @@ export function SetupPage() {
             {/* step 6 */}
             {step === 6 && (
               <div className="mt-7 space-y-6">
-                <div className="rounded-xl border border-accent bg-accent-soft/50 px-4 py-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-accent-strong">
-                      <LuSparkles className="h-3.5 w-3.5" />
-                      AI Recommended timeline
-                    </p>
+                <div className="border border-accent-bright/40 bg-accent-bright/10 px-5 py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className={cx(monoNote, 'text-accent-bright')}>ai recommended timeline</p>
                     {loadingTimeline && (
-                      <span className="inline-flex items-center gap-1 text-[11.5px] text-accent font-medium">
-                        <LuLoaderCircle className="h-3 w-3 animate-spin" />
-                        Analyzing {setup.subject}...
-                      </span>
+                      <span className={monoNote}>analyzing {setup.subject}…</span>
                     )}
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                  <p className="mt-3 text-[14.5px] leading-relaxed text-on-band-muted">
                     {aiTimeline?.reason ? (
                       aiTimeline.reason
                     ) : (
@@ -678,10 +776,8 @@ export function SetupPage() {
                 </Field>
 
                 <div>
-                  <p className="mb-1 text-sm font-medium text-ink">
-                    How long do you want to give it?
-                  </p>
-                  <p className="mb-3 text-[13px] text-muted">
+                  <p className={groupLabel}>How long do you want to give it?</p>
+                  <p className={cx(groupHint, 'mb-4')}>
                     Pick a pace, we will set your finish date for you.
                   </p>
                   <div className="space-y-2.5">
@@ -702,19 +798,17 @@ export function SetupPage() {
                         setDurationMonths(null)
                         patchSetup({ targetDate: '' })
                       }}
-                      className="mt-3 text-sm font-medium text-accent transition-colors hover:text-accent-strong"
+                      className="mt-4 text-[13.5px] font-medium text-accent-bright transition-colors hover:text-on-band"
                     >
                       No timeline, keep it open
                     </button>
                   )}
                 </div>
 
-                <div className="rounded-xl border border-line bg-canvas px-4 py-4">
-                  <p className="text-[13px] font-medium uppercase tracking-[0.08em] text-muted">
-                    Quick look
-                  </p>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-                    <span className="font-semibold text-ink">{setup.subject}</span>
+                <div className="border border-on-band/15 px-5 py-4">
+                  <p className={monoNote}>quick look</p>
+                  <p className="mt-3 text-[14px] leading-relaxed text-on-band-muted">
+                    <span className="text-on-band">{setup.subject}</span>
                     {setup.experience &&
                       ` · ${experiences.find((e) => e.id === setup.experience)?.label.toLowerCase()}`}
                     {setup.weeklyHours && ` · ${setup.weeklyHours} hours a week`}
@@ -728,17 +822,20 @@ export function SetupPage() {
                 </div>
               </div>
             )}
-          </div>
 
-          {/* actions */}
-          <div className="mt-9 flex items-center justify-between gap-3 border-t border-line pt-6">
-            <Button type="button" variant="ghost" onClick={back}>
-              <LuArrowLeft className="h-4 w-4" />
-              {step === 0 ? 'Home' : 'Back'}
-            </Button>
-            <Button type="submit" size="lg">
-              {step === steps.length - 1 ? 'Build my path' : 'Continue'}
-            </Button>
+              {/* actions */}
+              <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-on-band/10 pt-6">
+                <button type="button" onClick={back} className={setupGhost}>
+                  {step === 0 ? 'Back home' : 'Back'}
+                </button>
+                <button type="submit" className={setupPrimary}>
+                  <Sweep />
+                  <span className="relative">
+                    {step === steps.length - 1 ? 'Build my path' : 'Continue'}
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
         </form>
       </main>

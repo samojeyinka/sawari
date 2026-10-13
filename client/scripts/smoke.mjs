@@ -93,7 +93,7 @@ const main = async () => {
   /* ---------------------------------------------------- landing */
   step = 'landing'
   await page.goto(`${BASE}/`, { waitUntil: 'networkidle0' })
-  assert(await waitForText(page, 'No more fees,'), 'landing headline renders')
+  assert(await waitForText(page, 'Learn anything.'), 'landing headline renders')
   assert(await waitForText(page, 'Build my learning path'), 'primary CTA present')
   await click(page, 'See how it works')
   await sleep(600)

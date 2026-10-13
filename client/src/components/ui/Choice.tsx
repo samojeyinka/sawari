@@ -1,22 +1,23 @@
 import type { ReactNode } from 'react'
-import { LuCheck } from 'react-icons/lu'
 import type { SectionStatus } from '../../types'
 import { cx } from '../../lib/utils'
 
-/** Selectable option used in the setup flow and practice exercises. */
+/**
+ * Selectable option used in the setup flow. Square-cornered with a hairline
+ * border and a small cell as the selection mark — no glyphs, so it reads as
+ * part of the same system as the public pages.
+ */
 export function ChoiceCard({
   selected,
   onClick,
   label,
   description,
-  icon,
   disabled = false,
 }: {
   selected: boolean
   onClick: () => void
   label: ReactNode
   description?: string
-  icon?: ReactNode
   disabled?: boolean
 }) {
   return (
@@ -26,64 +27,56 @@ export function ChoiceCard({
       disabled={disabled}
       aria-pressed={selected}
       className={cx(
-        'flex w-full items-start gap-3 rounded-lg border px-4 py-3.5 text-left transition-all duration-150',
-        'disabled:opacity-60',
+        'flex w-full items-start gap-4 border px-4 py-4 text-left transition-colors duration-150',
+        'disabled:pointer-events-none disabled:opacity-60',
         selected
-          ? 'border-accent bg-accent-soft/60 shadow-[0_0_0_1px_var(--color-accent)]'
-          : 'border-line bg-panel hover:border-line-strong hover:bg-canvas',
+          ? 'border-accent-bright bg-accent-bright/10'
+          : 'border-on-band/15 hover:border-on-band/35 hover:bg-on-band/[0.03]',
       )}
     >
-      {icon && (
-        <span
-          className={cx(
-            'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
-            selected ? 'bg-accent text-band' : 'bg-canvas-deep text-body',
-          )}
-        >
-          {icon}
-        </span>
-      )}
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium text-ink">{label}</span>
-        {description && <span className="mt-0.5 block text-[13px] text-muted">{description}</span>}
-      </span>
       <span
+        aria-hidden="true"
         className={cx(
-          'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all',
-          selected ? 'border-accent bg-accent text-band' : 'border-line-strong bg-panel',
+          'mt-1 h-3.5 w-3.5 shrink-0 border transition-colors',
+          selected ? 'border-accent-bright bg-accent-bright' : 'border-on-band/30',
         )}
-      >
-        {selected && <LuCheck className="h-3 w-3" strokeWidth={3} />}
+      />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14.5px] text-on-band">{label}</span>
+        {description && (
+          <span className="mt-1 block text-[13px] leading-relaxed text-on-band-dim">
+            {description}
+          </span>
+        )}
       </span>
     </button>
   )
 }
 
-const statusStyles: Record<SectionStatus, { text: string; dot: string }> = {
-  completed: { text: 'text-success', dot: 'bg-success' },
-  current: { text: 'text-accent-strong', dot: 'bg-accent' },
-  upcoming: { text: 'text-muted', dot: 'bg-line-strong' },
-  locked: { text: 'text-faint', dot: 'bg-line-strong' },
+const statusStyles: Record<SectionStatus, string> = {
+  completed: 'text-success-bright',
+  current: 'text-accent-bright',
+  upcoming: 'text-on-band-dim',
+  locked: 'text-on-band-dim',
 }
 
 const statusLabels: Record<SectionStatus, string> = {
-  completed: 'Completed',
+  completed: 'Complete',
   current: 'Current',
   upcoming: 'Upcoming',
   locked: 'Locked',
 }
 
+/** The section's state as a word, in mono — a dot or a tick would be noise. */
 export function StatusBadge({ status, className }: { status: SectionStatus; className?: string }) {
-  const style = statusStyles[status]
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1.5 text-xs font-medium',
-        style.text,
+        'font-mono text-[10.5px] uppercase tracking-[0.08em]',
+        statusStyles[status],
         className,
       )}
     >
-      <span className={cx('h-1.5 w-1.5 rounded-full', style.dot)} />
       {statusLabels[status]}
     </span>
   )

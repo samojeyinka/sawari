@@ -1,15 +1,20 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { LuCheck, LuEye, LuEyeOff, LuLoaderCircle, LuTriangleAlert } from 'react-icons/lu'
 import { useApp } from '../state/store'
 import { useAlert } from '../state/alertContext'
-import { Logo } from '../components/ui/Logo'
+import { Sweep } from '../components/ui/Sweep'
+import {
+  AuthLayout,
+  accountPoints,
+  authAlt,
+  authEyebrow,
+  authInput,
+  authLabel,
+  authLink,
+  authSubmit,
+  monoNote,
+} from '../components/auth/AuthLayout'
 import { cx } from '../lib/utils'
-
-const darkInput =
-  'w-full border border-on-band/20 bg-band px-3.5 py-2.5 text-[15px] text-on-band ' +
-  'placeholder:text-on-band-dim transition-colors duration-150 focus:border-accent-bright ' +
-  'focus:outline-none focus:ring-2 focus:ring-accent-bright/25'
 
 const passwordRules = [
   { label: 'At least 8 characters', test: (v: string) => v.length >= 8 },
@@ -59,154 +64,124 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="hero-wash relative flex min-h-screen flex-col overflow-hidden">
-      <div className="hero-grid absolute inset-0" aria-hidden="true" />
-
-      <header className="relative z-10 px-5 py-5 sm:px-10">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between">
-          <Link to="/" aria-label="Sawari home">
-            <Logo />
-          </Link>
-        </div>
-      </header>
-
-      <main className="relative z-10 flex flex-1 items-center justify-center px-5 py-10 sm:px-10">
-        <div className="w-full max-w-md animate-rise">
-          <p className="font-mono text-sm uppercase tracking-wide text-accent-bright">
-            Choose a new password
-          </p>
-          <h1 className="mt-3 text-[28px] font-normal leading-[1.08] tracking-[-0.04em] text-on-band sm:text-[40px]">
-            Set a new password.
+    <AuthLayout
+      eyebrow={token ? 'Choose a new password' : 'Reset link'}
+      title={token ? 'Set a new password.' : 'That link has expired.'}
+      blurb={
+        token
+          ? 'Pick a strong password you have not used before. You will be signed in with it right after.'
+          : 'Reset links are valid for one hour and can only be used once. Request a fresh one from the sign in page.'
+      }
+      points={accountPoints}
+    >
+      <div className="w-full">
+        <div>
+          <p className={authEyebrow}>{token ? 'New password' : 'Invalid link'}</p>
+          <h1 className="mt-3 font-display text-[26px] font-light leading-[1.15] tracking-[-0.025em] text-on-band">
+            {token ? 'Choose your new password.' : 'We cannot use this link.'}
           </h1>
+        </div>
 
-          {token ? (
-            <>
-              <p className="mt-4 text-[15px] leading-relaxed text-on-band-muted">
-                Pick a strong password you have not used before. You will be signed in with it right
-                after.
-              </p>
-
-              <div className="mt-8 border border-on-band/15 bg-band-soft/60 p-6 backdrop-blur sm:p-7">
-                <form onSubmit={submit} className="space-y-5">
-                  <div className="space-y-2">
-                    <label htmlFor="reset-password" className="block text-sm font-medium text-on-band">
-                      New password
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="reset-password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        autoComplete="new-password"
-                        placeholder="••••••••"
-                        autoFocus
-                        className={cx(darkInput, 'pr-11')}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((v) => !v)}
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-on-band-muted transition-colors hover:text-on-band"
-                      >
-                        {showPassword ? (
-                          <LuEyeOff className="h-4 w-4" />
-                        ) : (
-                          <LuEye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-
-                    <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 pt-1">
-                      {passwordRules.map((rule) => {
-                        const met = rule.test(password)
-                        return (
-                          <li
-                            key={rule.label}
-                            className={cx(
-                              'flex items-center gap-1.5 text-[12.5px] transition-colors',
-                              met ? 'text-success-bright' : 'text-on-band-dim',
-                            )}
-                          >
-                            <LuCheck className={cx('h-3.5 w-3.5', !met && 'opacity-40')} />
-                            {rule.label}
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="reset-confirm" className="block text-sm font-medium text-on-band">
-                      Confirm new password
-                    </label>
-                    <input
-                      id="reset-confirm"
-                      type={showPassword ? 'text' : 'password'}
-                      value={confirm}
-                      onChange={(e) => setConfirm(e.target.value)}
-                      autoComplete="new-password"
-                      placeholder="••••••••"
-                      className={darkInput}
-                    />
-                    {mismatch && (
-                      <p className="text-[12.5px] text-danger-bright">
-                        The two passwords do not match.
-                      </p>
-                    )}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={busy || !passwordOk || password !== confirm}
-                    className="inline-flex h-12 w-full items-center justify-center gap-2 bg-cream px-6 text-sm font-bold uppercase tracking-wide text-band transition-colors duration-150 hover:bg-white disabled:pointer-events-none disabled:opacity-60"
-                  >
-                    {busy ? (
-                      <LuLoaderCircle className="h-4 w-4 animate-spin" />
-                    ) : (
-                      'Reset password'
-                    )}
-                  </button>
-                </form>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="mt-4 text-[15px] leading-relaxed text-on-band-muted">
-                This reset link is missing or invalid. Request a new one from the sign in page.
-              </p>
-              <div className="mt-8 border border-on-band/15 bg-band-soft/60 p-6 backdrop-blur sm:p-7">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-danger-bright/15 text-danger-bright">
-                    <LuTriangleAlert className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-medium text-on-band">Invalid reset link</p>
-                    <p className="mt-0.5 text-[13px] leading-relaxed text-on-band-muted">
-                      Reset links expire after 1 hour and can only be used once.
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  to="/login"
-                  className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 border border-on-band/20 bg-band text-sm font-medium text-on-band transition-colors duration-150 hover:border-on-band/35 hover:bg-band-soft"
+        {token ? (
+          <form onSubmit={submit} className="mt-8 space-y-5">
+            <div className="space-y-2">
+              <label htmlFor="reset-password" className={authLabel}>
+                New password
+              </label>
+              <div className="relative">
+                <input
+                  id="reset-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                  autoFocus
+                  className={cx(authInput, 'pr-20')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className={cx(
+                    monoNote,
+                    'absolute right-3 top-1/2 -translate-y-1/2 transition-colors hover:text-on-band',
+                  )}
                 >
-                  Back to sign in
-                </Link>
+                  {showPassword ? 'hide' : 'show'}
+                </button>
               </div>
-            </>
-          )}
-        </div>
-      </main>
 
-      <footer className="relative z-10 px-5 py-6 sm:px-10">
-        <div className="mx-auto max-w-[1200px]">
-          <p className="text-[13px] text-on-band-dim">
-            Your account is stored securely. Personalized learning paths are generated with DeepSeek
-            AI.
+              <ul className="grid grid-cols-1 gap-1.5 pt-2 sm:grid-cols-2">
+                {passwordRules.map((rule) => {
+                  const met = rule.test(password)
+                  return (
+                    <li
+                      key={rule.label}
+                      className={cx(
+                        'flex items-center gap-2 text-[12.5px] transition-colors',
+                        met ? 'text-accent-bright' : 'text-on-band-dim',
+                      )}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={cx(
+                          'h-2.5 w-2.5 shrink-0 border transition-colors',
+                          met ? 'border-accent-bright bg-accent-bright' : 'border-on-band/25',
+                        )}
+                      />
+                      {rule.label}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="reset-confirm" className={authLabel}>
+                Confirm new password
+              </label>
+              <input
+                id="reset-confirm"
+                type={showPassword ? 'text' : 'password'}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                autoComplete="new-password"
+                placeholder="••••••••"
+                className={authInput}
+              />
+              {mismatch && (
+                <p className="text-[12.5px] text-danger-bright">
+                  The two passwords do not match.
+                </p>
+              )}
+            </div>
+
+            <button type="submit" disabled={busy || !passwordOk || password !== confirm} className={authSubmit}>
+              <Sweep />
+              <span className="relative">{busy ? 'Saving…' : 'Reset password'}</span>
+            </button>
+          </form>
+        ) : (
+          <div className="mt-8 border border-on-band/15 bg-band-soft p-5">
+            <p className={cx(monoNote, 'text-danger-bright')}>link expired</p>
+            <p className="mt-2 text-[14.5px] leading-relaxed text-on-band-muted">
+              Open the reset email again, or ask for a new link from the sign in page.
+            </p>
+            <Link to="/login" className={cx(authAlt, 'mt-5')}>
+              Back to sign in
+            </Link>
+          </div>
+        )}
+
+        {token && (
+          <p className="mt-8 text-[13.5px] text-on-band-muted">
+            Remembered it?{' '}
+            <Link to="/login" className={authLink}>
+              Back to sign in
+            </Link>
           </p>
-        </div>
-      </footer>
-    </div>
+        )}
+      </div>
+    </AuthLayout>
   )
 }

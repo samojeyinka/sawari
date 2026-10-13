@@ -21,7 +21,7 @@ export function ResourcePreviewModal({
       <div className="space-y-4">
         <ResourceBlock resource={resource} showHeader={false} />
 
-        <div className="flex justify-end border-t border-line pt-4">
+        <div className="flex justify-end border-t border-on-band/10 pt-4">
           <Button onClick={onClose}>{isVideo ? 'Done watching' : 'Done reading'}</Button>
         </div>
       </div>

@@ -1,14 +1,14 @@
-import {
-  LuBrain,
-  LuCheck,
-  LuClock,
-  LuFastForward,
-  LuPause,
-  LuSparkles,
-} from 'react-icons/lu'
+import { ProgressBar } from '../ui/ProgressBar'
+import { monoLabel } from '../layout/nav'
 import { formatPacingTime, type PacingState } from '../../hooks/useActivityPacing'
 import { cx } from '../../lib/utils'
 
+/**
+ * Pacing readout for a lesson. It reports the same thing the old version did —
+ * how long you have been in the lesson, how long it wants you there, and
+ * whether the page has been left idle — but as a plain ruled panel instead of
+ * a dashboard of badges.
+ */
 export function DigestionTracker({
   pacing,
   baseMinutes,
@@ -16,110 +16,65 @@ export function DigestionTracker({
   pacing: PacingState
   baseMinutes: number
 }) {
-  const {
-    elapsedSeconds,
-    targetSeconds,
-    remainingSeconds,
-    progressPercent,
-    isUnlocked,
-    status,
-    fastForward,
-  } = pacing
+  const { elapsedSeconds, targetSeconds, remainingSeconds, progressPercent, isUnlocked, status, fastForward } =
+    pacing
 
   const targetMinutes = Math.round(targetSeconds / 60)
 
+  const statusTag =
+    status === 'active'
+      ? { text: `absorbing · ${formatPacingTime(remainingSeconds)} left`, tone: 'text-accent-bright' }
+      : status === 'paused_tab'
+        ? { text: 'paused · tab in background', tone: 'text-warn-bright' }
+        : status === 'paused_idle'
+          ? { text: 'paused · inactive', tone: 'text-warn-bright' }
+          : { text: 'pacing complete', tone: 'text-success-bright' }
+
   return (
-    <section className="my-6 rounded-2xl border border-line bg-canvas/60 p-4.5 sm:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span
-            className={cx(
-              'flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors',
-              isUnlocked
-                ? 'bg-success-soft text-success'
-                : 'bg-accent/10 text-accent',
-            )}
-          >
-            {isUnlocked ? <LuSparkles className="h-4 w-4" /> : <LuBrain className="h-4 w-4" />}
-          </span>
-          <div>
-            <h3 className="text-sm font-semibold text-ink">
-              {isUnlocked ? 'Digestion Goal Achieved' : 'Deep Absorption Pacing'}
-            </h3>
-            <p className="text-[12px] text-muted">
-              {isUnlocked
-                ? `You invested the necessary focus time for deep comprehension.`
-                : `Base estimate ${baseMinutes} min · Required digestion ${targetMinutes} min (2× pacing)`}
-            </p>
-          </div>
+    <section className="my-8 border border-on-band/15 bg-panel">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-on-band/10 px-5 py-4">
+        <div className="min-w-0">
+          <p className={cx(monoLabel, isUnlocked ? 'text-success-bright' : 'text-accent-bright')}>
+            {isUnlocked ? 'digestion complete' : 'deep absorption pacing'}
+          </p>
+          <p className="mt-2 text-[13.5px] leading-relaxed text-on-band-muted">
+            {isUnlocked
+              ? 'You invested the focus time required for deep comprehension.'
+              : `Base estimate ${baseMinutes} min · required digestion ${targetMinutes} min`}
+          </p>
         </div>
 
-        {/* Status indicator */}
-        <div className="flex items-center gap-2">
-          {status === 'active' && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success-soft/70 px-2.5 py-1 text-[11px] font-medium text-success">
-              <span className="h-1.5 w-1.5 rounded-full bg-success animate-ping" />
-              Actively absorbing · {formatPacingTime(remainingSeconds)} left
-            </span>
-          )}
-
-          {status === 'paused_tab' && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
-              <LuPause className="h-3 w-3" />
-              Paused · Tab in background
-            </span>
-          )}
-
-          {status === 'paused_idle' && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
-              <LuClock className="h-3 w-3" />
-              Paused · Inactive (move mouse to resume)
-            </span>
-          )}
-
-          {status === 'unlocked' && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success-soft px-2.5 py-1 text-[11px] font-medium text-success">
-              <LuCheck className="h-3.5 w-3.5" />
-              Pacing complete
-            </span>
-          )}
-
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          <span className={cx(monoLabel, statusTag.tone)}>{statusTag.text}</span>
           {import.meta.env.DEV && !isUnlocked && (
             <button
               type="button"
               onClick={fastForward}
-              title="Fast-forward timer (Dev only)"
-              className="inline-flex items-center gap-1 rounded border border-line bg-panel px-2 py-1 text-[11px] text-muted hover:text-ink"
+              title="Fast-forward timer (dev only)"
+              className="border border-on-band/20 px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim transition-colors hover:border-on-band/45 hover:text-on-band"
             >
-              <LuFastForward className="h-3 w-3" />
-              Dev skip
+              dev skip
             </button>
           )}
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="mt-3.5">
-        <div className="relative h-2 w-full overflow-hidden rounded-full bg-canvas-deep">
-          <div
-            className={cx(
-              'h-full rounded-full transition-all duration-300',
-              isUnlocked ? 'bg-success' : 'bg-accent',
-            )}
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-        <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted">
-          <span>Active focus: {formatPacingTime(elapsedSeconds)}</span>
-          <span>Target: {formatPacingTime(targetSeconds)}</span>
+      <div className="px-5 py-4">
+        <ProgressBar value={progressPercent} tone={isUnlocked ? 'success' : 'accent'} />
+        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+          <span className={monoLabel}>active focus {formatPacingTime(elapsedSeconds)}</span>
+          <span className={monoLabel}>target {formatPacingTime(targetSeconds)}</span>
         </div>
       </div>
 
-      {/* Pedagogical info banner */}
       {!isUnlocked && (
-        <p className="mt-3 rounded-lg border border-line/60 bg-panel/60 p-2.5 text-[12px] leading-relaxed text-muted">
-          💡 <strong className="text-ink">Why pacing is enforced:</strong> Sawari prioritizes long-term retention over speed-reading. Taking 2× the base time gives your brain room to re-read difficult paragraphs, take notes, and deeply internalize the principles before advancing.
-        </p>
+        <div className="border-t border-on-band/10 bg-band-deep px-5 py-4">
+          <p className="text-[13px] leading-relaxed text-on-band-dim">
+            <span className="text-on-band-muted">Why pacing is enforced. </span>
+            Sawari prioritises retention over speed-reading. Giving a lesson twice its base time
+            leaves room to re-read the difficult paragraphs and take notes before moving on.
+          </p>
+        </div>
       )}
     </section>
   )

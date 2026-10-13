@@ -1,5 +1,6 @@
-import { LuExternalLink, LuPlay } from 'react-icons/lu'
 import { parseMediaUrl } from '../../lib/media'
+import { monoLabel } from '../layout/nav'
+import { cx } from '../../lib/utils'
 
 /** Renders a video/site resource inline. YouTube and Vimeo play in an embedded
  *  frame; other sites get a clean "open on site" card. */
@@ -9,7 +10,7 @@ export function MediaEmbed({ url, title }: { url: string; title: string }) {
 
   if (media.embedUrl) {
     return (
-      <figure className="mt-5 overflow-hidden rounded-xl border border-line bg-band-deep">
+      <figure className="mt-5 border border-on-band/15 bg-band-deep">
         <div className="relative aspect-video w-full">
           <iframe
             src={media.embedUrl}
@@ -20,19 +21,15 @@ export function MediaEmbed({ url, title }: { url: string; title: string }) {
             className="absolute inset-0 h-full w-full"
           />
         </div>
-        <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-line bg-panel px-3.5 py-2.5 text-[12px] text-muted">
-          <span className="inline-flex items-center gap-1.5">
-            <LuPlay className="h-3.5 w-3.5 text-accent" />
-            Playing from {media.label}
-          </span>
+        <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-on-band/10 px-4 py-3">
+          <span className={monoLabel}>playing from {media.label}</span>
           <a
             href={media.watchUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 font-medium text-accent transition-colors hover:text-accent-strong"
+            className={cx(monoLabel, 'text-accent-bright transition-colors hover:text-on-band')}
           >
-            Open on {media.label}
-            <LuExternalLink className="h-3.5 w-3.5" />
+            open on {media.label}
           </a>
         </figcaption>
       </figure>
@@ -44,13 +41,10 @@ export function MediaEmbed({ url, title }: { url: string; title: string }) {
       href={media.watchUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-line bg-canvas/70 px-4 py-3.5 transition-colors hover:border-line-strong hover:bg-canvas"
+      className="mt-5 flex items-center justify-between gap-3 border border-on-band/20 px-5 py-4 transition-colors hover:border-on-band/45"
     >
-      <span className="inline-flex items-center gap-2.5 text-sm text-ink">
-        <LuExternalLink className="h-4 w-4 text-accent" />
-        Open resource on {media.label}
-      </span>
-      <LuExternalLink className="h-4 w-4 shrink-0 text-muted" />
+      <span className="text-[14.5px] font-medium text-on-band">Open resource on {media.label}</span>
+      <span className={cx(monoLabel, 'shrink-0 text-accent-bright')}>open</span>
     </a>
   )
 }

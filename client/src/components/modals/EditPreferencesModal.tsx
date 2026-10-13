@@ -3,7 +3,7 @@ import type { Intensity, LearningFormat, WeeklyHours } from '../../types'
 import { useApp } from '../../state/store'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
-import { Chip } from '../ui/ProgressBar'
+import { ContentOption } from '../ui/ContentOption'
 import { cx } from '../../lib/utils'
 
 const hours: { id: WeeklyHours; label: string }[] = [
@@ -81,63 +81,70 @@ export function EditPreferencesModal({
         </>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-7">
         <div>
-          <p className="mb-2 text-sm font-medium text-ink">Time each week</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <p className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim">
+            Time each week
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {hours.map((h) => (
-              <button
+              <ContentOption
                 key={h.id}
+                selected={weekly === h.id}
                 onClick={() => setWeekly(h.id)}
-                className={cx(
-                  'rounded-lg border px-3 py-2.5 text-sm transition-all',
-                  weekly === h.id
-                    ? 'border-accent bg-accent-soft font-medium text-accent-strong'
-                    : 'border-line text-body hover:border-line-strong hover:bg-canvas',
-                )}
+                className="justify-center"
               >
                 {h.label}
-              </button>
+              </ContentOption>
             ))}
           </div>
         </div>
 
         <div>
-          <p className="mb-2 text-sm font-medium text-ink">Intensity</p>
-          <div className="space-y-2">
+          <p className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim">
+            Intensity
+          </p>
+          <div className="mt-3 space-y-2">
             {intensities.map((item) => (
-              <button
+              <ContentOption
                 key={item.id}
+                selected={intensity === item.id}
                 onClick={() => setIntensity(item.id)}
-                className={cx(
-                  'flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-all',
-                  intensity === item.id
-                    ? 'border-accent bg-accent-soft/60'
-                    : 'border-line hover:border-line-strong hover:bg-canvas',
-                )}
+                className="w-full justify-between gap-3 px-4 py-3.5"
               >
-                <span>
-                  <span className="block text-sm font-medium text-ink">{item.label}</span>
-                  <span className="block text-[13px] text-muted">{item.hint}</span>
+                <span className="min-w-0">
+                  <span className="block text-[13.5px] text-on-band">{item.label}</span>
+                  <span className="mt-1 block text-[13px] leading-relaxed text-on-band-dim">
+                    {item.hint}
+                  </span>
                 </span>
                 <span
+                  aria-hidden="true"
                   className={cx(
-                    'h-4 w-4 shrink-0 rounded-full border-2 transition-all',
-                    intensity === item.id ? 'border-accent bg-accent' : 'border-line-strong',
+                    'h-3.5 w-3.5 shrink-0 border',
+                    intensity === item.id
+                      ? 'border-accent-bright bg-accent-bright'
+                      : 'border-on-band/30',
                   )}
                 />
-              </button>
+              </ContentOption>
             ))}
           </div>
         </div>
 
         <div>
-          <p className="mb-2 text-sm font-medium text-ink">Formats</p>
-          <div className="flex flex-wrap gap-2">
+          <p className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim">
+            Formats
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
             {formats.map((f) => (
-              <Chip key={f.id} selected={selected.includes(f.id)} onClick={() => toggleFormat(f.id)}>
+              <ContentOption
+                key={f.id}
+                selected={selected.includes(f.id)}
+                onClick={() => toggleFormat(f.id)}
+              >
                 {f.label}
-              </Chip>
+              </ContentOption>
             ))}
           </div>
         </div>

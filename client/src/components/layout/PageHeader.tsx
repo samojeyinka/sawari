@@ -16,7 +16,13 @@ export function Page({
     narrow: 'max-w-3xl',
   }
   return (
-    <div className={cx('mx-auto w-full px-5 pb-16 pt-6 sm:px-8 sm:pt-10', widths[width], className)}>
+    <div
+      className={cx(
+        'mx-auto w-full px-5 pb-16 pt-8 sm:px-8 sm:pt-12',
+        widths[width],
+        className,
+      )}
+    >
       {children}
     </div>
   )
@@ -34,15 +40,19 @@ export function PageHeader({
   eyebrow?: ReactNode
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-8 flex flex-col gap-5 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {eyebrow && (
-          <div className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-accent">
+          <div className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim">
             {eyebrow}
           </div>
         )}
-        <h1 className="text-2xl font-semibold text-ink sm:text-[28px]">{title}</h1>
-        {subtitle && <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">{subtitle}</p>}
+        <h1 className="font-display text-[26px] font-light leading-[1.15] tracking-[-0.025em] text-on-band sm:text-[32px]">
+          {title}
+        </h1>
+        {subtitle && (
+          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-on-band-muted">{subtitle}</p>
+        )}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>

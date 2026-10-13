@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LuCheck, LuChevronsUpDown, LuPlus } from 'react-icons/lu'
 import { useApp } from '../../state/store'
 import { pathPercent } from '../../data'
+import { monoLabel } from './nav'
 import { cx } from '../../lib/utils'
 
 export function PathSwitcher({ onNavigate }: { onNavigate?: () => void }) {
@@ -24,71 +24,100 @@ export function PathSwitcher({ onNavigate }: { onNavigate?: () => void }) {
     activatePath(id)
     setOpen(false)
     onNavigate?.()
+    navigate('/app/path')
+  }
+
+  const createPath = () => {
+    setOpen(false)
+    onNavigate?.()
+    navigate('/setup')
   }
 
   return (
-    <div className="relative" ref={wrap}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 rounded-lg border border-line bg-panel px-3 py-2.5 text-left transition-colors hover:border-line-strong"
-        aria-expanded={open}
-      >
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-ink">
+    <div ref={wrap}>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          className="group w-full border border-on-band/15 bg-panel px-3.5 py-3 text-left transition-colors hover:border-on-band/35"
+        >
+          <span className="flex items-baseline justify-between gap-3">
+            <span className={monoLabel}>active path</span>
+            <span
+              className={cx(
+                monoLabel,
+                'transition-colors',
+                open ? 'text-accent-bright' : 'text-on-band-dim group-hover:text-on-band',
+              )}
+            >
+              {open ? 'close' : 'switch'}
+            </span>
+          </span>
+          <span className="mt-1.5 block truncate text-[13.5px] text-on-band">
             {activePath ? activePath.subject : 'No paths yet'}
           </span>
-          <span className="block text-xs text-muted">
-            {activePath ? `${pathPercent(activePath)}% complete` : 'Create one to start'}
+          <span className={cx(monoLabel, 'mt-1 block')}>
+            {activePath ? `${pathPercent(activePath)}% complete` : 'create one to start'}
           </span>
-        </span>
-        <LuChevronsUpDown className="h-4 w-4 shrink-0 text-muted" />
-      </button>
+        </button>
 
-      {open && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-2 animate-rise rounded-lg border border-line bg-panel p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
-          {state.paths.map((path) => {
-            const pct = pathPercent(path)
-            const isActive = path.id === activePath?.id
-            return (
-              <button
-                key={path.id}
-                onClick={() => pick(path.id)}
-                className={cx(
-                  'flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors',
-                  isActive ? 'bg-canvas' : 'hover:bg-canvas',
-                )}
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5 text-sm font-medium text-ink">
-                    <span className="truncate">{path.subject}</span>
-                    {isActive && <LuCheck className="h-3.5 w-3.5 shrink-0 text-accent" />}
-                  </span>
-                  <span className="mt-1.5 block h-1 w-full overflow-hidden rounded-full bg-canvas-deep">
+        {open && (
+          <div
+            role="listbox"
+            aria-label="Learning paths"
+            className="absolute left-0 right-0 top-full z-40 mt-1.5 animate-rise border border-on-band/20 bg-panel"
+          >
+            {state.paths.map((path) => {
+              const pct = pathPercent(path)
+              const isActive = path.id === activePath?.id
+              return (
+                <button
+                  key={path.id}
+                  type="button"
+                  role="option"
+                  aria-selected={isActive}
+                  onClick={() => pick(path.id)}
+                  className={cx(
+                    'w-full border-b border-on-band/10 px-3.5 py-3 text-left transition-colors last:border-b-0',
+                    isActive ? 'bg-on-band/[0.05]' : 'hover:bg-on-band/[0.03]',
+                  )}
+                >
+                  <span className="flex items-baseline justify-between gap-3">
                     <span
-                      className="block h-full rounded-full bg-accent transition-all duration-500"
+                      className={cx(
+                        'truncate text-[13.5px]',
+                        isActive ? 'text-accent-bright' : 'text-on-band',
+                      )}
+                    >
+                      {path.subject}
+                    </span>
+                    <span className={cx(monoLabel, 'shrink-0')}>{pct}%</span>
+                  </span>
+                  <span className="mt-2 block h-[3px] w-full bg-on-band/10">
+                    <span
+                      className="block h-full bg-accent-bright transition-all duration-500"
                       style={{ width: `${pct}%` }}
                     />
                   </span>
-                </span>
-                <span className="shrink-0 text-xs text-muted">{pct}%</span>
-              </button>
-            )
-          })}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
-          <div className="my-1.5 border-t border-line" />
-          <button
-            onClick={() => {
-              setOpen(false)
-              onNavigate?.()
-              navigate('/setup')
-            }}
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm text-body transition-colors hover:bg-canvas hover:text-ink"
-          >
-            <LuPlus className="h-4 w-4" />
-            New learning path
-          </button>
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={createPath}
+        className="mt-2 w-full border border-dashed border-on-band/25 px-3.5 py-3 text-left text-[13.5px] text-on-band-dim transition-colors hover:border-accent-bright/60 hover:text-on-band"
+      >
+        <span aria-hidden="true" className="mr-2 font-mono text-accent-bright">
+          +
+        </span>
+        New learning path
+      </button>
     </div>
   )
 }

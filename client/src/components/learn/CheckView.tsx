@@ -1,6 +1,8 @@
 import type { Assessment, AssessmentResult } from '../../types'
 import { Button } from '../ui/Button'
+import { monoLabel } from '../layout/nav'
 import { PreviewNotice } from './PreviewNotice'
+import { cx } from '../../lib/utils'
 
 export function CheckView({
   assessment,
@@ -15,27 +17,21 @@ export function CheckView({
 }) {
   return (
     <div className="mx-auto max-w-3xl animate-rise">
-      <div className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-        Check <span className="text-line-strong">·</span>
-        <span className="ml-1 text-muted">{assessment.minutes} min</span>
-      </div>
-      <h2 className="mt-2 text-2xl font-semibold text-ink">{assessment.title}</h2>
+      <p className={monoLabel}>check · {assessment.minutes} min</p>
+      <h2 className="mt-3 font-display text-[26px] font-light leading-[1.15] tracking-[-0.025em] text-on-band sm:text-[32px]">
+        {assessment.title}
+      </h2>
 
-      <div className="mt-5 rounded-xl border border-line bg-canvas/70 p-5 sm:p-6">
-        <p className="text-[15.5px] leading-relaxed text-ink-soft">{assessment.intro}</p>
-        <p className="mt-2 text-sm text-muted">
-          {assessment.questions.length} questions. You will see why each answer works before moving
-          on.
+      <div className="mt-5 border border-on-band/15 bg-panel p-5 sm:p-6">
+        <p className="text-[15.5px] leading-relaxed text-on-band-muted">{assessment.intro}</p>
+        <p className={cx(monoLabel, 'mt-3')}>
+          {assessment.questions.length} questions · explanations after each answer
         </p>
 
         {result && (
-          <div className="mt-4 rounded-lg border border-line bg-panel px-4 py-3">
-            <p className="text-sm text-muted">
-              Last time:{' '}
-              <span className="font-semibold text-ink">
-                {result.score} / {result.total}
-              </span>{' '}
-              on {result.date}
+          <div className="mt-4 border border-on-band/10 bg-band-deep px-4 py-3">
+            <p className={monoLabel}>
+              last time <span className="text-on-band">{result.score} / {result.total}</span> · {result.date}
             </p>
           </div>
         )}
@@ -51,7 +47,7 @@ export function CheckView({
         )}
       </div>
 
-      <p className="mt-4 text-[13px] text-muted">
+      <p className="mt-4 text-[13px] text-on-band-dim">
         Finishing this updates your path with what to do next.
       </p>
     </div>
