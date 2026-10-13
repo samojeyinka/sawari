@@ -98,6 +98,8 @@ test('GET /api/v1/ai/health returns health envelope for authenticated user', { s
 
 test('queued AI path building lifecycle (queued -> generating -> ready) and retry', { skip: !hasDb }, async () => {
   const cookie = await registerUser('async-builder@example.com')
+  // This flow builds two paths; lift the free-account quota for the fixture.
+  await User.updateOne({ email: 'async-builder@example.com' }, { $set: { plan: 'pro' } })
   env.DEEPSEEK_API_KEY = 'test-key'
 
   const outlineJson = JSON.stringify({

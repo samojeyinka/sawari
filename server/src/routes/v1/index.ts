@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import aiRoutes from './ai.routes.js'
 import authRoutes from './auth.routes.js'
+import billingRoutes from './billing.routes.js'
 import learningPathRoutes from './learningPaths.routes.js'
 import meRoutes from './me.routes.js'
 import notificationRoutes from './notifications.routes.js'
@@ -15,6 +16,7 @@ router.get('/health', (_req, res) => {
 
 router.use('/ai', aiRoutes)
 router.use('/auth', authRoutes)
+router.use('/billing', billingRoutes)
 router.use('/me', meRoutes)
 router.use('/settings', settingsRoutes)
 router.use('/learning-paths', learningPathRoutes)

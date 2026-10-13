@@ -10,7 +10,7 @@ import {
   LuTriangleAlert,
 } from 'react-icons/lu'
 import { useApp } from '../state/store'
-import { aiApi, learningPathsApi, mapApiLearningPath } from '../lib/api'
+import { aiApi, billingApi, learningPathsApi, mapApiLearningPath, type ApiBillingStatus } from '../lib/api'
 import { Logo } from '../components/ui/Logo'
 import { Button } from '../components/ui/Button'
 import { ProgressBar } from '../components/ui/ProgressBar'
@@ -35,18 +35,27 @@ export function GeneratePage() {
   const [pathStatus, setPathStatus] = useState<GenerationStatus | null>(null)
   const [pathError, setPathError] = useState<string | null>(null)
   const [isRetrying, setIsRetrying] = useState(false)
+  const [limit, setLimit] = useState<ApiBillingStatus | null>(null)
 
   const creationTriggered = useRef(false)
 
   const runPreflightAndCreate = useCallback(async () => {
     setPreflightStatus('checking')
     setPreflightError(null)
+    setLimit(null)
 
     try {
       const health = await aiApi.health()
       if (!health.available) {
         setPreflightStatus('unavailable')
         setPreflightError(health.error || 'AI generation service is currently unreachable.')
+        return
+      }
+
+      // Free accounts hold 1 path; Pro / own-key accounts hold more.
+      const billing = await billingApi.status()
+      if (!billing.canCreateMore) {
+        setLimit(billing)
         return
       }
 
@@ -165,7 +174,37 @@ export function GeneratePage() {
       </header>
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-12 sm:px-8 sm:py-16">
-        {preflightStatus === 'unavailable' ? (
+        {limit ? (
+          <div className="animate-rise text-center">
+            <p className="font-mono text-sm uppercase tracking-wide text-accent-bright">
+              Path limit reached
+            </p>
+            <h1 className="mt-3 text-[28px] font-normal leading-[1.08] tracking-[-0.04em] text-on-band sm:text-[40px]">
+              You hold {limit.pathsUsed} of {limit.pathLimit}.
+            </h1>
+            <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-on-band-muted">
+              {limit.plan === 'free' && !limit.hasOwnKey
+                ? 'Free accounts hold one learning path. Go Pro ($6 once) or connect your own DeepSeek key for up to 5.'
+                : 'Delete a path you no longer need, then build this one.'}
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              {limit.plan === 'free' && !limit.hasOwnKey ? (
+                <>
+                  <Button size="lg" onClick={() => navigate('/app/settings')}>
+                    See options
+                  </Button>
+                  <Button variant="secondary" size="lg" onClick={() => navigate('/app/path')}>
+                    View paths
+                  </Button>
+                </>
+              ) : (
+                <Button size="lg" onClick={() => navigate('/app/path')}>
+                  Open my paths
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : preflightStatus === 'unavailable' ? (
           <div className="animate-rise text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <LuTriangleAlert className="h-7 w-7" />

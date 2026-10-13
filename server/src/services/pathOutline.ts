@@ -8,6 +8,7 @@ import type {
 import { LearningPath, type LearningPathDocument, type PathSection } from '../models/LearningPath.js'
 import { SessionContentModel } from '../models/SessionContent.js'
 import { generateOutline, type GeneratedSection } from './ai/index.js'
+import { resolveUserKey } from './userKey.js'
 import type { LearnerBrief } from './ai/prompts.js'
 
 /* ------------------------------------------------------------------ */
@@ -78,7 +79,9 @@ export function sectionsFromOutline(subject: string, outline: GeneratedSection[]
  * cached session content.
  */
 export async function regeneratePathOutline(path: LearningPathDocument): Promise<void> {
-  const outline = await generateOutline(briefFromPath(path))
+  // Prefer the learner's own key when they connected one; platform key otherwise.
+  const apiKey = await resolveUserKey(path.userId.toString())
+  const outline = await generateOutline(briefFromPath(path), apiKey)
 
   path.sections = sectionsFromOutline(path.subject, outline)
   path.currentSectionId = path.sections[0]?.id ?? null

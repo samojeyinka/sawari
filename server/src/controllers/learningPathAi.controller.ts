@@ -8,6 +8,7 @@ import { SessionContentModel } from '../models/SessionContent.js'
 import { AiRequestError, AiUnavailableError } from '../services/ai/deepseek.js'
 import { generateSessionContent } from '../services/ai/index.js'
 import type { SessionGenContext } from '../services/ai/prompts.js'
+import { resolveUserKey } from '../services/userKey.js'
 import {
   briefFromPath,
   regeneratePathOutline,
@@ -117,6 +118,7 @@ export const generatePathSectionSession = asyncHandler(
     }
 
     const context = await buildSessionContext(id, path.sections, sectionId)
+    const apiKey = await resolveUserKey(req.user!.id)
 
     const content = await withAiErrors(() =>
       generateSessionContent(
@@ -124,6 +126,7 @@ export const generatePathSectionSession = asyncHandler(
         { title: section.title, description: section.description },
         sectionId,
         context,
+        apiKey,
       ),
     )
 

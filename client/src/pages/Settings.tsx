@@ -545,6 +545,15 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
   const user = state.user
   if (!user) return null
 
+  const billing = state.billing
+  const planValue = !billing
+    ? 'Free'
+    : billing.plan === 'pro'
+      ? 'Pro · one-time'
+      : billing.hasOwnKey
+        ? 'Own DeepSeek key'
+        : `Free · ${billing.pathsUsed} of ${billing.pathLimit} paths`
+
   const savePassword = async () => {
     if (current.length === 0) {
       setError('Enter your current password.')
@@ -582,7 +591,7 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
         <Row label="Email" value={user.email} />
         <Row
           label="Plan"
-          value={state.settings.ai.mode === 'managed' ? 'Managed AI · $8/mo' : 'Own API key'}
+          value={planValue}
           action={
             <button
               onClick={onOpenAi}

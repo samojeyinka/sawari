@@ -51,6 +51,15 @@ export interface UserDocument extends Document {
   /** Password reset fields (token is stored hashed, never in the clear). */
   passwordResetToken?: string
   passwordResetExpiresAt?: Date
+  /** Billing: free users are capped, pro (one-time PayPal) unlocks more. */
+  plan: 'free' | 'pro'
+  proPaidAt?: Date | null
+  paypalOrderId?: string | null
+  paypalCaptureId?: string | null
+  /** User-supplied DeepSeek key (AES-256-GCM sealed; also unlocks more). */
+  aiKeySealed?: string | null
+  aiKeyLast4?: string | null
+  aiKeyVerifiedAt?: Date | null
   /** Idempotency guards for the scheduler (never serialized). */
   reminderLastSentAt?: Date | null
   summaryLastSentAt?: Date | null
@@ -101,6 +110,13 @@ const userSchema = new Schema<UserDocument, UserModel>(
     emailVerificationExpiresAt: { type: Date, select: false },
     passwordResetToken: { type: String, select: false },
     passwordResetExpiresAt: { type: Date, select: false },
+    plan: { type: String, enum: ['free', 'pro'], default: 'free', index: true },
+    proPaidAt: { type: Date, default: null },
+    paypalOrderId: { type: String, default: null },
+    paypalCaptureId: { type: String, default: null, index: true },
+    aiKeySealed: { type: String, select: false, default: null },
+    aiKeyLast4: { type: String, default: null },
+    aiKeyVerifiedAt: { type: Date, default: null },
     avatar: { type: String, default: null },
     provider: { type: String, enum: ['local', 'github', 'google'], required: true, default: 'local' },
     providerId: { type: String },
