@@ -3,10 +3,12 @@ import type { Practice, SessionContent } from '../../models/SessionContent.js'
 import { AiRequestError, chatCompletion, type ChatMessage } from './deepseek.js'
 import {
   contentMessages,
+  goalExtractMessages,
   outlineMessages,
   practiceReviewMessages,
   timelineMessages,
   type BriefSection,
+  type GoalExtractionMode,
   type LearnerBrief,
   type PracticeReviewParams,
   type SessionGenContext,
@@ -14,10 +16,12 @@ import {
 } from './prompts.js'
 import {
   aiTimelineResponseSchema,
+  goalExtractionResponseSchema,
   outlineResponseSchema,
   practiceReviewResponseSchema,
   sessionResponseSchema,
   type AiTimelineResponse,
+  type GoalExtractionResponse,
   type PracticeReviewResponse,
   type SessionResponse,
 } from './schemas.js'
@@ -165,6 +169,18 @@ export async function generateSessionContent(
       })),
     },
   }
+}
+
+export async function extractGoal(
+  mode: GoalExtractionMode,
+  input: string,
+  apiKey?: string,
+): Promise<GoalExtractionResponse> {
+  return generateValidated(
+    goalExtractMessages(mode, input),
+    goalExtractionResponseSchema,
+    { maxTokens: 1024, thinking: false, temperature: 0.4, apiKey },
+  )
 }
 
 export async function estimateTimeline(

@@ -1,10 +1,10 @@
 /* ------------------------------------------------------------------ */
-/*  Simulated goal extraction for the setup flow.                      */
+/*  Offline goal extraction for the setup flow.                          */
 /*                                                                     */
-/*  The real version will send the profile or the build idea to the    */
-/*  AI provider and read back a niche plus its skills. Until the        */
-/*  provider is funded we match keywords locally so the flow can be    */
-/*  demonstrated end to end. Swap `extractGoal` for the API call later.*/
+/*  Primary path is the server AI endpoint (`aiApi.extractGoal`). This  */
+/*  keyword matcher is the fallback when the API is unreachable or AI   */
+/*  is down, so the flow still works end to end with results flagged    */
+/*  `offline` in the UI.                                                */
 /* ------------------------------------------------------------------ */
 
 export type GoalMode = 'topic' | 'admire' | 'build'
@@ -19,6 +19,8 @@ export interface GoalExtraction {
   /** The person's name, or a short label for the thing to build. */
   label: string
   note: string
+  /** True when this came from the offline fallback instead of the AI. */
+  offline?: boolean
 }
 
 interface Archetype {
@@ -178,7 +180,7 @@ function derivedSubject(label: string): string {
   return words.slice(0, 3).map(titleCase).join(' ')
 }
 
-/** Simulated extraction. Real build will call the AI provider instead. */
+/** Offline fallback extraction (keyword match). Results are flagged `offline`. */
 export function extractGoal(mode: 'admire' | 'build', input: string): GoalExtraction {
   const archetype = matchArchetype(input)
 
