@@ -18,6 +18,7 @@ import { findTemplateMatch } from '../data'
 import {
   ApiError,
   authApi,
+  billingApi,
   learningPathsApi,
   mapApiLearningPath,
   mapApiNotification,
@@ -84,11 +85,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const reloadData = useCallback(async () => {
-    const [apiPaths, apiProjects, apiNotifications, apiSettings] = await Promise.all([
+    const [apiPaths, apiProjects, apiNotifications, apiSettings, apiBilling] = await Promise.all([
       learningPathsApi.list(),
       projectsApi.list(),
       notificationsApi.list().catch(() => []),
       settingsApi.get().catch(() => null),
+      billingApi.status().catch(() => null),
     ])
     dispatchNext({
       type: 'data/loaded',
@@ -97,6 +99,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       content: {},
     })
     dispatchNext({ type: 'notif/loaded', notifications: apiNotifications.map(mapApiNotification) })
+    dispatchNext({ type: 'billing/loaded', billing: apiBilling })
     if (apiSettings) {
       dispatchNext({
         type: 'settings/loaded',
@@ -301,6 +304,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
     await authApi.changePassword(currentPassword, newPassword)
+  }, [])
+
+  const refreshBilling = useCallback(async () => {
+    const billing = await billingApi.status().catch(() => null)
+    dispatch({ type: 'billing/loaded', billing })
   }, [])
 
   const refreshSession = useCallback(async () => {
@@ -628,6 +636,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
       toast,
       sessionContentFor: (sectionId) => state.customContent[sectionId] ?? null,
+      refreshBilling,
     }
   }, [
     state,
@@ -656,6 +665,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     markAllRead,
     ensureSessionContent,
     persistSettings,
+    refreshBilling,
     toast,
   ])
 

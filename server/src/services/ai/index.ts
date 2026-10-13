@@ -63,7 +63,7 @@ function tryParseAndValidate<T>(
 export async function generateValidated<T>(
   messages: ChatMessage[],
   schema: z.ZodType<T>,
-  options: { maxTokens?: number; temperature?: number; thinking?: boolean } = {},
+  options: { maxTokens?: number; temperature?: number; thinking?: boolean; apiKey?: string } = {},
 ): Promise<T> {
   let content = await chatCompletion(messages, options)
   let evaluated = tryParseAndValidate(content, schema)
@@ -85,8 +85,8 @@ export async function generateValidated<T>(
   throw new AiRequestError(`The model returned invalid data: ${evaluated.error}`)
 }
 
-export async function generateOutline(learner: LearnerBrief): Promise<GeneratedSection[]> {
-  const parsed = await generateValidated(outlineMessages(learner), outlineResponseSchema)
+export async function generateOutline(learner: LearnerBrief, apiKey?: string): Promise<GeneratedSection[]> {
+  const parsed = await generateValidated(outlineMessages(learner), outlineResponseSchema, { apiKey })
   return parsed.sections.map((section, index) => ({
     order: index + 1,
     title: section.title,
@@ -130,11 +130,12 @@ export async function generateSessionContent(
   section: BriefSection,
   sectionId: string,
   context?: SessionGenContext,
+  apiKey?: string,
 ): Promise<SessionContent> {
   const parsed = await generateValidated(
     contentMessages(learner, section, context),
     sessionResponseSchema,
-    { maxTokens: 8192 },
+    { maxTokens: 8192, apiKey },
   )
   const { lesson, resources, practice, assessment } = parsed
 
@@ -168,12 +169,13 @@ export async function generateSessionContent(
 
 export async function estimateTimeline(
   params: TimelinePromptParams,
+  apiKey?: string,
 ): Promise<AiTimelineResponse> {
   try {
     return await generateValidated(
       timelineMessages(params),
       aiTimelineResponseSchema,
-      { maxTokens: 512, thinking: false, temperature: 0.3 },
+      { maxTokens: 512, thinking: false, temperature: 0.3, apiKey },
     )
   } catch {
     // Graceful fallback heuristic if AI is unreachable or fails
@@ -190,10 +192,11 @@ export async function estimateTimeline(
 
 export async function reviewPractice(
   params: PracticeReviewParams,
+  apiKey?: string,
 ): Promise<PracticeReviewResponse> {
   return await generateValidated(
     practiceReviewMessages(params),
     practiceReviewResponseSchema,
-    { maxTokens: 600, thinking: false, temperature: 0.2 },
+    { maxTokens: 600, thinking: false, temperature: 0.2, apiKey },
   )
 }

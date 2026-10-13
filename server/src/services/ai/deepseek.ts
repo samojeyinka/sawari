@@ -38,9 +38,10 @@ interface CompletionResponse {
  */
 export async function chatCompletion(
   messages: ChatMessage[],
-  options: { maxTokens?: number; temperature?: number; thinking?: boolean } = {},
+  options: { maxTokens?: number; temperature?: number; thinking?: boolean; apiKey?: string } = {},
 ): Promise<string> {
-  if (!env.DEEPSEEK_API_KEY) throw new AiUnavailableError()
+  const apiKey = options.apiKey ?? env.DEEPSEEK_API_KEY
+  if (!apiKey) throw new AiUnavailableError()
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
@@ -61,7 +62,7 @@ export async function chatCompletion(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(payload),
       signal: controller.signal,

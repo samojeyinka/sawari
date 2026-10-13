@@ -4,6 +4,7 @@ import { validate } from '../../middleware/validate.js'
 import { asyncHandler } from '../../lib/asyncHandler.js'
 import { checkAiHealth } from '../../services/ai/health.js'
 import { estimateTimeline, reviewPractice } from '../../services/ai/index.js'
+import { resolveUserKey } from '../../services/userKey.js'
 import {
   reviewPracticeValidator,
   timelineEstimateValidator,
@@ -25,7 +26,7 @@ router.post(
   '/timeline',
   validate(timelineEstimateValidator),
   asyncHandler(async (req, res) => {
-    const estimate = await estimateTimeline(req.body)
+    const estimate = await estimateTimeline(req.body, await resolveUserKey(req.user!.id))
     res.ok(estimate)
   }),
 )
@@ -34,7 +35,7 @@ router.post(
   '/review-practice',
   validate(reviewPracticeValidator),
   asyncHandler(async (req, res) => {
-    const review = await reviewPractice(req.body)
+    const review = await reviewPractice(req.body, await resolveUserKey(req.user!.id))
     res.ok(review)
   }),
 )

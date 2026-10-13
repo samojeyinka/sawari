@@ -12,7 +12,7 @@ import type {
   User,
 } from '../types'
 import type { AlertVariant } from '../components/ui/Alert'
-import type { RegisterInput } from '../lib/api'
+import type { ApiBillingStatus, RegisterInput } from '../lib/api'
 import { advanceSections } from '../lib/sections'
 import { mockSettings } from '../data'
 import { fallbackFeedback } from '../data/projects'
@@ -69,6 +69,7 @@ export interface AppState {
   recent: RecentlyDone[]
   settings: Settings
   setup: SetupAnswers
+  billing: ApiBillingStatus | null
 }
 
 type Action =
@@ -108,6 +109,7 @@ type Action =
   | { type: 'settings/notifications'; patch: Partial<Settings['notifications']> }
   | { type: 'settings/ai'; patch: Partial<Settings['ai']> }
   | { type: 'profile/update'; patch: Partial<User> }
+  | { type: 'billing/loaded'; billing: ApiBillingStatus | null }
 
 export const initialState: AppState = {
   user: null,
@@ -123,6 +125,7 @@ export const initialState: AppState = {
   recent: [],
   settings: mockSettings,
   setup: loadDraftSetup(),
+  billing: null,
 }
 
 const activityKey = (pathId: string, sectionId: string, kind: ActivityKind) =>
@@ -198,6 +201,7 @@ export function reducer(state: AppState, action: Action): AppState {
         projects: [],
         notifications: [],
         recent: [],
+        billing: null,
         setup: emptySetup,
       }
 
@@ -495,6 +499,9 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'profile/update':
       return { ...state, user: state.user ? { ...state.user, ...action.patch } : null }
 
+    case 'billing/loaded':
+      return { ...state, billing: action.billing }
+
     default:
       return state
   }
@@ -579,6 +586,7 @@ export interface Store {
   updateProfile: (patch: Partial<User>) => void
   toast: (text: string, variant?: AlertVariant) => void
   sessionContentFor: (sectionId: string) => SessionContent | null
+  refreshBilling: () => Promise<void>
 }
 
 export const AppContext = createContext<Store | null>(null)

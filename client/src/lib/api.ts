@@ -492,3 +492,30 @@ export const settingsApi = {
   update: (patch: UpdateSettingsInput) =>
     request<ApiSettings>('/settings', { method: 'PATCH', body: patch }),
 }
+
+/* ------------------------------------------------------------------ */
+/*  Billing (plan, path limits, PayPal Pro, own DeepSeek key)           */
+/* ------------------------------------------------------------------ */
+
+export interface ApiBillingStatus {
+  plan: 'free' | 'pro'
+  hasOwnKey: boolean
+  aiKeyLast4: string | null
+  pathLimit: number
+  pathsUsed: number
+  canCreateMore: boolean
+  proPaidAt: string | null
+  proPriceUsd: string
+  paypalConfigured: boolean
+  paypalMode: 'sandbox' | 'live'
+}
+
+export const billingApi = {
+  status: (signal?: AbortSignal) => request<ApiBillingStatus>('/billing/status', { signal }),
+  createOrder: () => request<{ orderId: string }>('/billing/paypal/orders', { method: 'POST' }),
+  captureOrder: (orderId: string) =>
+    request<ApiBillingStatus>('/billing/paypal/capture', { method: 'POST', body: { orderId } }),
+  saveAiKey: (key: string) =>
+    request<ApiBillingStatus>('/billing/ai-key', { method: 'POST', body: { provider: 'deepseek', key } }),
+  removeAiKey: () => request<ApiBillingStatus>('/billing/ai-key', { method: 'DELETE' }),
+}

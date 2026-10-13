@@ -42,6 +42,17 @@ const envSchema = z.object({
   DEEPSEEK_BASE_URL: z.url().default('https://api.deepseek.com'),
   DEEPSEEK_MODEL: z.string().default('deepseek-chat'),
 
+  /* --- user-supplied DeepSeek keys (AES-256-GCM, hex, 32 bytes) --- */
+  AI_KEY_SECRET: z.string().optional(),
+
+  /* --- PayPal one-time billing (sandbox by default) --- */
+  PAYPAL_CLIENT_ID: z.string().optional(),
+  PAYPAL_CLIENT_SECRET: z.string().optional(),
+  PAYPAL_MODE: z.enum(['sandbox', 'live']).default('sandbox'),
+  PRO_PRICE_USD: z.string().default('6.00'),
+  FREE_PATH_LIMIT: z.coerce.number().int().positive().default(1),
+  PRO_PATH_LIMIT: z.coerce.number().int().positive().default(5),
+
   /* --- background jobs (Mongo-backed queue) --- */
   QUEUE_POLL_MS: z.coerce.number().int().positive().default(2000),
   QUEUE_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
@@ -78,6 +89,9 @@ export const isOAuthConfigured = {
 
 /** Mail is only sent when a key is present and sending is not switched off. */
 export const isMailConfigured = Boolean(env.RESEND_API_KEY) && env.MAIL_ENABLED
+
+/** PayPal checkout is only offered when client + secret are both present. */
+export const isPaypalConfigured = Boolean(env.PAYPAL_CLIENT_ID) && Boolean(env.PAYPAL_CLIENT_SECRET)
 
 /** AI generation is only attempted when a DeepSeek key is present. */
 export const isAiConfigured = Boolean(env.DEEPSEEK_API_KEY)

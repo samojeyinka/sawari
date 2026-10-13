@@ -11,6 +11,7 @@ import {
   parseSort,
 } from '../lib/queryFilters.js'
 import { serialize } from '../lib/serialize.js'
+import { assertCanCreatePath } from '../services/billing.js'
 import { LearningPath } from '../models/LearningPath.js'
 import { Project } from '../models/Project.js'
 import type {
@@ -88,6 +89,9 @@ export const getLearningPath = asyncHandler(
 export const createLearningPath = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const body = req.body as CreateLearningPathInput
+
+    // Free accounts hold 1 path; Pro or own-key accounts hold more.
+    await assertCanCreatePath(req.user!.id)
 
     // If explicit sections were sent, preserve them (back-compat / tests)
     if (body.sections && body.sections.length > 0) {
