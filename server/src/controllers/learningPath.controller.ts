@@ -14,6 +14,7 @@ import { serialize } from '../lib/serialize.js'
 import { assertCanCreatePath } from '../services/billing.js'
 import { LearningPath } from '../models/LearningPath.js'
 import { Project } from '../models/Project.js'
+import { SessionContentModel } from '../models/SessionContent.js'
 import type {
   CreateLearningPathInput,
   UpdateLearningPathInput,
@@ -193,6 +194,10 @@ export const deleteLearningPath = asyncHandler(
       { userId: req.user!.id, pathId: path._id },
       { $set: { pathId: null } },
     )
+
+    // Cascade: drop cached AI session content for the deleted path so no
+    // orphan SessionContent rows linger (they are keyed by pathId).
+    await SessionContentModel.deleteMany({ pathId: path._id })
 
     res.noContent()
   },

@@ -52,6 +52,10 @@ const notificationSchema = new Schema<NotificationDocument, NotificationModel>(
 notificationSchema.index({ user: 1, createdAt: -1 })
 notificationSchema.index({ user: 1, read: 1 })
 
+// Retention safety net: no bell row lives longer than 180 days. Read rows are
+// cleaned much earlier (90d) by the scheduler; see `cleanupOldNotifications`.
+notificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 180 * 24 * 60 * 60 })
+
 export const Notification: Model<NotificationDocument> = mongoose.model<
   NotificationDocument,
   NotificationModel

@@ -2,7 +2,7 @@ import crypto from 'node:crypto'
 import type { NextFunction, Request, Response } from 'express'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import { httpError } from '../lib/AppError.js'
-import { env } from '../config/env.js'
+import { env, isMailConfigured } from '../config/env.js'
 import { hashPassword, toSafeUser, User } from '../models/User.js'
 import { setAuthCookie, clearAuthCookie } from '../lib/cookies.js'
 import { hashSecret, safeEqualHex } from '../lib/secrets.js'
@@ -14,6 +14,7 @@ import type {
   LoginInput,
   RegisterInput,
   ResetPasswordInput,
+  SetPasswordInput,
   VerifyEmailInput,
 } from '../validators/authValidators.js'
 
@@ -77,7 +78,16 @@ export const register = asyncHandler(
       },
     })
 
-    res.created(toSafeUser(user))
+    res.created(
+      toSafeUser(user, { hasPassword: true }),
+      isMailConfigured
+        ? undefined
+        : {
+            warning:
+              'Email delivery is not configured on this server, so the verification email was queued but cannot be sent. Contact support for a code.',
+            mailConfigured: false,
+          },
+    )
   },
 )
 
@@ -167,7 +177,16 @@ export const resendVerificationCode = asyncHandler(
       },
     })
 
-    res.ok({ message: 'A new 6-digit verification code has been sent to your email.' })
+    res.ok(
+      { message: 'A new 6-digit verification code has been sent to your email.' },
+      isMailConfigured
+        ? undefined
+        : {
+            warning:
+              'Email delivery is not configured on this server, so the code was generated but cannot be emailed.',
+            mailConfigured: false,
+          },
+    )
   },
 )
 
@@ -198,7 +217,15 @@ export const forgotPassword = asyncHandler(
       )
     }
 
-    res.ok({ message: 'If an account exists for that email, a reset link is on its way.' })
+    res.ok(
+      { message: 'If an account exists for that email, a reset link is on its way.' },
+      isMailConfigured
+        ? undefined
+        : {
+            warning: 'Email delivery is not configured on this server; reset emails cannot be sent.',
+            mailConfigured: false,
+          },
+    )
   },
 )
 
@@ -258,6 +285,36 @@ export const changePassword = asyncHandler(
     )
 
     res.ok({ message: 'Your password has been updated.' })
+  },
+)
+
+/* --------------------------- set password ------------------------- */
+/* First password for OAuth accounts that never had one: no current-password
+   check (there is nothing to check against). Local accounts that already
+   have a password must use change-password instead. */
+
+export const setPassword = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const body = req.body as SetPasswordInput
+
+    const user = await User.findById(req.user!.id).select('+passwordHash')
+    if (!user) throw httpError.unauthorized('Account not found.')
+
+    if (user.passwordHash) {
+      throw httpError.badRequest(
+        'A password is already set on this account. Use change-password instead.',
+      )
+    }
+
+    user.passwordHash = await hashPassword(body.newPassword)
+    await user.save()
+
+    await queueEmail(
+      user.email,
+      renderTemplate('password-changed', { firstName: user.firstName }),
+    )
+
+    res.ok({ message: 'Your password has been set.' })
   },
 )
 

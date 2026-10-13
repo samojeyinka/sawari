@@ -19,11 +19,19 @@ export function createGithubStrategy(): GitHubStrategy {
       profile.emails?.[0]?.value ??
       (profile.username ? `${profile.username}@users.noreply.github.com` : null)
 
+    const isNoreply = Boolean(email?.toLowerCase().endsWith('@users.noreply.github.com'))
+    // passport-github2 surfaces `verified` on email entries when the API
+    // provides it. Absent the flag we trust non-noreply public emails (the
+    // legacy behaviour); noreply addresses are never verified.
+    const upstreamVerified = (profile.emails?.[0] as unknown as { verified?: unknown })
+      ?.verified
+
     const normalized: OAuthProfile = {
       id: profile.id,
       provider: 'github',
       providerId: profile.id,
       email: email ? email.toLowerCase() : null,
+      emailVerified: Boolean(email) && !isNoreply && upstreamVerified !== false,
       name: profile.displayName || profile.username || 'GitHub Learner',
       avatar: profile.photos?.[0]?.value ?? null,
     }

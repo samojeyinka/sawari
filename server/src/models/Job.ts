@@ -44,4 +44,15 @@ const jobSchema = new Schema<JobDocument>(
 // The one index the worker's claim query depends on: due, highest priority first.
 jobSchema.index({ status: 1, runAt: 1, priority: -1 })
 
+// Retention: finished jobs (done/failed) age out 7 days after finishing so the
+// jobs table cannot grow forever. Queued/running rows have no `finishedAt` and
+// are never matched by the partial filter.
+jobSchema.index(
+  { finishedAt: 1 },
+  {
+    expireAfterSeconds: 7 * 24 * 60 * 60,
+    partialFilterExpression: { status: { $in: ['done', 'failed'] } },
+  },
+)
+
 export const Job: Model<JobDocument> = mongoose.model<JobDocument>('Job', jobSchema)

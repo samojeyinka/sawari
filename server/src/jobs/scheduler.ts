@@ -1,6 +1,7 @@
 import { env } from '../config/env.js'
 import { sessionReminder } from '../mail/templates/sessionReminder.js'
 import { weeklySummary } from '../mail/templates/weeklySummary.js'
+import { Job } from '../models/Job.js'
 import { LearningPath } from '../models/LearningPath.js'
 import { Notification } from '../models/Notification.js'
 import { Project } from '../models/Project.js'
@@ -139,9 +140,12 @@ async function sendWeeklySummary(user: UserDocument): Promise<boolean> {
 /** Soft-deleted accounts age out after this long, then vanish for good. */
 const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000
 
+/** Finished jobs are kept 7 days; read notifications 90 days. */
+const JOB_RETENTION_MS = 7 * 24 * 60 * 60 * 1000
+const READ_NOTIFICATION_RETENTION_MS = 90 * 24 * 60 * 60 * 1000
+
 /** Hard-deletes accounts past the restore window with all their data. */
-export async function purgeExpiredDeletions(now: Date = new Date()): Promise<number> {
-  const expired = await User.find({ deletedAt: { $lt: new Date(now.getTime() - PURGE_AFTER_MS) } })
+export async function purgeExpiredDeletions(now: Date = new Date()): Promise<number> {  const expired = await User.find({ deletedAt: { $lt: new Date(now.getTime() - PURGE_AFTER_MS) } })
     .select('_id')
     .lean()
   if (expired.length === 0) return 0
@@ -159,7 +163,61 @@ export async function purgeExpiredDeletions(now: Date = new Date()): Promise<num
   return userIds.length
 }
 
+/**
+ * Retention sweep so the jobs + notifications tables cannot grow forever:
+ * finished jobs older than 7 days, read notifications older than 90 days.
+ * (TTL indexes back this up; the sweep covers backends where TTL is delayed.)
+ */
+export async function cleanupOldRecords(now: Date = new Date()): Promise<void> {
+  await Promise.all([
+    Job.deleteMany({
+      status: { $in: ['done', 'failed'] },
+      finishedAt: { $lt: new Date(now.getTime() - JOB_RETENTION_MS) },
+    }),
+    Notification.deleteMany({
+      read: true,
+      updatedAt: { $lt: new Date(now.getTime() - READ_NOTIFICATION_RETENTION_MS) },
+    }),
+  ])
+}
+
 /* ------------------------------ tick ------------------------------ */
+
+const SCHEDULER_PAGE_SIZE = 100
+
+type SchedulerUser = Awaited<ReturnType<typeof User.find>>[number]
+
+/** One user's reminders for this tick; throws are caught per-user by the tick. */
+async function processUserReminders(user: SchedulerUser, now: Date): Promise<void> {
+  const prefs = toReminderPreferences(user)
+  const local = localNow(now, prefs.timezone)
+  if (!local) return
+
+  const target = parseTime(prefs.reminderTime)
+  if (!withinWindow(local.minutes, target)) return
+
+  const today = localDateKey(now, prefs.timezone)
+
+  if (prefs.dailyReminder && prefs.reminderDays.includes(local.day)) {
+    const sentToday =
+      user.reminderLastSentAt != null &&
+      localDateKey(user.reminderLastSentAt, prefs.timezone) === today
+    if (!sentToday && (await sendSessionReminder(user))) {
+      user.reminderLastSentAt = now
+    }
+  }
+
+  if (prefs.weeklySummary && local.day === 'Mon') {
+    const sentToday =
+      user.summaryLastSentAt != null &&
+      localDateKey(user.summaryLastSentAt, prefs.timezone) === today
+    if (!sentToday && (await sendWeeklySummary(user))) {
+      user.summaryLastSentAt = now
+    }
+  }
+
+  if (user.isModified()) await user.save()
+}
 
 export async function runSchedulerTick(now: Date = new Date()): Promise<void> {
   try {
@@ -168,43 +226,39 @@ export async function runSchedulerTick(now: Date = new Date()): Promise<void> {
     console.error('[scheduler] purge failed:', error)
   }
 
-  const users = await User.find({
-    deletedAt: null,
-    $or: [
-      { 'preferences.dailyReminder': { $ne: false } },
-      { 'preferences.weeklySummary': { $ne: false } },
-    ],
-  })
+  try {
+    await cleanupOldRecords(now)
+  } catch (error) {
+    console.error('[scheduler] retention cleanup failed:', error)
+  }
 
-  for (const user of users) {
-    const prefs = toReminderPreferences(user)
-    const local = localNow(now, prefs.timezone)
-    if (!local) continue
+  // Paginated cursor over eligible users: no full-table load, and one user's
+  // throw can never abort the tick for everyone after them.
+  let lastId: SchedulerUser['_id'] | null = null
+  for (;;) {
+    const users = await User.find({
+      deletedAt: null,
+      ...(lastId != null ? { _id: { $gt: lastId } } : {}),
+      $or: [
+        { 'preferences.dailyReminder': { $ne: false } },
+        { 'preferences.weeklySummary': { $ne: false } },
+      ],
+    })
+      .sort({ _id: 1 })
+      .limit(SCHEDULER_PAGE_SIZE)
 
-    const target = parseTime(prefs.reminderTime)
-    if (!withinWindow(local.minutes, target)) continue
+    if (users.length === 0) break
 
-    const today = localDateKey(now, prefs.timezone)
-
-    if (prefs.dailyReminder && prefs.reminderDays.includes(local.day)) {
-      const sentToday =
-        user.reminderLastSentAt != null &&
-        localDateKey(user.reminderLastSentAt, prefs.timezone) === today
-      if (!sentToday && (await sendSessionReminder(user))) {
-        user.reminderLastSentAt = now
+    for (const user of users) {
+      try {
+        await processUserReminders(user, now)
+      } catch (error) {
+        console.error(`[scheduler] user ${user._id.toString()} failed:`, error)
       }
     }
 
-    if (prefs.weeklySummary && local.day === 'Mon') {
-      const sentToday =
-        user.summaryLastSentAt != null &&
-        localDateKey(user.summaryLastSentAt, prefs.timezone) === today
-      if (!sentToday && (await sendWeeklySummary(user))) {
-        user.summaryLastSentAt = now
-      }
-    }
-
-    if (user.isModified()) await user.save()
+    if (users.length < SCHEDULER_PAGE_SIZE) break
+    lastId = users[users.length - 1]!._id
   }
 }
 

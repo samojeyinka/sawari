@@ -20,11 +20,11 @@ import type {
 /* ------------------------------ current user ---------------------- */
 
 export const me = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  const user = await User.findById(req.user!.id).select('-passwordHash')
+  const user = await User.findById(req.user!.id).select('+passwordHash')
   if (!user) {
     throw httpError.unauthorized('Account not found.')
   }
-  res.ok(toSafeUser(user))
+  res.ok(toSafeUser(user, { hasPassword: Boolean(user.passwordHash) }))
 })
 
 /* ------------------------------ update profile -------------------- */

@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import { authenticate } from '../../middleware/authenticate.js'
-import { authLimiter } from '../../middleware/rateLimiter.js'
+import { requireVerifiedEmail } from '../../middleware/requireVerifiedEmail.js'
+import { checkAiMonthlyCap } from '../../middleware/aiUsage.js'
+import { aiLimiter, authLimiter } from '../../middleware/rateLimiter.js'
 import { validate } from '../../middleware/validate.js'
 import { asyncHandler } from '../../lib/asyncHandler.js'
 import { checkAiHealth } from '../../services/ai/health.js'
@@ -27,8 +29,11 @@ router.get(
 
 router.post(
   '/extract-goal',
-  authLimiter,
+  requireVerifiedEmail,
   validate(extractGoalValidator),
+  authLimiter,
+  aiLimiter,
+  checkAiMonthlyCap,
   asyncHandler(async (req, res) => {
     const body = req.body as ExtractGoalInput
     const goal = await extractGoal(body.mode, body.input, await resolveUserKey(req.user!.id))
@@ -38,7 +43,10 @@ router.post(
 
 router.post(
   '/timeline',
+  requireVerifiedEmail,
   validate(timelineEstimateValidator),
+  aiLimiter,
+  checkAiMonthlyCap,
   asyncHandler(async (req, res) => {
     const estimate = await estimateTimeline(req.body, await resolveUserKey(req.user!.id))
     res.ok(estimate)
@@ -47,7 +55,10 @@ router.post(
 
 router.post(
   '/review-practice',
+  requireVerifiedEmail,
   validate(reviewPracticeValidator),
+  aiLimiter,
+  checkAiMonthlyCap,
   asyncHandler(async (req, res) => {
     const review = await reviewPractice(req.body, await resolveUserKey(req.user!.id))
     res.ok(review)

@@ -4,6 +4,9 @@ export interface OAuthProfile {
   provider: 'github' | 'google'
   providerId: string
   email: string | null
+  /** Whether the provider asserts the email is verified. Auto-linking an
+      existing local account by bare email is only safe when this is true. */
+  emailVerified: boolean
   name: string
   avatar: string | null
 }

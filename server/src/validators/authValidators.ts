@@ -64,6 +64,11 @@ export const changePasswordSchema = z.strictObject({
   newPassword: passwordSchema,
 })
 
+/** First password for OAuth accounts that never had one (no current check). */
+export const setPasswordSchema = z.strictObject({
+  newPassword: passwordSchema,
+})
+
 export const deleteConfirmSchema = z.strictObject({
   token: z.string('Confirmation token is required.').trim().min(32).max(128),
 })
@@ -94,6 +99,7 @@ export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
+export type SetPasswordInput = z.infer<typeof setPasswordSchema>
 export type DeleteConfirmInput = z.infer<typeof deleteConfirmSchema>
 export type RestoreAccountInput = z.infer<typeof restoreAccountSchema>
 export type RestoreRequestInput = z.infer<typeof restoreRequestSchema>
