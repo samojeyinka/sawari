@@ -150,7 +150,7 @@ export function LoginPage() {
           return
         }
         alert.success(`Welcome back, ${user.firstName}.`)
-        navigate(returnTo, { replace: true })
+        navigate(user.role === 'admin' ? '/app/admin' : returnTo, { replace: true })
       }
     } catch (error) {
       if (error instanceof ApiError && error.code === 'account_deleted') {

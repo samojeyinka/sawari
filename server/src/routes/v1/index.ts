@@ -1,8 +1,10 @@
 import { Router } from 'express'
 import { env, isAiConfigured, isMailConfigured, isOAuthConfigured, isPaypalConfigured } from '../../config/env.js'
 import aiRoutes from './ai.routes.js'
+import adminRoutes from './admin.routes.js'
 import authRoutes from './auth.routes.js'
 import billingRoutes from './billing.routes.js'
+import catalogRoutes from './catalog.routes.js'
 import learningPathRoutes from './learningPaths.routes.js'
 import meRoutes from './me.routes.js'
 import notificationRoutes from './notifications.routes.js'
@@ -31,5 +33,7 @@ router.use('/settings', settingsRoutes)
 router.use('/learning-paths', learningPathRoutes)
 router.use('/projects', projectRoutes)
 router.use('/notifications', notificationRoutes)
+router.use('/catalog', catalogRoutes)
+router.use('/admin', adminRoutes)
 
 export default router

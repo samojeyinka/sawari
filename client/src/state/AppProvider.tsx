@@ -106,6 +106,7 @@ function mapApiUser(apiUser: ApiUser): User {
     emailVerified: Boolean(apiUser.emailVerified),
     joined: apiUser.createdAt.slice(0, 10),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    role: apiUser.role ?? 'user',
   }
 }
 
@@ -375,7 +376,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshSession = useCallback(async () => {
-    dispatch({ type: 'auth/setUser', user: mapApiUser(await authApi.me()) })
+    const user = mapApiUser(await authApi.me())
+    dispatch({ type: 'auth/setUser', user })
+    return user
   }, [])
 
   const signOut = useCallback(() => {

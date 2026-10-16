@@ -27,7 +27,7 @@ export function createGoogleStrategy(): GoogleStrategy {
       name: profile.displayName || 'Google Learner',
       avatar: profile.photos?.[0]?.value ?? null,
     }
-    done(null, normalized)
+    done(null, normalized as unknown as Express.User)
   }
 
   return new GoogleStrategy(

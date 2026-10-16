@@ -23,6 +23,8 @@ export interface SetupAnswers {
   targetDate: string
 }
 
+export type Role = 'user' | 'admin'
+
 export interface User {
   id: string
   name: string
@@ -31,6 +33,7 @@ export interface User {
   emailVerified: boolean
   joined: string
   timezone: string
+  role: Role
 }
 
 /* ---------------------------- learning ---------------------------- */

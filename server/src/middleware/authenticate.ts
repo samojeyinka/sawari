@@ -35,14 +35,14 @@ export const authenticate: RequestHandler = (req, _res, next) => {
   }
 
   User.findById(subject)
-    .select('deletedAt')
+    .select('deletedAt role')
     .lean()
     .then((user) => {
       if (!user || user.deletedAt) {
         next(httpError.unauthorized('Your session is invalid or expired. Please log in again.'))
         return
       }
-      req.user = { id: subject }
+      req.user = { id: subject, role: user.role ?? 'user' }
       next()
     })
     .catch(next)

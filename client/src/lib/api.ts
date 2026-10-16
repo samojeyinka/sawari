@@ -13,11 +13,13 @@ import type {
   Intensity,
   LearningFormat,
   LearningPath,
+  LessonBlock,
   PathSection,
   PathStats,
   Project,
   ProjectFeedback,
   ProjectTask,
+  Resource,
   SessionContent,
   WeeklyHours,
 } from '../types'
@@ -111,6 +113,7 @@ export interface ApiUser {
   emailVerified: boolean
   avatar: string | null
   provider: 'local' | 'github' | 'google'
+  role: 'user' | 'admin'
   activePathId: string | null
   createdAt: string
   /** Present when the server knows; false for OAuth accounts with no password yet. */
@@ -135,7 +138,7 @@ interface RequestOptions {
   signal?: AbortSignal
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function send<T>(path: string, options: RequestOptions = {}): Promise<Envelope<T>> {
   const { method = 'GET', body, signal } = options
   const headers = new Headers({ Accept: 'application/json' })
   let payload: string | undefined
@@ -161,7 +164,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     })
   }
 
-  if (response.status === 204) return undefined as T
+  if (response.status === 204) return { success: true }
 
   const envelope = (await response.json().catch(() => null)) as Envelope<T> | null
 
@@ -173,7 +176,42 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     })
   }
 
+  return envelope
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const envelope = await send<T>(path, options)
   return envelope.data as T
+}
+
+export interface PageMeta {
+  page: number
+  limit: number
+  total: number
+  pages: number
+}
+
+/** Like `request`, but keeps the pagination `meta` alongside the items. */
+async function requestPage<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<{ items: T[]; meta: PageMeta }> {
+  const envelope = await send<T[]>(path, options)
+  return {
+    items: (envelope.data ?? []) as T[],
+    meta: (envelope.meta as PageMeta) ?? { page: 1, limit: 0, total: 0, pages: 0 },
+  }
+}
+
+/** Builds a query string, dropping empty values. */
+function qs(params: object): string {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === '') continue
+    search.set(key, String(value))
+  }
+  const query = search.toString()
+  return query ? `?${query}` : ''
 }
 
 export const authApi = {
@@ -622,4 +660,263 @@ export const billingApi = {
   saveAiKey: (key: string) =>
     request<ApiBillingStatus>('/billing/ai-key', { method: 'POST', body: { provider: 'deepseek', key } }),
   removeAiKey: () => request<ApiBillingStatus>('/billing/ai-key', { method: 'DELETE' }),
+}
+
+/* ------------------------------------------------------------------ */
+/*  Catalog: admin-authored public learning paths. Read anonymously,    */
+/*  enroll and review when signed in.                                   */
+/* ------------------------------------------------------------------ */
+
+/** The lightweight section shape returned by list endpoints. */
+export interface CatalogSectionHead {
+  id: string
+  order: number
+  title: string
+  minutes: number
+  description?: string
+}
+
+/** A catalog path card (list endpoints omit per-section content). */
+export interface ApiCatalogPath {
+  id: string
+  slug: string
+  subject: string
+  summary: string
+  goal?: string
+  level: ExperienceLevel | null
+  tags: string[]
+  weeklyHours: WeeklyHours
+  intensity: Intensity
+  formats: LearningFormat[]
+  expectedWeeks: number
+  expectedHours: number
+  ogImage: string | null
+  sections: CatalogSectionHead[]
+  published?: boolean
+  publishedAt: string | null
+  enrollments: number
+  reviewsCount: number
+  reviewsAvg: number
+  createdAt: string
+  updatedAt: string
+}
+
+/** A catalog section with its fully authored session content. */
+export interface CatalogSection {
+  id: string
+  order: number
+  title: string
+  description: string
+  minutes: number
+  content: SessionContent
+}
+
+/** A catalog path with authored content, from the detail endpoints. */
+export interface ApiCatalogPathDetail extends ApiCatalogPath {
+  sections: CatalogSection[]
+}
+
+export interface ApiCatalogReview {
+  id: string
+  rating: number
+  text: string
+  createdAt: string
+  author: string
+}
+
+export interface CatalogListParams {
+  q?: string
+  tag?: string
+  level?: ExperienceLevel
+  sort?: string
+  page?: number
+  limit?: number
+}
+
+/* ---- admin authoring input (mirrors the server validator) ---- */
+
+export interface CatalogLessonInput {
+  title: string
+  minutes: number
+  intro: string
+  blocks: LessonBlock[]
+}
+
+export interface CatalogResourceInput {
+  title: string
+  kind: Resource['kind']
+  source: string
+  minutes: number
+  summary: string
+  body: string[]
+  url?: string | null
+}
+
+export interface CatalogPracticeItemInput {
+  label: string
+  detail?: string
+  options: string[]
+  correctIndex: number
+  feedback: string
+}
+
+export type CatalogPracticeInput =
+  | { kind: 'written'; title: string; minutes: number; brief: string; prompt: string; modelAnswer: string }
+  | { kind: 'classify'; title: string; minutes: number; brief: string; items: CatalogPracticeItemInput[] }
+
+export interface CatalogQuestionInput {
+  prompt: string
+  choices: string[]
+  correctIndex: number
+  explanation: string
+}
+
+export interface CatalogAssessmentInput {
+  title: string
+  intro: string
+  minutes: number
+  topic?: string
+  reviewTopic?: string
+  questions: CatalogQuestionInput[]
+}
+
+export interface CatalogContentInput {
+  lesson: CatalogLessonInput
+  resources: CatalogResourceInput[]
+  practice: CatalogPracticeInput
+  assessment: CatalogAssessmentInput
+}
+
+export interface CatalogSectionInput {
+  /** Send the existing id back when editing so section-anchored data survives. */
+  id?: string
+  title: string
+  description?: string
+  minutes?: number
+  content: CatalogContentInput
+}
+
+export interface CatalogPathInput {
+  slug?: string
+  subject: string
+  summary?: string
+  goal?: string
+  level?: ExperienceLevel | null
+  tags?: string[]
+  weeklyHours?: WeeklyHours
+  intensity?: Intensity
+  formats?: LearningFormat[]
+  expectedWeeks?: number
+  expectedHours?: number
+  ogImage?: string | null
+  sections: CatalogSectionInput[]
+  published?: boolean
+}
+
+/** Strips generated ids so an authored section can be re-submitted as input. */
+export function toSectionInput(section: CatalogSection): CatalogSectionInput {
+  const { content } = section
+  const practice: CatalogPracticeInput =
+    content.practice.kind === 'classify'
+      ? {
+          kind: 'classify',
+          title: content.practice.title,
+          minutes: content.practice.minutes,
+          brief: content.practice.brief,
+          items: (content.practice.items ?? []).map((item) => ({
+            label: item.label,
+            detail: item.detail,
+            options: item.options,
+            correctIndex: item.correctIndex,
+            feedback: item.feedback,
+          })),
+        }
+      : {
+          kind: 'written',
+          title: content.practice.title,
+          minutes: content.practice.minutes,
+          brief: content.practice.brief,
+          prompt: content.practice.prompt ?? '',
+          modelAnswer: content.practice.modelAnswer ?? '',
+        }
+
+  return {
+    id: section.id,
+    title: section.title,
+    description: section.description,
+    minutes: section.minutes,
+    content: {
+      lesson: {
+        title: content.lesson.title,
+        minutes: content.lesson.minutes,
+        intro: content.lesson.intro,
+        blocks: content.lesson.blocks,
+      },
+      resources: content.resources.map((resource) => ({
+        title: resource.title,
+        kind: resource.kind,
+        source: resource.source,
+        minutes: resource.minutes,
+        summary: resource.summary,
+        body: resource.body,
+        url: resource.url ?? null,
+      })),
+      practice,
+      assessment: {
+        title: content.assessment.title,
+        intro: content.assessment.intro,
+        minutes: content.assessment.minutes,
+        topic: content.assessment.topic,
+        reviewTopic: content.assessment.reviewTopic,
+        questions: content.assessment.questions.map((question) => ({
+          prompt: question.prompt,
+          choices: question.choices,
+          correctIndex: question.correctIndex,
+          explanation: question.explanation,
+        })),
+      },
+    },
+  }
+}
+
+export const catalogApi = {
+  /** Published paths, newest first. Public: no session required. */
+  list: (params: CatalogListParams = {}, signal?: AbortSignal) =>
+    requestPage<ApiCatalogPath>(`/catalog${qs(params)}`, { signal }),
+  get: (slug: string, signal?: AbortSignal) =>
+    request<ApiCatalogPathDetail>(`/catalog/${encodeURIComponent(slug)}`, { signal }),
+  /** Enrolls (idempotently) and returns the learner's personal copy. */
+  enroll: (slug: string) =>
+    request<ApiLearningPath>(`/catalog/${encodeURIComponent(slug)}/enroll`, { method: 'POST' }),
+  reviews: (slug: string, params: { page?: number; limit?: number } = {}, signal?: AbortSignal) =>
+    requestPage<ApiCatalogReview>(`/catalog/${encodeURIComponent(slug)}/reviews${qs(params)}`, {
+      signal,
+    }),
+  /** Creates or updates the signed-in learner's review for this path. */
+  addReview: (slug: string, input: { rating: number; text: string }) =>
+    request<ApiCatalogReview>(`/catalog/${encodeURIComponent(slug)}/reviews`, {
+      method: 'POST',
+      body: input,
+    }),
+}
+
+export interface AdminCatalogListParams {
+  q?: string
+  published?: boolean
+  sort?: string
+  page?: number
+  limit?: number
+}
+
+export const adminCatalogApi = {
+  list: (params: AdminCatalogListParams = {}, signal?: AbortSignal) =>
+    requestPage<ApiCatalogPath>(`/admin/catalog-paths${qs(params)}`, { signal }),
+  get: (id: string) => request<ApiCatalogPathDetail>(`/admin/catalog-paths/${id}`),
+  create: (input: CatalogPathInput) =>
+    request<ApiCatalogPathDetail>('/admin/catalog-paths', { method: 'POST', body: input }),
+  update: (id: string, patch: Partial<CatalogPathInput>) =>
+    request<ApiCatalogPathDetail>(`/admin/catalog-paths/${id}`, { method: 'PATCH', body: patch }),
+  remove: (id: string) => request<void>(`/admin/catalog-paths/${id}`, { method: 'DELETE' }),
+  setPublished: (id: string, action: 'publish' | 'unpublish') =>
+    request<ApiCatalogPath>(`/admin/catalog-paths/${id}/${action}`, { method: 'POST' }),
 }

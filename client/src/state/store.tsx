@@ -620,7 +620,7 @@ export interface Store {
   forgotPassword: (email: string) => Promise<void>
   resetPassword: (token: string, password: string) => Promise<void>
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>
-  refreshSession: () => Promise<void>
+  refreshSession: () => Promise<User>
   signOut: () => void
   reloadData: () => Promise<void>
   patchSetup: (patch: Partial<SetupAnswers>) => void

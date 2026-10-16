@@ -8,6 +8,7 @@ import { notFound } from './middleware/notFound.js'
 import { apiLimiter } from './middleware/rateLimiter.js'
 import { responseMacros } from './middleware/responseMacros.js'
 import { passport, registerPassport } from './passport/index.js'
+import publicRoutes from './routes/public.routes.js'
 import v1Routes from './routes/v1/index.js'
 
 export function createApp(): express.Express {
@@ -33,6 +34,9 @@ export function createApp(): express.Express {
   app.use(responseMacros)
 
   app.use('/api/v1', apiLimiter, v1Routes)
+
+  // Server-rendered, crawlable public catalog surface (root-level, no auth).
+  app.use(publicRoutes)
 
   app.use(notFound)
   app.use(errorHandler)
