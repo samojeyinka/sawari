@@ -487,7 +487,6 @@ export function LandingPage() {
                 <span className="relative">See how it works</span>
               </a>
             </div>
-            <p className={cx(monoNote, 'mt-1')}>free to start · no card until you save a path</p>
           </div>
 
           <div className="hidden h-full justify-end overflow-hidden xl:flex">
