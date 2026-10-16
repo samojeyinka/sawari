@@ -1,0 +1,55 @@
+name: Deploy
+
+# Runs after the CI workflow succeeds on main (and can be run by hand).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    steps:
+      - name: Pull, build, and restart on the VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd /var/www/sawari
+            git fetch origin main
+            git reset --hard origin/main
+
+            cd server
+            npm ci
+            npm run build
+            pm2 restart sawari-api
+
+            cd ../client
+            npm ci
+            npm run build
+
+            # The API refuses to boot on bad config; make that visible here.
+            for i in $(seq 1 10); do
+              if curl -fsS http://127.0.0.1:4000/api/v1/health >/dev/null 2>&1; then break; fi
+              sleep 2
+            done
+            curl -fsS http://127.0.0.1:4000/api/v1/health >/dev/null
+            echo "Deployed $(git -C /var/www/sawari rev-parse --short HEAD)"
+
+      - name: Health check (public)
+        run: curl -fsS https://sawari-api.synchrome.co/api/v1/health
