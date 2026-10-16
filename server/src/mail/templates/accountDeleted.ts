@@ -7,18 +7,18 @@ export interface AccountDeletedData {
   restoreDays?: number
 }
 
-/** Sent after an account is soft-deleted. Carries the restore link. */
+/** Sent after an account is soft deleted. Carries the restore link. */
 export function accountDeleted({
   firstName,
   restoreUrl,
   restoreDays = 30,
 }: AccountDeletedData): RenderedEmail {
   const bodyHtml = `
-    <p style="margin:0 0 16px;color:#55575e;font-size:15px;line-height:1.6;">
-      Hi ${firstName}, your Sawari account has been deleted as requested. Your paths, projects and progress are kept for ${restoreDays} days — click below any time before then to bring everything back:
+    <p style="margin:0 0 16px;color:#333333;font-size:15px;line-height:1.65;">
+      Your Sawari account has been deleted as requested. Your paths, projects and progress are kept for ${restoreDays} days. Open the link below any time before then to bring everything back.
     </p>
-    <p style="margin:0 0 16px;color:#71717a;font-size:13px;line-height:1.6;">
-      After ${restoreDays} days your data is permanently removed and cannot be recovered.
+    <p style="margin:0 0 16px;color:#777777;font-size:13px;line-height:1.6;">
+      After ${restoreDays} days your data is removed for good and cannot be recovered.
     </p>
   `
 
@@ -27,8 +27,8 @@ export function accountDeleted({
     heading: 'Account deleted',
     intro: `Changed your mind? You have ${restoreDays} days to restore everything.`,
     bodyHtml,
-    cta: { label: 'Restore my account', url: restoreUrl },
-    footerNote: 'Sawari — deep, structured learning.',
+    cta: { label: 'Restore your account', url: restoreUrl },
+    footerNote: 'Sawari. Learn by doing.',
   })
 
   const text = [
@@ -37,9 +37,9 @@ export function accountDeleted({
     'Your Sawari account has been deleted as requested.',
     `Restore everything within ${restoreDays} days: ${restoreUrl}`,
     '',
-    `After ${restoreDays} days your data is permanently removed and cannot be recovered.`,
+    `After ${restoreDays} days your data is removed for good and cannot be recovered.`,
     '',
-    '— Sawari',
+    'Sawari. Learn by doing.',
   ].join('\n')
 
   return { subject: 'Your Sawari account was deleted', html, text }

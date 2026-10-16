@@ -585,15 +585,6 @@ function NotificationsSection() {
               )}
             </div>
           )}
-
-          <div className="border border-on-band/10 bg-panel px-4 py-3">
-            <p className="text-[12.5px] leading-relaxed text-on-band-dim">
-              <span className="font-medium text-on-band-muted">Resend sandbox note:</span> With the
-              default <code className="bg-on-band/10 px-1 py-0.5 font-mono text-[11.5px]">onboarding@resend.dev</code> sender,
-              emails can only be delivered to <span className="font-medium text-on-band">samuelojeyinka@gmail.com</span>.
-              To send to any learner address, verify your domain in Resend.
-            </p>
-          </div>
         </div>
       </section>
     </div>

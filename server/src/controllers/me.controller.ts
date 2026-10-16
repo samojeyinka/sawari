@@ -157,6 +157,14 @@ export const restoreAccount = asyncHandler(
     user.restoreTokenExpiresAt = null
     await user.save()
 
+    await queueEmail(
+      user.email,
+      renderTemplate('account-restored', {
+        firstName: user.firstName,
+        appUrl: `${env.FRONTEND_URL}/app`,
+      }),
+    )
+
     res.ok(toSafeUser(user), { message: 'Welcome back — your account is restored.' })
   },
 )
@@ -249,12 +257,24 @@ export const confirmEmailChange = asyncHandler(
       throw httpError.conflict('An account with this email already exists.')
     }
 
-    user.email = user.pendingEmail
+    const previousEmail = user.email
+    const nextEmail = user.pendingEmail
+    user.email = nextEmail
     user.emailVerified = true
     user.pendingEmail = null
     user.emailChangeCodeHash = null
     user.emailChangeExpiresAt = null
     await user.save()
+
+    // Tell the address that just lost the account, so a hijack cannot pass
+    // silently even though the new address had to confirm a code.
+    await queueEmail(
+      previousEmail,
+      renderTemplate('email-changed', {
+        firstName: user.firstName,
+        newEmail: nextEmail,
+      }),
+    )
 
     res.ok(toSafeUser(user), { message: 'Your account email is updated.' })
   },

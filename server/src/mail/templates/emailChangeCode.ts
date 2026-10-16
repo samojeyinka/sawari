@@ -8,7 +8,7 @@ export interface EmailChangeCodeData {
   expiresMinutes?: number
 }
 
-/** 6-digit code sent to the NEW address to confirm an email change. */
+/** 6 digit code sent to the new address to confirm an email change. */
 export function emailChangeCode({
   firstName,
   code,
@@ -16,39 +16,31 @@ export function emailChangeCode({
   expiresMinutes = 15,
 }: EmailChangeCodeData): RenderedEmail {
   const bodyHtml = `
-    <p style="margin:0 0 16px;color:#55575e;font-size:15px;line-height:1.6;">
-      Hi ${firstName}, enter this 6-digit code in Sawari to confirm ${newEmail} as your new account email:
-    </p>
-    <div style="text-align:center;margin:24px 0;">
-      <div style="display:inline-block;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:12px;padding:16px 32px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:10px;color:#18181b;">
-        ${code}
-      </div>
-    </div>
-    <p style="margin:0 0 16px;color:#71717a;font-size:13px;line-height:1.6;text-align:center;">
-      This code will expire in ${expiresMinutes} minutes. If you did not request this, you can safely ignore this email.
+    <p style="margin:0 0 8px;color:#111111;font-size:28px;font-weight:600;letter-spacing:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${code}</p>
+    <p style="margin:0 0 16px;color:#777777;font-size:13px;line-height:1.6;">
+      Enter it to confirm ${newEmail} as your account email. The code expires in ${expiresMinutes} minutes. If you did not request this, you can ignore this email.
     </p>
   `
 
   const html = renderLayout({
-    preheader: `Your Sawari email-change code is ${code}`,
+    preheader: `Your Sawari email change code is ${code}`,
     heading: 'Confirm your new email',
-    intro: 'One quick step to move your account to the new address.',
+    intro: 'Enter this code to move your account to the new address.',
     bodyHtml,
-    footerNote: 'Sawari — deep, structured learning.',
+    footerNote: 'Sawari. Learn by doing.',
   })
 
   const text = [
     `Hi ${firstName},`,
     '',
-    `Your Sawari 6-digit email-change code is: ${code}`,
-    `Enter it to confirm ${newEmail} as your new account email.`,
+    `Your Sawari email change code is: ${code}`,
     '',
-    `This code expires in ${expiresMinutes} minutes.`,
+    `Enter it to confirm ${newEmail} as your account email. The code expires in ${expiresMinutes} minutes.`,
     '',
-    'If you did not request this, you can safely ignore this email.',
+    'If you did not request this, you can ignore this email.',
     '',
-    '— Sawari',
+    'Sawari. Learn by doing.',
   ].join('\n')
 
-  return { subject: `${code} is your Sawari email-change code`, html, text }
+  return { subject: `${code} is your Sawari email change code`, html, text }
 }

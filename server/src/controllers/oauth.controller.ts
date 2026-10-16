@@ -3,8 +3,10 @@ import { env } from '../config/env.js'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import { httpError } from '../lib/AppError.js'
 import { setAuthCookie } from '../lib/cookies.js'
+import { renderTemplate } from '../mail/index.js'
 import { User } from '../models/User.js'
 import { splitName, type OAuthProfile } from '../passport/types.js'
+import { queueEmail } from '../services/notifications.js'
 
 /**
  * Shared callback for passport providers. `req.user` holds the normalized
@@ -39,6 +41,7 @@ export const oauthCallback = asyncHandler(
       return
     }
 
+    let created = false
     if (!user) {
       const { firstName, lastName } = splitName(profile.name)
       user = await User.create({
@@ -50,6 +53,7 @@ export const oauthCallback = asyncHandler(
         avatar: profile.avatar ?? undefined,
         emailVerified: Boolean(profile.emailVerified),
       })
+      created = true
     } else {
       // Link the provider to the matched account (exact-provider and
       // verified-email matches only — unverified email matches bail out above).
@@ -63,6 +67,18 @@ export const oauthCallback = asyncHandler(
 
     user.lastLoggedInAt = new Date()
     await user.save()
+
+    // Welcome a brand new OAuth account the same way a local signup is
+    // welcomed. Skipped when the provider gave us no usable address.
+    if (created && profile.email) {
+      await queueEmail(
+        user.email,
+        renderTemplate('welcome', {
+          firstName: user.firstName,
+          appUrl: `${env.FRONTEND_URL}/app/setup`,
+        }),
+      )
+    }
 
     setAuthCookie(res, user._id.toString())
     res.redirect(`${env.FRONTEND_URL}?oauth=success&provider=${profile.provider}`)

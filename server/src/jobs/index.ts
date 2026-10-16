@@ -1,10 +1,12 @@
 import { registerJobHandler, startJobWorker } from './queue.js'
 import type { EmailMessage } from '../mail/types.js'
-import { sendEmail } from '../mail/index.js'
+import { env } from '../config/env.js'
+import { sendEmail, renderTemplate } from '../mail/index.js'
+import { LearningPath } from '../models/LearningPath.js'
+import { toReminderPreferences, User } from '../models/User.js'
+import { AiUnavailableError } from '../services/ai/deepseek.js'
 import { createNotification } from '../services/notifications.js'
 import { regeneratePathOutline } from '../services/pathOutline.js'
-import { LearningPath } from '../models/LearningPath.js'
-import { AiUnavailableError } from '../services/ai/deepseek.js'
 
 /* ------------------------------------------------------------------ */
 /*  Job bootstrap. index.ts calls startJobs() once after the DB        */
@@ -33,12 +35,27 @@ async function handleBuildPath(payload: BuildPathJobPayload, job: { attempts: nu
     path.generationFinishedAt = new Date()
     await path.save()
 
+    const owner = await User.findById(payload.userId).select('firstName email preferences')
+    const emailReady = owner && toReminderPreferences(owner).pathUpdates
+
     await createNotification({
       userId: payload.userId,
       kind: 'path',
       title: 'Your path is ready',
       body: `We designed "${path.subject}" into ${path.sections.length} sections. Take a look when you're ready.`,
       link: '/app/path',
+      email:
+        emailReady && owner
+          ? {
+              to: owner.email,
+              rendered: renderTemplate('path-ready', {
+                firstName: owner.firstName,
+                pathTitle: path.subject,
+                sections: path.sections.length,
+                ctaUrl: `${env.FRONTEND_URL}/app/path`,
+              }),
+            }
+          : undefined,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
