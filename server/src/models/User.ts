@@ -1,6 +1,6 @@
 import mongoose, { type Document, type Model, Schema, type Types } from 'mongoose'
 import { hash, compare } from 'bcryptjs'
-import { INTENSITIES, LEARNING_FORMATS, REMINDER_DAYS, WEEKLY_HOURS, type Intensity, type LearningFormat, type Provider, type ReminderDay, type WeeklyHours } from '../domain/index.js'
+import { INTENSITIES, LEARNING_FORMATS, REMINDER_DAYS, ROLES, WEEKLY_HOURS, type Intensity, type LearningFormat, type Provider, type ReminderDay, type Role, type WeeklyHours } from '../domain/index.js'
 
 export interface SafeUser {
   id: string
@@ -10,6 +10,7 @@ export interface SafeUser {
   emailVerified: boolean
   avatar: string | null
   provider: Provider
+  role: Role
   activePathId: string | null
   createdAt: string
   /** True when a local password is set (OAuth accounts may not have one). */
@@ -66,6 +67,8 @@ export interface UserDocument extends Document {
   providerId?: string
   passwordHash?: string
   lastLoggedInAt?: Date
+  /** Account role: regular learner or catalog admin (set manually in the DB). */
+  role: Role
   preferences?: ReminderPreferences
   /** Currently selected learning path (restored on load). */
   activePathId?: string | null
@@ -192,6 +195,7 @@ const userSchema = new Schema<UserDocument, UserModel>(
     avatar: { type: String, default: null },
     provider: { type: String, enum: ['local', 'github', 'google'], required: true, default: 'local' },
     providerId: { type: String },
+    role: { type: String, enum: ROLES, default: 'user', index: true },
     passwordHash: { type: String, select: false },
     lastLoggedInAt: { type: Date },
     preferences: { type: preferencesSchema, default: () => ({}) },
@@ -227,6 +231,7 @@ export function toSafeUser(user: UserDocument, opts?: { hasPassword?: boolean })
     emailVerified: user.emailVerified,
     avatar: user.avatar?.length ? user.avatar : null,
     provider: user.provider,
+    role: user.role ?? 'user',
     activePathId: user.activePathId ?? null,
     createdAt: user.createdAt.toISOString(),
   }

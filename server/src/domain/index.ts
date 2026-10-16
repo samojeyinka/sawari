@@ -38,6 +38,10 @@ export type ProjectStatus = (typeof PROJECT_STATUSES)[number]
 export const PROVIDERS = ['local', 'github', 'google'] as const
 export type Provider = (typeof PROVIDERS)[number]
 
+/** Account roles. Only admins may curate the public catalog. */
+export const ROLES = ['user', 'admin'] as const
+export type Role = (typeof ROLES)[number]
+
 /** Weekday codes for reminder scheduling, Monday-first. */
 export const REMINDER_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
 export type ReminderDay = (typeof REMINDER_DAYS)[number]

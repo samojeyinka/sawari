@@ -45,6 +45,8 @@ export interface AssessmentResult {
 export interface LearningPathDocument extends Document {
   _id: Types.ObjectId
   userId: Types.ObjectId
+  /** Set when this path was enrolled from a public catalog path. */
+  catalogPathId: Types.ObjectId | null
   subject: string
   goal: string
   experience: ExperienceLevel | null
@@ -108,6 +110,7 @@ const assessmentResultSchema = new Schema<AssessmentResult>(
 const learningPathSchema = new Schema<LearningPathDocument, LearningPathModel>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    catalogPathId: { type: Schema.Types.ObjectId, ref: 'CatalogPath', default: null, index: true },
     subject: { type: String, required: true, trim: true, maxlength: 120 },
     goal: { type: String, default: '', maxlength: 500 },
     experience: { type: String, enum: EXPERIENCE_LEVELS, default: null },

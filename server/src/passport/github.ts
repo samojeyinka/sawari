@@ -35,7 +35,7 @@ export function createGithubStrategy(): GitHubStrategy {
       name: profile.displayName || profile.username || 'GitHub Learner',
       avatar: profile.photos?.[0]?.value ?? null,
     }
-    done(null, normalized)
+    done(null, normalized as unknown as Express.User)
   }
 
   return new GitHubStrategy(

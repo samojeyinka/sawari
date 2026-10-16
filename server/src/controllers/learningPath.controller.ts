@@ -12,6 +12,7 @@ import {
 } from '../lib/queryFilters.js'
 import { serialize } from '../lib/serialize.js'
 import { assertCanCreatePath } from '../services/billing.js'
+import { CatalogPath } from '../models/CatalogPath.js'
 import { LearningPath } from '../models/LearningPath.js'
 import { Project } from '../models/Project.js'
 import { SessionContentModel } from '../models/SessionContent.js'
@@ -25,6 +26,7 @@ const LIST_SORT = ['createdAt', 'updatedAt', 'subject', 'targetDate'] as const
 const LIST_SELECT = [
   'subject',
   'goal',
+  'catalogPathId',
   'experience',
   'reason',
   'weeklyHours',
@@ -198,6 +200,12 @@ export const deleteLearningPath = asyncHandler(
     // Cascade: drop cached AI session content for the deleted path so no
     // orphan SessionContent rows linger (they are keyed by pathId).
     await SessionContentModel.deleteMany({ pathId: path._id })
+
+    // Keep the public catalog's enrollment counter honest when a learner
+    // removes their enrolled copy.
+    if (path.catalogPathId) {
+      await CatalogPath.updateOne({ _id: path.catalogPathId }, { $inc: { enrollments: -1 } })
+    }
 
     res.noContent()
   },
