@@ -52,6 +52,12 @@ jobs:
           --health-retries 5
     env:
       TEST_MONGODB_URI: mongodb://127.0.0.1:27017/sawari_test
+      # The suite stubs every outbound request (DeepSeek, PayPal), but the app
+      # still gates those features on whether they are "configured". Placeholder
+      # values satisfy those guards so the stubs are reached; nothing hits the network.
+      DEEPSEEK_API_KEY: ci-placeholder-key
+      PAYPAL_CLIENT_ID: ci-placeholder-id
+      PAYPAL_CLIENT_SECRET: ci-placeholder-secret
     steps:
       - uses: actions/checkout@v4
 
