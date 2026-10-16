@@ -78,6 +78,16 @@ export const register = asyncHandler(
       },
     })
 
+    // Welcome every new account, whatever the signup method. Sent as a plain
+    // queued email so it never adds a second bell notification at signup.
+    await queueEmail(
+      user.email,
+      renderTemplate('welcome', {
+        firstName: user.firstName,
+        appUrl: `${env.FRONTEND_URL}/app/setup`,
+      }),
+    )
+
     res.created(
       toSafeUser(user, { hasPassword: true }),
       isMailConfigured
@@ -126,16 +136,9 @@ export const verifyEmail = asyncHandler(
     await createNotification({
       userId: user._id.toString(),
       kind: 'account',
-      title: 'Email verified — Welcome to Sawari',
-      body: `Your email is verified! Build your personalized learning path whenever you are ready.`,
+      title: 'Email verified',
+      body: 'Your email is verified. Build your personalized learning path whenever you are ready.',
       link: setupUrl,
-      email: {
-        to: user.email,
-        rendered: renderTemplate('welcome', {
-          firstName: user.firstName,
-          appUrl: setupUrl,
-        }),
-      },
     })
 
     res.ok(toSafeUser(user), { message: 'Email successfully verified!' })

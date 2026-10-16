@@ -6,27 +6,29 @@ export interface WelcomeData {
   appUrl: string
 }
 
-/** Sent once when a new account is created. */
+/** Sent once when a new account is created, whichever way you signed up. */
 export function welcome({ firstName, appUrl }: WelcomeData): RenderedEmail {
-  const heading = `Welcome to Sawari, ${firstName}`
   const html = renderLayout({
-    preheader: 'Your account is ready. Build your first learning path.',
-    heading,
+    preheader: 'Your Sawari account is ready.',
+    heading: `Welcome, ${firstName}`,
     intro:
-      'Sawari turns what you want to learn into a paced, hands-on path — short sessions, real practice, and a plan that adapts as you go.',
+      'Your account is ready. Sawari turns what you want to learn into a short, steady plan you can actually keep up with.',
     bodyHtml:
-      '<p style="margin:0 0 16px;color:#55575e;font-size:15px;line-height:1.6;">Your account is ready. When you have a moment, tell us what you want to learn and we will build the first path for you.</p>',
-    cta: { label: 'Build my learning path', url: appUrl },
-    footerNote: 'Sawari — learn by doing.',
+      '<p style="margin:0 0 16px;color:#333333;font-size:15px;line-height:1.65;">Tell us what you want to learn and we will build your first path. Nothing is set in stone, so you can change it whenever you like.</p>',
+    cta: { label: 'Build your first path', url: appUrl },
+    footerNote: 'Sawari. Learn by doing.',
   })
+
   const text = [
-    `Welcome to Sawari, ${firstName}!`,
+    `Hi ${firstName},`,
     '',
-    'Sawari turns what you want to learn into a paced, hands-on path.',
-    'Your account is ready. Build your first learning path here:',
+    'Welcome to Sawari. Your account is ready.',
+    '',
+    'Tell us what you want to learn and we will build your first path:',
     appUrl,
     '',
-    '— Sawari',
+    'Sawari. Learn by doing.',
   ].join('\n')
+
   return { subject: 'Welcome to Sawari', html, text }
 }

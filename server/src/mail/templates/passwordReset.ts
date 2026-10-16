@@ -14,11 +14,11 @@ export function passwordReset({
   expiresMinutes = 60,
 }: PasswordResetData): RenderedEmail {
   const bodyHtml = `
-    <p style="margin:0 0 16px;color:#55575e;font-size:15px;line-height:1.6;">
-      Hi ${firstName}, we received a request to reset your Sawari password. Click the button below to choose a new one:
+    <p style="margin:0 0 16px;color:#333333;font-size:15px;line-height:1.65;">
+      We received a request to reset your Sawari password. Choose a new one with the link below.
     </p>
-    <p style="margin:0 0 16px;color:#71717a;font-size:13px;line-height:1.6;">
-      This link expires in ${expiresMinutes} minutes. If you did not request a reset, you can safely ignore this email — your password will not change.
+    <p style="margin:0 0 16px;color:#777777;font-size:13px;line-height:1.6;">
+      This link expires in ${expiresMinutes} minutes. If you did not request this, you can ignore this email and your password will stay the same.
     </p>
   `
 
@@ -27,21 +27,21 @@ export function passwordReset({
     heading: 'Reset your password',
     intro: 'Choose a new password to get back into your learning path.',
     bodyHtml,
-    cta: { label: 'Reset password', url: resetUrl },
-    footerNote: 'Sawari — deep, structured learning.',
+    cta: { label: 'Reset your password', url: resetUrl },
+    footerNote: 'Sawari. Learn by doing.',
   })
 
   const text = [
     `Hi ${firstName},`,
     '',
     'We received a request to reset your Sawari password.',
-    `Open this link to choose a new one: ${resetUrl}`,
+    `Choose a new one here: ${resetUrl}`,
     '',
     `This link expires in ${expiresMinutes} minutes.`,
     '',
-    'If you did not request this, you can safely ignore this email.',
+    'If you did not request this, you can ignore this email and your password will stay the same.',
     '',
-    '— Sawari',
+    'Sawari. Learn by doing.',
   ].join('\n')
 
   return { subject: 'Reset your Sawari password', html, text }

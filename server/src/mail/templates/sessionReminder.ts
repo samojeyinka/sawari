@@ -17,24 +17,27 @@ export function sessionReminder({
   minutes,
   ctaUrl,
 }: SessionReminderData): RenderedEmail {
-  const heading = `Today: ${sessionTitle}`
   const html = renderLayout({
     preheader: `${minutes} minutes on ${pathTitle}. Start whenever you are ready.`,
-    heading,
-    intro: `${firstName}, your next session on ${pathTitle} is ready. About ${minutes} minutes when you have the time.`,
+    heading: sessionTitle,
+    intro: `${firstName}, your next session on ${pathTitle} is ready. It takes about ${minutes} minutes.`,
     bodyHtml:
-      '<p style="margin:0 0 16px;color:#55575e;font-size:15px;line-height:1.6;">Skipping a day is fine — the plan simply shifts. This is just a nudge, not a deadline.</p>',
-    cta: { label: 'Start session', url: ctaUrl },
+      '<p style="margin:0 0 16px;color:#333333;font-size:15px;line-height:1.65;">Skipping a day is fine. The plan shifts and you pick up where you left off.</p>',
+    cta: { label: 'Start this session', url: ctaUrl },
     footerNote: 'You can turn reminders off in Settings.',
   })
+
   const text = [
-    `Today: ${sessionTitle}`,
+    `Today's session: ${sessionTitle}`,
     '',
-    `${firstName}, your next session on ${pathTitle} is ready (about ${minutes} minutes).`,
-    'Start whenever you are ready:',
-    ctaUrl,
+    `${firstName}, your next session on ${pathTitle} is ready. It takes about ${minutes} minutes.`,
     '',
-    '— Sawari',
+    'Skipping a day is fine. The plan shifts and you pick up where you left off.',
+    '',
+    `Start this session: ${ctaUrl}`,
+    '',
+    'Sawari. Learn by doing.',
   ].join('\n')
+
   return { subject: `Today's session: ${sessionTitle}`, html, text }
 }

@@ -1,12 +1,16 @@
 import type { NextFunction, Request, Response } from 'express'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import { httpError } from '../lib/AppError.js'
+import { env } from '../config/env.js'
 import { pageMeta, parsePagination, parseSelect, parseSort } from '../lib/queryFilters.js'
 import { serialize } from '../lib/serialize.js'
+import { renderTemplate } from '../mail/index.js'
 import { LearningPath } from '../models/LearningPath.js'
 import { Project } from '../models/Project.js'
+import { toReminderPreferences, User } from '../models/User.js'
 import { reviewProjectSubmission } from '../services/ai/index.js'
 import { AiRequestError, AiUnavailableError } from '../services/ai/deepseek.js'
+import { queueEmail } from '../services/notifications.js'
 import { resolveUserKey } from '../services/userKey.js'
 import type {
   CreateProjectInput,
@@ -150,6 +154,19 @@ export const reviewProject = asyncHandler(
     project.reviewed = true
     project.status = 'completed'
     await project.save()
+
+    const owner = await User.findById(req.user!.id)
+    if (owner && toReminderPreferences(owner).projectFeedback) {
+      await queueEmail(
+        owner.email,
+        renderTemplate('project-feedback', {
+          firstName: owner.firstName,
+          projectTitle: project.title,
+          summary: review.note,
+          ctaUrl: `${env.FRONTEND_URL}/app/projects/${project._id.toString()}`,
+        }),
+      )
+    }
 
     res.ok(serialize(project.toObject({ flattenMaps: true })))
   },

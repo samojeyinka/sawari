@@ -1,19 +1,12 @@
 /* ------------------------------------------------------------------ */
-/*  Shared email chrome. One table-based shell keeps every template     */
-/*  visually consistent and email-client-safe (inline styles only).     */
+/*  Shared email chrome. Plain white canvas, dark text, no cards, no    */
+/*  rounded corners, no brand colours. Every style is inline so it      */
+/*  holds up across email clients.                                      */
 /* ------------------------------------------------------------------ */
 
-const COLORS = {
-  band: '#001e2b',
-  panel: '#0b2a3a',
-  accent: '#0f766e',
-  accentText: '#ffffff',
-  ink: '#17181c',
-  body: '#55575e',
-  muted: '#83858d',
-  line: '#e8e6e1',
-  canvas: '#faf9f7',
-} as const
+const INK = '#111111'
+const BODY = '#333333'
+const MUTED = '#777777'
 
 /** Escapes untrusted text before it is interpolated into HTML. */
 export function escapeHtml(value: string): string {
@@ -29,7 +22,7 @@ export function paragraphs(items: string[]): string {
   return items
     .map(
       (text) =>
-        `<p style="margin:0 0 16px;color:${COLORS.body};font-size:15px;line-height:1.6;">${escapeHtml(
+        `<p style="margin:0 0 16px;color:${BODY};font-size:15px;line-height:1.65;">${escapeHtml(
           text,
         )}</p>`,
     )
@@ -38,27 +31,16 @@ export function paragraphs(items: string[]): string {
 
 export function bulletList(items: string[]): string {
   const rows = items
-    .map(
-      (text) =>
-        `<li style="margin:0 0 8px;color:${COLORS.body};font-size:15px;line-height:1.6;">${escapeHtml(
-          text,
-        )}</li>`,
-    )
+    .map((text) => `<li style="margin:0 0 6px;">${escapeHtml(text)}</li>`)
     .join('')
-  return `<ul style="margin:0 0 16px;padding-left:20px;">${rows}</ul>`
+  return `<ul style="margin:0 0 16px;padding-left:20px;color:${BODY};font-size:15px;line-height:1.65;">${rows}</ul>`
 }
 
-export function button(label: string, url: string): string {
-  return `
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px;">
-      <tr>
-        <td style="border-radius:8px;background:${COLORS.accent};">
-          <a href="${url}" target="_blank" style="display:inline-block;padding:12px 22px;color:${COLORS.accentText};font-size:15px;font-weight:600;text-decoration:none;">${escapeHtml(
-            label,
-          )}</a>
-        </td>
-      </tr>
-    </table>`
+/** A plain text link. No button chrome, just something to click. */
+export function ctaLink(label: string, url: string): string {
+  return `<p style="margin:0 0 20px;font-size:15px;line-height:1.65;"><a href="${url}" target="_blank" style="color:${INK};text-decoration:underline;">${escapeHtml(
+    label,
+  )}</a></p>`
 }
 
 export interface LayoutOptions {
@@ -70,7 +52,7 @@ export interface LayoutOptions {
   footerNote?: string
 }
 
-/** Wraps content in the Sawari navy band shell. */
+/** Wraps content in a plain white canvas. */
 export function renderLayout(options: LayoutOptions): string {
   const { preheader, heading, intro, bodyHtml, cta, footerNote } = options
   return `<!doctype html>
@@ -81,33 +63,26 @@ export function renderLayout(options: LayoutOptions): string {
     <meta name="color-scheme" content="light" />
     <title>${escapeHtml(heading)}</title>
   </head>
-  <body style="margin:0;padding:0;background:${COLORS.canvas};font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <body style="margin:0;padding:0;background:#ffffff;">
     <span style="display:none!important;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden;">${escapeHtml(
       preheader,
     )}</span>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${COLORS.canvas};padding:24px 12px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;">
       <tr>
         <td align="center">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
             <tr>
-              <td style="background:${COLORS.band};border-radius:14px 14px 0 0;padding:22px 28px;">
-                <span style="color:#f2f5f7;font-size:18px;font-weight:600;letter-spacing:-0.02em;">Sawari</span>
-              </td>
-            </tr>
-            <tr>
-              <td style="background:#ffffff;border:1px solid ${COLORS.line};border-top:0;border-radius:0 0 14px 14px;padding:28px;">
-                <h1 style="margin:0 0 16px;color:${COLORS.ink};font-size:20px;line-height:1.3;">${escapeHtml(
+              <td style="padding:32px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                <p style="margin:0 0 28px;color:${INK};font-size:15px;font-weight:600;">Sawari</p>
+                <h1 style="margin:0 0 16px;color:${INK};font-size:20px;font-weight:600;line-height:1.35;">${escapeHtml(
                   heading,
                 )}</h1>
-                ${intro ? `<p style="margin:0 0 16px;color:${COLORS.body};font-size:15px;line-height:1.6;">${escapeHtml(intro)}</p>` : ''}
+                ${intro ? `<p style="margin:0 0 16px;color:${BODY};font-size:15px;line-height:1.65;">${escapeHtml(intro)}</p>` : ''}
                 ${bodyHtml ?? ''}
-                ${cta ? button(cta.label, cta.url) : ''}
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:18px 28px;color:${COLORS.muted};font-size:12px;line-height:1.6;text-align:center;">
-                ${footerNote ? `${escapeHtml(footerNote)}<br />` : ''}
-                You are receiving this because you have a Sawari account.
+                ${cta ? ctaLink(cta.label, cta.url) : ''}
+                <p style="margin:32px 0 0;color:${MUTED};font-size:12.5px;line-height:1.6;">
+                  ${footerNote ? `${escapeHtml(footerNote)}<br />` : ''}You are receiving this because you have a Sawari account.
+                </p>
               </td>
             </tr>
           </table>

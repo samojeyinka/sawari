@@ -4,8 +4,10 @@ import { httpError } from '../lib/AppError.js'
 import { env, isPaypalConfigured } from '../config/env.js'
 import { User } from '../models/User.js'
 import { fingerprintSecret, sealSecret } from '../lib/secrets.js'
+import { renderTemplate } from '../mail/index.js'
 import { billingStatusFor } from '../services/billing.js'
 import { captureAndVerifyProOrder, createProOrder, PaypalError } from '../services/paypal.js'
+import { queueEmail } from '../services/notifications.js'
 import { UserKeyError, verifyDeepSeekKey } from '../services/userKey.js'
 import type { CaptureOrderInput, SaveAiKeyInput } from '../validators/billingValidators.js'
 
@@ -85,6 +87,15 @@ export const capturePaypalOrder = asyncHandler(
       user.paypalOrderId = verified.orderId
       user.paypalCaptureId = verified.captureId
       await user.save()
+
+      await queueEmail(
+        user.email,
+        renderTemplate('pro-upgraded', {
+          firstName: user.firstName,
+          pathLimit: env.PRO_PATH_LIMIT,
+          appUrl: `${env.FRONTEND_URL}/app`,
+        }),
+      )
 
       res.ok({ ...(await billingStatusFor(user._id.toString())), message: 'Welcome to Pro.' })
     } catch (error) {
