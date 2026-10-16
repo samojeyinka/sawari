@@ -55,6 +55,22 @@ export const goalExtractionResponseSchema = z.object({
 
 export type GoalExtractionResponse = z.infer<typeof goalExtractionResponseSchema>
 
+/* --------------------------- admire search ------------------------ */
+
+export const admireCandidateSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  role: z.string().trim().min(2).max(120),
+  blurb: z.string().trim().min(5).max(240),
+  subject: z.string().trim().min(2).max(60),
+  skills: z.array(z.string().trim().min(2).max(60)).min(4).max(8),
+})
+
+export const admireCandidatesResponseSchema = z.object({
+  candidates: z.array(admireCandidateSchema).min(3).max(6),
+})
+
+export type AdmireCandidatesResponse = z.infer<typeof admireCandidatesResponseSchema>
+
 /* --------------------------- project review ----------------------- */
 
 export const projectReviewResponseSchema = z.object({

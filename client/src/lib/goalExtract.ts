@@ -23,6 +23,16 @@ export interface GoalExtraction {
   offline?: boolean
 }
 
+/** A person the AI suggests when the learner wants to copy someone's skills. */
+export interface AdmireCandidate {
+  name: string
+  role: string
+  /** What they do and why they match the learner's description. */
+  blurb: string
+  subject: string
+  skills: string[]
+}
+
 interface Archetype {
   keys: string[]
   subject: string
@@ -149,19 +159,47 @@ function matchArchetype(text: string): Archetype {
   return best
 }
 
-/** Pull a readable name out of a LinkedIn URL, or accept a plain name. */
-function personName(raw: string): string {
-  const text = raw.trim()
-  const match = text.match(/linkedin\.com\/in\/([^/?#]+)/i)
-  let base = match ? decodeURIComponent(match[1]) : text
-  if (match) {
-    base = base.replace(/-[0-9a-f]{6,}$/i, '').replace(/-?\d+$/g, '').replace(/[-_]+/g, ' ')
-  } else {
-    base = base.replace(/https?:\/\/\S+/i, '').replace(/[|,].*$/, '').trim()
-  }
-  const words = base.split(/\s+/).filter(Boolean).slice(0, 3)
+/** Reduce a typed name or description to a short, readable display name. */
+function cleanQuery(raw: string): string {
+  const text = raw
+    .trim()
+    .replace(/https?:\/\/\S+/i, '')
+    .replace(/[|,].*$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const words = text.split(/\s+/).filter(Boolean).slice(0, 4)
   if (words.length === 0) return 'this person'
   return words.map(titleCase).join(' ')
+}
+
+/**
+ * Offline fallback when the AI people-search is unreachable: a single
+ * candidate inferred from the typed query via the archetype keyword match.
+ */
+export function offlineAdmireCandidates(query: string): AdmireCandidate[] {
+  const archetype = matchArchetype(query)
+  const name = cleanQuery(query)
+  return [
+    {
+      name,
+      role: archetype.role,
+      blurb: `Closest offline match for “${name}”. Fine-tune the path to your own goals.`,
+      subject: archetype.subject,
+      skills: archetype.skills,
+    },
+  ]
+}
+
+/** Turn a chosen candidate into the goal extraction the setup flow stores. */
+export function candidateToExtraction(candidate: AdmireCandidate, offline = false): GoalExtraction {
+  return {
+    subject: candidate.subject,
+    outcome: `Reach ${candidate.name}'s level by building the same core skills.`,
+    skills: candidate.skills,
+    label: candidate.name,
+    note: `Skills behind ${candidate.name}'s niche`,
+    offline,
+  }
 }
 
 /** Reduce "I want to build a booking site" to "a booking site". */
@@ -185,14 +223,7 @@ export function extractGoal(mode: 'admire' | 'build', input: string): GoalExtrac
   const archetype = matchArchetype(input)
 
   if (mode === 'admire') {
-    const name = personName(input)
-    return {
-      subject: archetype.subject,
-      outcome: `Reach ${name}'s level by building the same core skills.`,
-      skills: archetype.skills,
-      label: name,
-      note: `Niche read from ${name}'s profile`,
-    }
+    return candidateToExtraction(offlineAdmireCandidates(input)[0])
   }
 
   const thing = thingLabel(input)

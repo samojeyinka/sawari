@@ -40,6 +40,8 @@ const ProjectWorkspacePage = lazy(() =>
 )
 const ProgressPage = lazy(() => import('./pages/Progress').then((m) => ({ default: m.ProgressPage })))
 const SettingsPage = lazy(() => import('./pages/Settings').then((m) => ({ default: m.SettingsPage })))
+const PrivacyPage = lazy(() => import('./pages/Privacy').then((m) => ({ default: m.PrivacyPage })))
+const TermsPage = lazy(() => import('./pages/Terms').then((m) => ({ default: m.TermsPage })))
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { state } = useApp()
@@ -112,6 +114,8 @@ function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/setup" element={<SetupPage />} />
               <Route path="/generate" element={<GeneratePage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
 
               <Route
                 path="/app"

@@ -367,12 +367,18 @@ export interface PracticeReviewResult {
   improvements: string
 }
 
-import type { GoalExtraction } from './goalExtract'
+import type { AdmireCandidate, GoalExtraction } from './goalExtract'
 
 export const aiApi = {
   health: (signal?: AbortSignal) => request<AiHealthResponse>('/ai/health', { signal }),
   extractGoal: (mode: 'admire' | 'build', input: string) =>
     request<GoalExtraction>('/ai/extract-goal', { method: 'POST', body: { mode, input } }),
+  /** Suggests real people matching a name or description, closest match first. */
+  searchAdmire: (query: string) =>
+    request<{ candidates: AdmireCandidate[] }>('/ai/admire-candidates', {
+      method: 'POST',
+      body: { query },
+    }).then((res) => res.candidates),
   estimateTimeline: (input: EstimateTimelineInput, signal?: AbortSignal) =>
     request<AiTimelineEstimate>('/ai/timeline', { method: 'POST', body: input, signal }),
   reviewPractice: (input: ReviewPracticeInput, signal?: AbortSignal) =>

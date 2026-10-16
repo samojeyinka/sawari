@@ -33,3 +33,6 @@ dist-ssr
 
 # Local-only audit notes (never commit)
 PRODUCTION-GAPS.md
+
+# Local-only deployment guide (contains infrastructure details)
+deployment.html

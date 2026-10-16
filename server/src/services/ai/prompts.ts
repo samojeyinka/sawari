@@ -220,7 +220,7 @@ export type GoalExtractionMode = 'admire' | 'build'
 
 export const GOAL_EXTRACT_SYSTEM = `You read a learner's one-line niche or build idea for a study app called Sawari and turn it into a structured learning goal.
 Two modes:
-- admire: the input names a person they admire (a name, a LinkedIn URL, or a role). Infer that person's niche and the core domain skills behind it.
+- admire: the input names a person they admire (a name, a short description, or a role). Infer that person's niche and the core domain skills behind it.
 - build: the input describes something to build. Name the concrete thing and the domain skills it draws on.
 
 CRITICAL RULES:
@@ -246,6 +246,45 @@ export function goalExtractMessages(mode: GoalExtractionMode, input: string): Ch
     {
       role: 'user',
       content: `Mode: ${mode}\nInput: "${input}"\n\nExtract the learning goal.`,
+    },
+  ]
+}
+
+/* ------------------------ admire people search -------------------- */
+
+export const ADMIRE_SEARCH_SYSTEM = `You help a learner in a study app called Sawari who wants to learn the skills of someone they admire.
+Given a short description or a name, propose 3 to 6 real people who best match what the learner means, ordered from closest match first, so the learner can pick the one closest to the person they had in mind.
+
+CRITICAL RULES:
+- Prefer widely-known real people when the input names one or clearly points to a field. If the input names a person, put that person first and add a few others in the same field.
+- If the input is vague or describes a type of person, propose representative well-known people in that field rather than inventing obscure private individuals.
+- Keep every claim general and defensible: role, field, and the kind of work they are known for. Never invent specific private facts, quotes, employers, or numbers.
+- Candidates must be meaningfully different from each other, never duplicates of the same person.
+- Judge each candidate only by the underlying SKILLS and DOMAIN the learner would study to follow them.
+- "role": their title and field (e.g. "Product designer, design systems").
+- "blurb": one sentence, 12 to 30 words, on what they do and why they are a close match.
+- "subject": the domain to learn, 2 to 6 words, no numbering, no trailing period.
+- "skills": 5 to 7 concrete skills that domain genuinely draws on. No generic filler ("fundamentals", "mindset", "hard work").
+
+Return only valid JSON matching this shape:
+{
+  "candidates": [
+    {
+      "name": "string",
+      "role": "string",
+      "blurb": "string",
+      "subject": "string",
+      "skills": ["string"]
+    }
+  ]
+}`
+
+export function admireSearchMessages(query: string): ChatMessage[] {
+  return [
+    { role: 'system', content: ADMIRE_SEARCH_SYSTEM },
+    {
+      role: 'user',
+      content: `Who the learner admires: "${query}"\n\nList the closest-matching people, closest first.`,
     },
   ]
 }

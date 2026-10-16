@@ -86,6 +86,13 @@ export const extractGoalValidator = z.strictObject({
 
 export type ExtractGoalInput = z.infer<typeof extractGoalValidator>
 
+/** Setup admire search: find people matching a name or short description. */
+export const admireSearchValidator = z.strictObject({
+  query: z.string().trim().min(3).max(200),
+})
+
+export type AdmireSearchInput = z.infer<typeof admireSearchValidator>
+
 export type CreateLearningPathInput = z.infer<typeof createLearningPathSchema>
 export type UpdateLearningPathInput = z.infer<typeof updateLearningPathSchema>
 

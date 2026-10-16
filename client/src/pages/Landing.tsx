@@ -26,7 +26,7 @@ const btnGhost = cx(
   btn,
   'h-[46px] border border-on-band/25 px-6 text-[14.5px] font-medium text-on-band hover:border-on-band/60',
 )
-const btnSmall = cx(btn, 'h-[38px] bg-on-band px-5 text-[13.5px] font-medium text-band')
+const btnSmall = cx(btn, 'h-[38px] bg-on-band px-4 text-[13.5px] font-medium text-band sm:px-5')
 
 const navLinks = [
   { label: 'How it works', href: '#how' },
@@ -415,14 +415,14 @@ function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
           {user ? (
             <AvatarMenu name={user.name} onSignOut={signOut} />
           ) : (
             <>
               <Link
                 to="/login"
-                className={cx(monoNote, 'hidden transition-colors hover:text-on-band sm:block')}
+                className={cx(monoNote, 'py-2 transition-colors hover:text-on-band')}
               >
                 Log in
               </Link>
@@ -473,7 +473,7 @@ export function LandingPage() {
               </span>
             </h1>
             <p className={cx(body, 'max-w-[520px]')}>
-              The material you need is already out there, most of it free. Sawari orders it into one
+              The material you need is already out there, all free. Sawari orders it into one
               path, fits it around the hours you actually have, and walks you through real practice
               until you can do the thing.
             </p>
@@ -667,7 +667,7 @@ export function LandingPage() {
             'flex flex-col items-center justify-center gap-4 py-24 text-center',
           )}
         >
-          <p className={eyebrow}>Free to start · sign in to save your path</p>
+         
           <h2 className={cx(display, 'text-[32px] leading-[1.1] sm:text-[46px]')}>
             What do you want to learn?
           </h2>
@@ -690,7 +690,7 @@ export function LandingPage() {
 
       {/* footer */}
       <footer className="bg-band-deep">
-        <div className={cx(inset, 'grid gap-y-0 sm:grid-cols-2 xl:grid-cols-[420px_1fr_1fr_1fr]')}>
+        <div className={cx(inset, 'grid gap-y-0 sm:grid-cols-2 xl:grid-cols-[420px_1fr_1fr_1fr_1fr]')}>
           <div className="flex flex-col items-start gap-4 py-10 sm:pr-10">
             <Logo size="sm" />
             <p className="max-w-[300px] text-[13.5px] leading-relaxed text-on-band-dim">
@@ -721,6 +721,13 @@ export function LandingPage() {
                 { label: 'Project Management', to: '#paths' },
                 { label: 'Spanish', to: '#paths' },
                 { label: 'Photography', to: '#paths' },
+              ],
+            },
+            {
+              heading: 'Legal',
+              items: [
+                { label: 'Privacy Policy', to: '/privacy' },
+                { label: 'Terms of Service', to: '/terms' },
               ],
             },
           ].map((column) => (

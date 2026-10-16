@@ -6,10 +6,14 @@ import { createApp } from '../src/app.js'
 import { connectDb, disconnectDb } from '../src/config/db.js'
 import { User } from '../src/models/User.js'
 import {
+  admireSearchMessages,
   goalExtractMessages,
   type GoalExtractionMode,
 } from '../src/services/ai/prompts.js'
-import { goalExtractionResponseSchema } from '../src/services/ai/schemas.js'
+import {
+  admireCandidatesResponseSchema,
+  goalExtractionResponseSchema,
+} from '../src/services/ai/schemas.js'
 
 /**
  * Goal extraction contracts: prompt shape, response schema, and the
@@ -47,6 +51,57 @@ test('goalExtractMessages carries mode and input', () => {
     assert.match(messages[1].content, /some input here/)
     assert.match(messages[0].content, /Return only valid JSON/)
   }
+})
+
+/* --------------------------- admire search ------------------------ */
+
+const validCandidates = {
+  candidates: [
+    {
+      name: 'Amara Osei',
+      role: 'Product designer, design systems',
+      blurb: 'Builds design systems for large product teams and teaches the craft.',
+      subject: 'Product Design',
+      skills: ['Design systems', 'Typography', 'Prototyping', 'User research', 'Handoff'],
+    },
+    {
+      name: 'Nadia Rahim',
+      role: 'Design lead, editorial products',
+      blurb: 'Leads editorial design and typography for digital publications.',
+      subject: 'Editorial Design',
+      skills: ['Layout', 'Typography', 'Grids', 'Print', 'Art direction'],
+    },
+    {
+      name: 'Marta Silva',
+      role: 'UX researcher, product',
+      blurb: 'Runs research programmes that shape product decisions.',
+      subject: 'UX Research',
+      skills: ['Interviewing', 'Usability testing', 'Synthesis', 'Journey maps', 'Metrics'],
+    },
+  ],
+}
+
+const validCandidate = validCandidates.candidates[0]
+
+test('admire candidates schema accepts a well-formed list', () => {
+  assert.equal(admireCandidatesResponseSchema.safeParse(validCandidates).success, true)
+})
+
+test('admire candidates schema rejects too few candidates and thin skills', () => {
+  assert.equal(admireCandidatesResponseSchema.safeParse({ candidates: [] }).success, false)
+  assert.equal(
+    admireCandidatesResponseSchema.safeParse({
+      candidates: [{ ...validCandidate, skills: ['One'] }],
+    }).success,
+    false,
+  )
+})
+
+test('admireSearchMessages carries the query', () => {
+  const messages = admireSearchMessages('a designer known for design systems')
+  assert.equal(messages.length, 2)
+  assert.match(messages[1].content, /a designer known for design systems/)
+  assert.match(messages[0].content, /Return only valid JSON/)
 })
 
 /* --------------------------- endpoint ----------------------------- */
@@ -115,5 +170,38 @@ test('POST /ai/extract-goal validates its input', { skip: !hasDb }, async () => 
   const anon = await request(app)
     .post('/api/v1/ai/extract-goal')
     .send({ mode: 'build', input: 'a proper build idea here' })
+  assert.equal(anon.status, 401)
+})
+
+test('POST /ai/admire-candidates returns model candidates', { skip: !hasDb }, async () => {
+  const cookie = await authCookie('admire-ai@example.com')
+  globalThis.fetch = (async () => {
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: JSON.stringify(validCandidates) } }] }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    )
+  }) as unknown as typeof fetch
+
+  const res = await request(app)
+    .post('/api/v1/ai/admire-candidates')
+    .set('Cookie', cookie)
+    .send({ query: 'a designer known for design systems' })
+  assert.equal(res.status, 200)
+  assert.equal(res.body.data.candidates.length, 3)
+  assert.equal(res.body.data.candidates[0].name, 'Amara Osei')
+  assert.equal(res.body.data.candidates[0].skills.length, 5)
+})
+
+test('POST /ai/admire-candidates validates its input', { skip: !hasDb }, async () => {
+  const cookie = await authCookie('admire-bad@example.com')
+  const short = await request(app)
+    .post('/api/v1/ai/admire-candidates')
+    .set('Cookie', cookie)
+    .send({ query: 'x' })
+  assert.equal(short.status, 422)
+
+  const anon = await request(app)
+    .post('/api/v1/ai/admire-candidates')
+    .send({ query: 'a designer known for design systems' })
   assert.equal(anon.status, 401)
 })

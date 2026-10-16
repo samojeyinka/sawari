@@ -56,6 +56,8 @@ const envSchema = z.object({
   /* --- background jobs (Mongo-backed queue) --- */
   QUEUE_POLL_MS: z.coerce.number().int().positive().default(2000),
   QUEUE_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
+  /** Jobs run in parallel up to this many; a slow build can't block mail. */
+  QUEUE_CONCURRENCY: z.coerce.number().int().min(1).max(32).default(4),
 
   /* --- reminder scheduler (session reminders + weekly summary) --- */
   SCHEDULER_ENABLED: z
@@ -67,20 +69,50 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>
 
+/**
+ * Production must never boot degraded-but-listening. Development and tests
+ * keep the forgiving defaults so `npm run dev` / `npm test` need no secrets;
+ * production refuses to start when a required value is missing or still
+ * pointing at localhost, and reports every gap at once.
+ */
+function assertProductionConfig(env: Env): void {
+  if (env.NODE_ENV !== 'production') return
+
+  const missing: string[] = []
+  const isDefault = (value: string, fallback: string) => value === fallback
+
+  if (isDefault(env.MONGODB_URI, 'mongodb://127.0.0.1:27017/sawari')) {
+    missing.push('MONGODB_URI')
+  }
+  if (isDefault(env.FRONTEND_URL, 'http://localhost:5173')) missing.push('FRONTEND_URL')
+  if (env.JWT_SECRET === DEV_JWT_SECRET) missing.push('JWT_SECRET')
+  // Mail carries verification + password reset: silent unless explicitly off.
+  if (env.MAIL_ENABLED && !env.RESEND_API_KEY) missing.push('RESEND_API_KEY')
+  // Path building is the product; an own-key fallback still needs this base key.
+  if (!env.DEEPSEEK_API_KEY) missing.push('DEEPSEEK_API_KEY')
+  // Sealing user-supplied keys throws without it (see lib/secrets.ts).
+  if (!env.AI_KEY_SECRET) missing.push('AI_KEY_SECRET')
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Refusing to boot production with missing/placeholder configuration:\n` +
+        missing.map((name) => `  - ${name}`).join('\n') +
+        '\nSet them in .env (copy .env.example).',
+    )
+  }
+}
+
 function loadEnv(): Env {
   const result = envSchema.safeParse(process.env)
   if (!result.success) {
     const lines = result.error.issues.map((issue) => `  - ${issue.path.join('.')}: ${issue.message}`)
     throw new Error(`Invalid environment configuration:\n${lines.join('\n')}`)
   }
+  assertProductionConfig(result.data)
   return result.data
 }
 
 export const env = loadEnv()
-
-if (env.NODE_ENV === 'production' && env.JWT_SECRET === DEV_JWT_SECRET) {
-  throw new Error('Refusing to boot production with the default JWT_SECRET. Set JWT_SECRET in .env.')
-}
 
 export const isOAuthConfigured = {
   github: Boolean(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET),
