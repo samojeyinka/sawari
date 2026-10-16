@@ -4,6 +4,7 @@ import { AiRequestError, chatCompletion, type ChatMessage } from './deepseek.js'
 import {
   contentMessages,
   goalExtractMessages,
+  admireSearchMessages,
   outlineMessages,
   practiceReviewMessages,
   projectReviewMessages,
@@ -17,12 +18,14 @@ import {
   type TimelinePromptParams,
 } from './prompts.js'
 import {
+  admireCandidatesResponseSchema,
   aiTimelineResponseSchema,
   goalExtractionResponseSchema,
   outlineResponseSchema,
   practiceReviewResponseSchema,
   projectReviewResponseSchema,
   sessionResponseSchema,
+  type AdmireCandidatesResponse,
   type AiTimelineResponse,
   type GoalExtractionResponse,
   type PracticeReviewResponse,
@@ -184,6 +187,18 @@ export async function extractGoal(
     goalExtractMessages(mode, input),
     goalExtractionResponseSchema,
     { maxTokens: 1024, thinking: false, temperature: 0.4, apiKey },
+  )
+}
+
+/** Suggests real people matching an admirer description, closest match first. */
+export async function searchAdmireCandidates(
+  query: string,
+  apiKey?: string,
+): Promise<AdmireCandidatesResponse> {
+  return generateValidated(
+    admireSearchMessages(query),
+    admireCandidatesResponseSchema,
+    { maxTokens: 2048, thinking: false, temperature: 0.6, apiKey },
   )
 }
 

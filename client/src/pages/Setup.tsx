@@ -18,7 +18,8 @@ import { Field } from '../components/ui/ProgressBar'
 import { Sweep } from '../components/ui/Sweep'
 import { DatePickerField } from '../components/ui/DatePickerField'
 import { cx } from '../lib/utils'
-import { extractGoal, type GoalExtraction, type GoalMode } from '../lib/goalExtract'
+import { extractGoal, offlineAdmireCandidates, candidateToExtraction, type AdmireCandidate, type GoalExtraction, type GoalMode } from '../lib/goalExtract'
+import { AdmireCandidatesModal } from '../components/modals/AdmireCandidatesModal'
 
 const steps = [
   'What do you want to learn?',
@@ -237,6 +238,10 @@ export function SetupPage() {
   const [aim, setAim] = useState('')
   const [extraction, setExtraction] = useState<GoalExtraction | null>(null)
   const [extracting, setExtracting] = useState(false)
+  const [candidates, setCandidates] = useState<AdmireCandidate[]>([])
+  const [searching, setSearching] = useState(false)
+  const [admireOpen, setAdmireOpen] = useState(false)
+  const [admireOffline, setAdmireOffline] = useState(false)
   const [aiTimeline, setAiTimeline] = useState<AiTimelineEstimate | null>(null)
   const [loadingTimeline, setLoadingTimeline] = useState(false)
 
@@ -288,7 +293,7 @@ export function SetupPage() {
       case 0:
         if (mode !== 'topic' && !extraction)
           return mode === 'admire'
-            ? 'Find their skills first.'
+            ? 'Find and pick the person closest to who you mean.'
             : 'Describe it, then find the skills.'
         if (setup.subject.trim().length < 2) return 'Tell us what you want to learn.'
         if (setup.subject.trim().length > 120) return 'Keep the subject under 120 characters.'
@@ -335,6 +340,8 @@ export function SetupPage() {
     setError('')
     setExtraction(null)
     setAim('')
+    setCandidates([])
+    setAdmireOpen(false)
   }
 
   const runExtract = async () => {
@@ -354,6 +361,34 @@ export function SetupPage() {
     } finally {
       setExtracting(false)
     }
+  }
+
+  /** Asks the AI for people matching the description, then opens the picker. */
+  const runAdmireSearch = async () => {
+    if (aim.trim().length < 3) return
+    setError('')
+    setSearching(true)
+    setExtraction(null)
+    try {
+      const found = await aiApi.searchAdmire(aim.trim())
+      setCandidates(found)
+      setAdmireOffline(false)
+    } catch {
+      // Offline fallback: one keyword-matched candidate so the flow still works.
+      setCandidates(offlineAdmireCandidates(aim))
+      setAdmireOffline(true)
+    } finally {
+      setSearching(false)
+      setAdmireOpen(true)
+    }
+  }
+
+  const chooseAdmire = (candidate: AdmireCandidate) => {
+    const result = candidateToExtraction(candidate, admireOffline)
+    setExtraction(result)
+    patchSetup({ subject: result.subject, outcome: result.outcome })
+    setAdmireOpen(false)
+    setError('')
   }
 
   const toggleFormat = (id: LearningFormat) => {
@@ -499,19 +534,20 @@ export function SetupPage() {
                 {mode === 'admire' && (
                   <div className="mt-6">
                     <Field
-                      label="LinkedIn profile"
-                      htmlFor="linkedin"
-                      hint="Paste a profile link. We read the skills behind their niche and shape your path the same way."
+                      label="Person you admire"
+                      htmlFor="admire"
+                      hint="Name someone, or describe who you mean. We suggest the closest matches so you can pick the one you had in mind."
                     >
                       <input
-                        id="linkedin"
+                        id="admire"
                         value={aim}
-                        maxLength={500}
+                        maxLength={200}
                         onChange={(e) => {
                           setAim(e.target.value)
                           setExtraction(null)
+                          setCandidates([])
                         }}
-                        placeholder="linkedin.com/in/…"
+                        placeholder="e.g. a product designer known for design systems"
                         autoFocus
                         className={setupInput}
                       />
@@ -519,12 +555,12 @@ export function SetupPage() {
                     <button
                       type="button"
                       className={cx(setupSecondary, 'mt-4')}
-                      onClick={runExtract}
-                      disabled={extracting || aim.trim().length < 3}
+                      onClick={runAdmireSearch}
+                      disabled={searching || aim.trim().length < 3}
                     >
                       <Sweep tone="soft" />
                       <span className="relative">
-                        {extracting ? 'Finding their skills…' : 'Find their skills'}
+                        {searching ? 'Finding people…' : 'Find people'}
                       </span>
                     </button>
                   </div>
@@ -854,6 +890,15 @@ export function SetupPage() {
           </div>
         </form>
       </main>
+
+      <AdmireCandidatesModal
+        open={admireOpen}
+        onClose={() => setAdmireOpen(false)}
+        candidates={candidates}
+        selectedName={extraction?.label}
+        onSelect={chooseAdmire}
+        offline={admireOffline}
+      />
     </div>
   )
 }

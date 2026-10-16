@@ -6,10 +6,11 @@ import { aiLimiter, authLimiter } from '../../middleware/rateLimiter.js'
 import { validate } from '../../middleware/validate.js'
 import { asyncHandler } from '../../lib/asyncHandler.js'
 import { checkAiHealth } from '../../services/ai/health.js'
-import { estimateTimeline, extractGoal, reviewPractice } from '../../services/ai/index.js'
+import { estimateTimeline, extractGoal, reviewPractice, searchAdmireCandidates } from '../../services/ai/index.js'
 import { resolveUserKey } from '../../services/userKey.js'
-import type { ExtractGoalInput } from '../../validators/learningPathValidators.js'
+import type { AdmireSearchInput, ExtractGoalInput } from '../../validators/learningPathValidators.js'
 import {
+  admireSearchValidator,
   extractGoalValidator,
   reviewPracticeValidator,
   timelineEstimateValidator,
@@ -38,6 +39,20 @@ router.post(
     const body = req.body as ExtractGoalInput
     const goal = await extractGoal(body.mode, body.input, await resolveUserKey(req.user!.id))
     res.ok(goal)
+  }),
+)
+
+router.post(
+  '/admire-candidates',
+  requireVerifiedEmail,
+  validate(admireSearchValidator),
+  authLimiter,
+  aiLimiter,
+  checkAiMonthlyCap,
+  asyncHandler(async (req, res) => {
+    const body = req.body as AdmireSearchInput
+    const candidates = await searchAdmireCandidates(body.query, await resolveUserKey(req.user!.id))
+    res.ok(candidates)
   }),
 )
 
