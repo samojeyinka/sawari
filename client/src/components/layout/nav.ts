@@ -8,6 +8,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { to: '/app/today', label: 'Today', short: 'Today' },
   { to: '/app/path', label: 'Learning path', short: 'Path' },
+  { to: '/app/explore', label: 'Explore', short: 'Explore' },
   { to: '/app/projects', label: 'Projects', short: 'Projects' },
   { to: '/app/progress', label: 'Progress', short: 'Progress' },
 ]

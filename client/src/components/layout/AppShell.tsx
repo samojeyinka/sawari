@@ -62,7 +62,7 @@ export function AppShell() {
         className="fixed inset-x-0 bottom-0 z-30 border-t border-on-band/10 bg-band-deep/95 backdrop-blur lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-6">
           {[...navItems, { to: '/app/settings', label: 'Settings', short: 'Settings' }].map((item) => (
             <NavLink
               key={item.to}
@@ -101,6 +101,15 @@ export function AppShell() {
           </nav>
 
           <div className="border-t border-on-band/10 pt-3">
+            {user?.role === 'admin' && (
+              <NavLink
+                to="/app/admin"
+                onClick={() => setNavOpen(false)}
+                className={({ isActive }) => navClass(isActive)}
+              >
+                Admin
+              </NavLink>
+            )}
             <NavLink
               to="/app/settings"
               onClick={() => setNavOpen(false)}

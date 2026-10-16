@@ -40,6 +40,16 @@ const ProjectWorkspacePage = lazy(() =>
 )
 const ProgressPage = lazy(() => import('./pages/Progress').then((m) => ({ default: m.ProgressPage })))
 const SettingsPage = lazy(() => import('./pages/Settings').then((m) => ({ default: m.SettingsPage })))
+const ExplorePage = lazy(() => import('./pages/Explore').then((m) => ({ default: m.ExplorePage })))
+const ExploreDetailPage = lazy(() =>
+  import('./pages/ExploreDetail').then((m) => ({ default: m.ExploreDetailPage })),
+)
+const AdminCatalogPage = lazy(() =>
+  import('./pages/AdminCatalog').then((m) => ({ default: m.AdminCatalogPage })),
+)
+const AdminCatalogEditPage = lazy(() =>
+  import('./pages/AdminCatalogEdit').then((m) => ({ default: m.AdminCatalogEditPage })),
+)
 const PrivacyPage = lazy(() => import('./pages/Privacy').then((m) => ({ default: m.PrivacyPage })))
 const TermsPage = lazy(() => import('./pages/Terms').then((m) => ({ default: m.TermsPage })))
 
@@ -49,6 +59,13 @@ function RequireAuth({ children }: { children: ReactNode }) {
   if (!state.user) return <Navigate to="/login" replace />
   // Wait for paths + projects to load so the dashboard never flashes empty.
   if (state.dataStatus !== 'ready') return <RouteFallback />
+  return children
+}
+
+/** Admin-only screens (catalog curation). Non-admins bounce to Today. */
+function RequireAdmin({ children }: { children: ReactNode }) {
+  const { state } = useApp()
+  if (state.user?.role !== 'admin') return <Navigate to="/app/today" replace />
   return children
 }
 
@@ -75,9 +92,9 @@ function OAuthResultHandler() {
         saveLastAuth({ method: provider })
       }
       refreshSession()
-        .then(() => {
+        .then((user) => {
           alert.success('Signed in. Welcome to Sawari.')
-          navigate('/app/today', { replace: true })
+          navigate(user.role === 'admin' ? '/app/admin' : '/app/today', { replace: true })
         })
         .catch(() => {
           alert.error('We could not finish signing you in. Please try again.')
@@ -128,12 +145,38 @@ function App() {
                 <Route index element={<Navigate to="/app/today" replace />} />
                 <Route path="today" element={<TodayPage />} />
                 <Route path="path" element={<PathPage />} />
+                <Route path="explore" element={<ExplorePage />} />
+                <Route path="explore/:slug" element={<ExploreDetailPage />} />
                 <Route path="session/:sectionId" element={<SessionPage />} />
                 <Route path="assessment/:sectionId" element={<AssessmentPage />} />
                 <Route path="projects" element={<ProjectsPage />} />
                 <Route path="projects/:projectId" element={<ProjectWorkspacePage />} />
                 <Route path="progress" element={<ProgressPage />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route
+                  path="admin"
+                  element={
+                    <RequireAdmin>
+                      <AdminCatalogPage />
+                    </RequireAdmin>
+                  }
+                />
+                <Route
+                  path="admin/new"
+                  element={
+                    <RequireAdmin>
+                      <AdminCatalogEditPage />
+                    </RequireAdmin>
+                  }
+                />
+                <Route
+                  path="admin/:id"
+                  element={
+                    <RequireAdmin>
+                      <AdminCatalogEditPage />
+                    </RequireAdmin>
+                  }
+                />
               </Route>
 
               <Route path="*" element={<Navigate to="/" replace />} />

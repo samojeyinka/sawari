@@ -8,6 +8,7 @@ export const mockUser: User = {
   emailVerified: true,
   joined: 'Joined March 2026',
   timezone: '(GMT+01:00) Lagos',
+  role: 'user',
 }
 
 export const mockNotifications: AppNotification[] = [

@@ -30,6 +30,11 @@ export function Sidebar({ onOpenNotifications }: { onOpenNotifications: () => vo
       </nav>
 
       <div className="border-t border-on-band/10 py-3">
+        {user?.role === 'admin' && (
+          <NavLink to="/app/admin" className={({ isActive }) => navClass(isActive)}>
+            Admin
+          </NavLink>
+        )}
         <NavLink to="/app/settings" className={({ isActive }) => navClass(isActive)}>
           Settings
         </NavLink>
