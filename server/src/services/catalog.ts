@@ -5,7 +5,12 @@ import { CatalogPath, type CatalogPathDocument, type CatalogSection } from '../m
 import { CatalogReview } from '../models/CatalogReview.js'
 import { LearningPath, type LearningPathDocument, type PathSection } from '../models/LearningPath.js'
 import { SessionContentModel, type Practice, type SessionContent } from '../models/SessionContent.js'
+import { User } from '../models/User.js'
 import type { CatalogSectionInput } from '../validators/catalogValidators.js'
+
+/** Card fields shared by the public list and the learner's saved list. */
+export const CATALOG_CARD_SELECT =
+  'slug subject summary level tags weeklyHours intensity formats expectedWeeks expectedHours ogImage publishedAt enrollments reviewsCount reviewsAvg createdAt updatedAt sections.id sections.title sections.order sections.minutes'
 
 /* ------------------------------------------------------------------ */
 /*  Enrolling copies a public catalog path into the learner's own      */
@@ -165,4 +170,37 @@ export async function enrollUserInCatalog(
   await CatalogPath.updateOne({ _id: catalog._id }, { $inc: { enrollments: 1 } })
 
   return path
+}
+
+/* ----------------------------- saved list -------------------------- */
+
+/**
+ * Bookmarks a published catalog path for the learner. Idempotent: saving
+ * twice keeps a single entry, so the "save" action is always safe to repeat.
+ */
+export async function saveCatalogPath(userId: string, slug: string): Promise<void> {
+  const catalog = await CatalogPath.findOne({ slug, published: true }).select('_id').lean()
+  if (!catalog) throw httpError.notFound('Catalog path not found.')
+  await User.updateOne({ _id: userId }, { $addToSet: { savedCatalogPaths: catalog._id } })
+}
+
+/** Removes a bookmark. A no-op when the path was never saved. */
+export async function unsaveCatalogPath(userId: string, slug: string): Promise<void> {
+  const catalog = await CatalogPath.findOne({ slug }).select('_id').lean()
+  if (!catalog) throw httpError.notFound('Catalog path not found.')
+  await User.updateOne({ _id: userId }, { $pull: { savedCatalogPaths: catalog._id } })
+}
+
+/**
+ * The learner's bookmarked courses, newest first. Unpublished or deleted
+ * catalog paths simply drop out rather than leaving a broken card behind.
+ */
+export async function listSavedCatalogPaths(userId: string) {
+  const user = await User.findById(userId).select('savedCatalogPaths').lean()
+  const ids = user?.savedCatalogPaths ?? []
+  if (ids.length === 0) return []
+  return CatalogPath.find({ _id: { $in: ids }, published: true })
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .select(CATALOG_CARD_SELECT)
+    .lean()
 }

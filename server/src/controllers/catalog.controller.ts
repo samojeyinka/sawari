@@ -5,7 +5,14 @@ import { escapeRegex, pageMeta, parsePagination, parseSort } from '../lib/queryF
 import { serialize } from '../lib/serialize.js'
 import { CatalogPath } from '../models/CatalogPath.js'
 import { CatalogReview } from '../models/CatalogReview.js'
-import { enrollUserInCatalog, recomputeReviewAggregates } from '../services/catalog.js'
+import {
+  CATALOG_CARD_SELECT,
+  enrollUserInCatalog,
+  listSavedCatalogPaths,
+  recomputeReviewAggregates,
+  saveCatalogPath,
+  unsaveCatalogPath,
+} from '../services/catalog.js'
 import type { CreateReviewInput } from '../validators/catalogValidators.js'
 
 /* ------------------------------------------------------------------ */
@@ -16,8 +23,7 @@ import type { CreateReviewInput } from '../validators/catalogValidators.js'
 const LIST_SORT = ['createdAt', 'enrollments', 'reviewsAvg', 'subject'] as const
 
 /** Cards omit the heavy per-section content. */
-const LIST_SELECT =
-  'slug subject summary level tags weeklyHours intensity formats expectedWeeks expectedHours ogImage publishedAt enrollments reviewsCount reviewsAvg createdAt updatedAt sections.id sections.title sections.order sections.minutes'
+const LIST_SELECT = CATALOG_CARD_SELECT
 
 /* ------------------------------- list ----------------------------- */
 
@@ -63,6 +69,29 @@ export const enrollInCatalog = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const path = await enrollUserInCatalog(req.user!.id, String(req.params.slug))
     res.created(serialize(path.toObject({ flattenMaps: true })))
+  },
+)
+
+/* ------------------------------ saved ----------------------------- */
+
+export const listSavedCatalog = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const items = await listSavedCatalogPaths(req.user!.id)
+    res.ok(items.map(serialize))
+  },
+)
+
+export const saveCatalog = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    await saveCatalogPath(req.user!.id, String(req.params.slug))
+    res.ok({ saved: true })
+  },
+)
+
+export const unsaveCatalog = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    await unsaveCatalogPath(req.user!.id, String(req.params.slug))
+    res.ok({ saved: false })
   },
 )
 

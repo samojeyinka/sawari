@@ -72,6 +72,8 @@ export interface UserDocument extends Document {
   preferences?: ReminderPreferences
   /** Currently selected learning path (restored on load). */
   activePathId?: string | null
+  /** Catalog courses bookmarked for later (public catalog ids). */
+  savedCatalogPaths?: Types.ObjectId[]
   /** Verification fields */
   emailVerificationCode?: string
   emailVerificationExpiresAt?: Date
@@ -200,6 +202,7 @@ const userSchema = new Schema<UserDocument, UserModel>(
     lastLoggedInAt: { type: Date },
     preferences: { type: preferencesSchema, default: () => ({}) },
     activePathId: { type: String, default: null, maxlength: 60 },
+    savedCatalogPaths: { type: [Schema.Types.ObjectId], ref: 'CatalogPath', default: [] },
     reminderLastSentAt: { type: Date, default: null },
     summaryLastSentAt: { type: Date, default: null },
   },

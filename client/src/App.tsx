@@ -6,7 +6,6 @@ import {
   Routes,
   useLocation,
   useNavigate,
-  useParams,
 } from 'react-router-dom'
 import { useApp } from './state/store'
 import { useAlert } from './state/alertContext'
@@ -41,9 +40,17 @@ const ProjectWorkspacePage = lazy(() =>
 )
 const ProgressPage = lazy(() => import('./pages/Progress').then((m) => ({ default: m.ProgressPage })))
 const SettingsPage = lazy(() => import('./pages/Settings').then((m) => ({ default: m.SettingsPage })))
-const CoursesPage = lazy(() => import('./pages/Courses').then((m) => ({ default: m.CoursesPage })))
-const CourseDetailPage = lazy(() =>
-  import('./pages/CourseDetail').then((m) => ({ default: m.CourseDetailPage })),
+const SavedCoursesPage = lazy(() =>
+  import('./pages/SavedCourses').then((m) => ({ default: m.SavedCoursesPage })),
+)
+const StartCoursePage = lazy(() =>
+  import('./pages/StartCourse').then((m) => ({ default: m.StartCoursePage })),
+)
+const SaveCoursePage = lazy(() =>
+  import('./pages/SaveCourse').then((m) => ({ default: m.SaveCoursePage })),
+)
+const ReviewCoursePage = lazy(() =>
+  import('./pages/ReviewCourse').then((m) => ({ default: m.ReviewCoursePage })),
 )
 const AdminCatalogPage = lazy(() =>
   import('./pages/AdminCatalog').then((m) => ({ default: m.AdminCatalogPage })),
@@ -56,9 +63,12 @@ const TermsPage = lazy(() => import('./pages/Terms').then((m) => ({ default: m.T
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { state } = useApp()
+  const location = useLocation()
   if (state.authStatus === 'checking') return <RouteFallback />
-  if (!state.user) return <Navigate to="/login" replace />
-  // Wait for paths + projects to load so the dashboard never flashes empty.
+  if (!state.user) {
+    const returnTo = `${location.pathname}${location.search}`
+    return <Navigate to={`/login?returnTo=${encodeURIComponent(returnTo)}`} replace />
+  }
   if (state.dataStatus !== 'ready') return <RouteFallback />
   return children
 }
@@ -68,12 +78,6 @@ function RequireAdmin({ children }: { children: ReactNode }) {
   const { state } = useApp()
   if (state.user?.role !== 'admin') return <Navigate to="/app/today" replace />
   return children
-}
-
-/** Old /app/explore links keep working, mapped onto /app/courses. */
-function LegacyCourseRedirect() {
-  const { slug } = useParams()
-  return <Navigate to={slug ? `/app/courses/${slug}` : '/app/courses'} replace />
 }
 
 const providerName = (provider: string | null) =>
@@ -98,10 +102,13 @@ function OAuthResultHandler() {
       if (provider === 'github' || provider === 'google') {
         saveLastAuth({ method: provider })
       }
+      const stored = sessionStorage.getItem('sawari:returnTo')
+      sessionStorage.removeItem('sawari:returnTo')
+      const resume = stored && stored.startsWith('/') ? stored : '/app/today'
       refreshSession()
         .then((user) => {
           alert.success('Signed in. Welcome to Sawari.')
-          navigate(user.role === 'admin' ? '/app/admin' : '/app/today', { replace: true })
+          navigate(user.role === 'admin' ? '/app/admin' : resume, { replace: true })
         })
         .catch(() => {
           alert.error('We could not finish signing you in. Please try again.')
@@ -140,6 +147,30 @@ function App() {
               <Route path="/generate" element={<GeneratePage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
+              <Route
+                path="/start/:slug"
+                element={
+                  <RequireAuth>
+                    <StartCoursePage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/save/:slug"
+                element={
+                  <RequireAuth>
+                    <SaveCoursePage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/review/:slug"
+                element={
+                  <RequireAuth>
+                    <ReviewCoursePage />
+                  </RequireAuth>
+                }
+              />
 
               <Route
                 path="/app"
@@ -152,10 +183,7 @@ function App() {
                 <Route index element={<Navigate to="/app/today" replace />} />
                 <Route path="today" element={<TodayPage />} />
                 <Route path="path" element={<PathPage />} />
-                <Route path="courses" element={<CoursesPage />} />
-                <Route path="courses/:slug" element={<CourseDetailPage />} />
-                <Route path="explore" element={<LegacyCourseRedirect />} />
-                <Route path="explore/:slug" element={<LegacyCourseRedirect />} />
+                <Route path="saved" element={<SavedCoursesPage />} />
                 <Route path="session/:sectionId" element={<SessionPage />} />
                 <Route path="assessment/:sectionId" element={<AssessmentPage />} />
                 <Route path="projects" element={<ProjectsPage />} />

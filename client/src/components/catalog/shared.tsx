@@ -10,20 +10,6 @@ export const levelLabels: Record<ExperienceLevel, string> = {
   advanced: 'Advanced',
 }
 
-export const levelOptions: { value: ExperienceLevel; label: string }[] = [
-  { value: 'beginner', label: levelLabels.beginner },
-  { value: 'some', label: levelLabels.some },
-  { value: 'comfortable', label: levelLabels.comfortable },
-  { value: 'advanced', label: levelLabels.advanced },
-]
-
-export const catalogSortOptions = [
-  { value: '-createdAt', label: 'Newest' },
-  { value: '-enrollments', label: 'Most enrolled' },
-  { value: '-reviewsAvg', label: 'Top rated' },
-  { value: 'subject', label: 'A to Z' },
-]
-
 /** A small mono pill for a level, level-less paths render nothing. */
 export function LevelTag({ level, className }: { level: ExperienceLevel | null; className?: string }) {
   if (!level) return null

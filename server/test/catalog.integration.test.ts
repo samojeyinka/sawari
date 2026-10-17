@@ -320,6 +320,80 @@ test('learners review a published path and aggregates update', { skip: !hasDb },
   assert.equal(catalog!.reviewsAvg, 3)
 })
 
+/* ------------------------------ saved ----------------------------- */
+
+test('learners save and unsave courses; the saved list is their own', { skip: !hasDb }, async () => {
+  const admin = await registerUser('catalog-admin-save@example.com', { admin: true, verified: true })
+  const created = await createCatalog(admin, { subject: 'Savable Path' })
+  const slug = created.slug as string
+  const learner = await registerUser('catalog-saver@example.com', { verified: true })
+
+  // Anonymous and unverified callers cannot bookmark.
+  assert.equal((await request(app).post(`/api/v1/catalog/${slug}/save`)).status, 401)
+  const unverified = await registerUser('catalog-saver-unverified@example.com')
+  assert.equal(
+    (await request(app).post(`/api/v1/catalog/${slug}/save`).set('Cookie', unverified.cookie))
+      .status,
+    403,
+  )
+
+  const saved = await request(app)
+    .post(`/api/v1/catalog/${slug}/save`)
+    .set('Cookie', learner.cookie)
+  assert.equal(saved.status, 200, JSON.stringify(saved.body))
+  assert.equal(saved.body.data.saved, true)
+
+  // Saving again is idempotent: still a single entry.
+  await request(app).post(`/api/v1/catalog/${slug}/save`).set('Cookie', learner.cookie)
+
+  const list = await request(app).get('/api/v1/catalog/saved').set('Cookie', learner.cookie)
+  assert.equal(list.status, 200)
+  assert.equal(list.body.data.length, 1)
+  assert.equal(list.body.data[0].slug, slug)
+
+  // Another learner has their own (empty) list.
+  const other = await registerUser('catalog-saver-2@example.com', { verified: true })
+  const otherList = await request(app).get('/api/v1/catalog/saved').set('Cookie', other.cookie)
+  assert.equal(otherList.body.data.length, 0)
+
+  // Unsaving empties it.
+  const removed = await request(app)
+    .delete(`/api/v1/catalog/${slug}/save`)
+    .set('Cookie', learner.cookie)
+  assert.equal(removed.status, 200)
+  assert.equal(removed.body.data.saved, false)
+  assert.equal(
+    (await request(app).get('/api/v1/catalog/saved').set('Cookie', learner.cookie)).body.data
+      .length,
+    0,
+  )
+})
+
+test('unpublished courses drop out of the saved list', { skip: !hasDb }, async () => {
+  const admin = await registerUser('catalog-admin-save-2@example.com', {
+    admin: true,
+    verified: true,
+  })
+  const created = await createCatalog(admin, { subject: 'Soon Draft' })
+  const learner = await registerUser('catalog-saver-3@example.com', { verified: true })
+
+  await request(app).post(`/api/v1/catalog/${created.slug}/save`).set('Cookie', learner.cookie)
+  assert.equal(
+    (await request(app).get('/api/v1/catalog/saved').set('Cookie', learner.cookie)).body.data
+      .length,
+    1,
+  )
+
+  await request(app)
+    .post(`/api/v1/admin/catalog-paths/${created.id}/unpublish`)
+    .set('Cookie', admin.cookie)
+  assert.equal(
+    (await request(app).get('/api/v1/catalog/saved').set('Cookie', learner.cookie)).body.data
+      .length,
+    0,
+  )
+})
+
 /* ------------------- server-rendered public pages ----------------- */
 
 test('the public course pages are server-rendered and crawlable', { skip: !hasDb }, async () => {
@@ -341,6 +415,11 @@ test('the public course pages are server-rendered and crawlable', { skip: !hasDb
   assert.match(detail.text, /application\/ld\+json/)
   assert.match(detail.text, /"@type":"Course"/)
   assert.match(detail.text, /Crawlable Sourdough Path/)
+
+  // Enroll and bookmark CTAs point at the SPA action routes.
+  assert.match(detail.text, new RegExp(`/start/${slug}`))
+  assert.match(detail.text, new RegExp(`/save/${slug}`))
+  assert.match(detail.text, /Save for later/)
 
   // Unknown slug renders an HTML 404, not the JSON envelope.
   const missing = await request(app).get('/courses/does-not-exist')
