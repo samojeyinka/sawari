@@ -1,0 +1,65 @@
+name: Seed Catalog
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Seeding mode (create = skip existing, update = update existing, dry-run = preview only)'
+        required: true
+        default: 'create'
+        type: choice
+        options:
+          - create
+          - update
+          - dry-run
+      slugs:
+        description: 'Specific course slugs to target (space-separated, e.g. "sql-fundamentals public-speaking"; leave empty for all)'
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  group: seed-production
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    name: Seed catalog on VPS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute seed script on the VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd /var/www/sawari/server
+
+            MODE="${{ github.event.inputs.mode }}"
+            SLUGS="${{ github.event.inputs.slugs }}"
+
+            echo "Running seed script with mode=$MODE"
+
+            if [ "$MODE" = "create" ]; then
+              npx tsx scripts/seed-courses.ts
+            elif [ "$MODE" = "update" ]; then
+              if [ -n "$SLUGS" ]; then
+                echo "Targeting specific slugs: $SLUGS"
+                npx tsx scripts/seed-courses.ts --update $SLUGS
+              else
+                echo "Updating all catalog courses"
+                npx tsx scripts/seed-courses.ts --update-all
+              fi
+            elif [ "$MODE" = "dry-run" ]; then
+              if [ -n "$SLUGS" ]; then
+                npx tsx scripts/seed-courses.ts --dry-run --update $SLUGS
+              else
+                npx tsx scripts/seed-courses.ts --dry-run
+              fi
+            else
+              echo "Unknown mode: $MODE"
+              exit 1
+            fi

@@ -11,7 +11,8 @@
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "oxlint src",
-    "test": "tsx --test --test-concurrency=1 test/smoke.test.ts test/auth.integration.test.ts test/account.integration.test.ts test/domain.integration.test.ts test/aiHealth.test.ts test/sessionContent.test.ts test/crypto.test.ts test/goalExtract.test.ts test/settings.integration.test.ts test/catalog.integration.test.ts test/projectReview.test.ts test/billing.integration.test.ts test/pathBuild.integration.test.ts test/productionGaps.test.ts"
+    "test": "tsx --test --test-concurrency=1 test/smoke.test.ts test/auth.integration.test.ts test/account.integration.test.ts test/domain.integration.test.ts test/aiHealth.test.ts test/sessionContent.test.ts test/crypto.test.ts test/goalExtract.test.ts test/settings.integration.test.ts test/catalog.integration.test.ts test/projectReview.test.ts test/billing.integration.test.ts test/pathBuild.integration.test.ts test/productionGaps.test.ts",
+    "seed": "tsx scripts/seed-courses.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
