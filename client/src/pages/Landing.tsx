@@ -31,8 +31,25 @@ const btnSmall = cx(btn, 'h-[38px] bg-on-band px-4 text-[13.5px] font-medium tex
 const navLinks = [
   { label: 'How it works', href: '#how' },
   { label: "What's included", href: '#included' },
-  { label: 'Paths', href: '#paths' },
 ]
+
+const navLinkClass = cx(
+  monoNote,
+  'group relative overflow-hidden px-3 py-2 transition-colors hover:text-on-band',
+)
+
+/** The sweep + label shared by every landing nav link. */
+function NavSweep({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className="absolute inset-0 origin-left scale-x-0 bg-accent-bright/25 transition-transform duration-300 ease-out group-hover:scale-x-100"
+      />
+      <span className="relative">{children}</span>
+    </>
+  )
+}
 
 /* words the hero types through, then the cell strip echoes back */
 const SUBJECTS = [
@@ -398,21 +415,19 @@ function Header() {
 
         <nav className="hidden items-center gap-2 lg:flex">
           {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className={cx(
-                monoNote,
-                'group relative overflow-hidden px-3 py-2 transition-colors hover:text-on-band',
-              )}
-            >
-              <span
-                aria-hidden="true"
-                className="absolute inset-0 origin-left scale-x-0 bg-accent-bright/25 transition-transform duration-300 ease-out group-hover:scale-x-100"
-              />
-              <span className="relative">{link.label}</span>
+            <a key={link.label} href={link.href} className={navLinkClass}>
+              <NavSweep>{link.label}</NavSweep>
             </a>
           ))}
+          {user ? (
+            <Link to="/app/courses" className={navLinkClass}>
+              <NavSweep>Courses</NavSweep>
+            </Link>
+          ) : (
+            <a href="/courses" className={navLinkClass}>
+              <NavSweep>Courses</NavSweep>
+            </a>
+          )}
         </nav>
 
         <div className="flex items-center gap-4 sm:gap-6">
@@ -487,6 +502,16 @@ export function LandingPage() {
                 <span className="relative">See how it works</span>
               </a>
             </div>
+            <p className={cx(monoNote, 'mt-1')}>
+              Or{' '}
+              <a
+                href="/courses"
+                className="text-on-band underline underline-offset-4 transition-colors hover:text-accent-bright"
+              >
+                browse the public courses
+              </a>
+              , open to anyone, no account needed.
+            </p>
           </div>
 
           <div className="hidden h-full justify-end overflow-hidden xl:flex">
@@ -642,14 +667,22 @@ export function LandingPage() {
       <section className={band}>
         <div className={cx(inset, 'grid lg:grid-cols-[420px_minmax(0,1fr)]')}>
           <div data-reveal className="reveal-up flex flex-col justify-center gap-4 py-12 lg:pr-12">
-            <p className={eyebrow}>Paths</p>
+            <p className={eyebrow}>Courses</p>
             <h2 className={cx(display, 'text-[28px] leading-[1.12] sm:text-[36px]')}>
-              Whatever you want to learn, it is already here.
+              Start from a course, or build your own.
             </h2>
             <p className={body}>
-              There is no catalogue to browse. Tell the agent what you want to learn and it builds
-              your path from free material that already exists for it.
+              Every published course is public and open to anyone, no account needed. Browse them by
+              subject, level and tag, and enroll in one to make it your own. Or tell the agent what
+              you want to learn and it builds your path from free material that already exists for
+              it.
             </p>
+            <div className="mt-1">
+              <a href="/courses" className={btnGhost}>
+                <Sweep tone="soft" />
+                <span className="relative">Browse all courses</span>
+              </a>
+            </div>
           </div>
           <div className="flex flex-col justify-center gap-px overflow-hidden border-t border-on-band/10 py-10 lg:border-t-0 lg:pl-12">
             <CellStrip items={stripA} duration={48} />
@@ -703,7 +736,7 @@ export function LandingPage() {
               items: [
                 { label: 'How it works', to: '#how' },
                 { label: "What's included", to: '#included' },
-                { label: 'Paths', to: '#paths' },
+                { label: 'Courses', to: '/courses', hard: true },
               ],
             },
             {
@@ -717,9 +750,9 @@ export function LandingPage() {
             {
               heading: 'Learn',
               items: [
-                { label: 'Project Management', to: '#paths' },
-                { label: 'Spanish', to: '#paths' },
-                { label: 'Photography', to: '#paths' },
+                { label: 'Project Management', to: '/courses?q=Project%20Management', hard: true },
+                { label: 'Spanish', to: '/courses?q=Spanish', hard: true },
+                { label: 'Photography', to: '/courses?q=Photography', hard: true },
               ],
             },
             {
@@ -737,7 +770,7 @@ export function LandingPage() {
               <p className={monoNote}>{column.heading}</p>
               <div className="flex flex-col items-start gap-3">
                 {column.items.map((item) =>
-                  item.to.startsWith('#') ? (
+                  item.to.startsWith('#') || 'hard' in item ? (
                     <a
                       key={item.label}
                       href={item.to}

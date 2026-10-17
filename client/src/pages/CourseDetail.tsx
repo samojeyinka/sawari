@@ -92,7 +92,7 @@ function ReviewComposer({
   )
 }
 
-export function ExploreDetailPage() {
+export function CourseDetailPage() {
   const { slug = '' } = useParams()
   const navigate = useNavigate()
   const alert = useAlert()
@@ -119,7 +119,7 @@ export function ExploreDetailPage() {
           setStatus('missing')
           return
         }
-        alert.fromError(error, 'Could not load this path.')
+        alert.fromError(error, 'Could not load this course.')
         setStatus('missing')
       }
     },
@@ -143,7 +143,7 @@ export function ExploreDetailPage() {
       alert.success('Added to your paths. You can edit it and track progress like any other.')
       navigate('/app/path')
     } catch (error) {
-      alert.fromError(error, 'Could not enroll in this path.')
+      alert.fromError(error, 'Could not enroll in this course.')
     } finally {
       setEnrolling(false)
     }
@@ -157,11 +157,11 @@ export function ExploreDetailPage() {
         <div className="border border-dashed border-on-band/20 bg-panel px-6 py-16 text-center">
           <p className={monoLabel}>not found</p>
           <p className="mt-2 text-[14px] text-on-band-muted">
-            This path is not published, or it has been removed.
+            This course is not published, or it has been removed.
           </p>
-          <Link to="/app/explore" className="mt-6 inline-block">
+          <Link to="/app/courses" className="mt-6 inline-block">
             <Button variant="secondary" size="sm">
-              Back to Explore
+              Back to Courses
             </Button>
           </Link>
         </div>
@@ -174,19 +174,19 @@ export function ExploreDetailPage() {
   return (
     <Page width="default">
       <Link
-        to="/app/explore"
+        to="/app/courses"
         className={cx(monoLabel, 'transition-colors hover:text-on-band')}
       >
-        ← Explore
+        ← Courses
       </Link>
 
       <PageHeader
-        eyebrow="Catalog path"
+        eyebrow="Course"
         title={path.subject}
         subtitle={path.summary || undefined}
         actions={
           <Button loading={enrolling} onClick={enroll}>
-            Start this path
+            Start this course
           </Button>
         }
       />

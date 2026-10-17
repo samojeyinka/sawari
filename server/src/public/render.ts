@@ -122,7 +122,7 @@ ${jsonLd}
 <header class="site"><div class="wrap">
 <a class="brand" href="${SITE_BASE}">Saw<span>ari</span></a>
 <nav class="nav">
-<a href="/explore">Explore</a>
+<a href="/courses">Courses</a>
 <a href="${appUrl('/today')}">Sign in</a>
 </nav>
 </div></header>
@@ -130,7 +130,7 @@ ${jsonLd}
 ${inner}
 </div></main>
 <footer class="site"><div class="wrap">
-<a href="/explore">Explore</a>
+<a href="/courses">Courses</a>
 <a href="${SITE_BASE}">Home</a>
 <a href="${SITE_BASE}/privacy">Privacy</a>
 <a href="${SITE_BASE}/terms">Terms</a>
@@ -173,7 +173,7 @@ function cardHtml(card: CatalogCard): string {
   const tags = card.tags.length
     ? `<div class="chips">${card.tags.slice(0, 3).map((t) => `<span class="chip">${escapeHtml(t)}</span>`).join('')}</div>`
     : ''
-  return `<a class="card" href="/explore/${encodeURIComponent(card.slug)}">
+  return `<a class="card" href="/courses/${encodeURIComponent(card.slug)}">
 <h3>${escapeHtml(card.subject)}</h3>
 <p>${escapeHtml(card.summary || 'A structured path to learn something new.')}</p>
 ${meta}
@@ -181,7 +181,7 @@ ${tags}
 </a>`
 }
 
-export async function renderExploreList(params: ListParams): Promise<string> {
+export async function renderCourseList(params: ListParams): Promise<string> {
   const filter: Record<string, unknown> = { published: true }
   if (params.q) {
     const rx = { $regex: params.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' }
@@ -207,14 +207,14 @@ export async function renderExploreList(params: ListParams): Promise<string> {
   if (params.level) query.set('level', params.level)
 
   const heading = params.q
-    ? `Paths matching “${escapeHtml(params.q)}”`
+    ? `Courses matching “${escapeHtml(params.q)}”`
     : params.tag
-      ? `Paths tagged “${escapeHtml(params.tag)}”`
-      : 'Explore learning paths'
+      ? `Courses tagged “${escapeHtml(params.tag)}”`
+      : 'Browse courses'
 
   const grid = items.length
     ? `<div class="grid">${items.map(cardHtml).join('')}</div>`
-    : `<div class="empty">No paths found yet. Check back soon.</div>`
+    : `<div class="empty">No courses found yet. Check back soon.</div>`
 
   const pages = Math.max(1, Math.ceil(total / params.limit))
   const pager =
@@ -230,19 +230,19 @@ ${params.page < pages ? `<a href="?${withPage(query, params.page + 1)}">Next →
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: heading,
-    url: `${SITE_BASE}/explore`,
+    url: `${SITE_BASE}/courses`,
     hasPart: items.map((c) => ({
       '@type': 'Course',
       name: c.subject,
-      url: `${SITE_BASE}/explore/${c.slug}`,
+      url: `${SITE_BASE}/courses/${c.slug}`,
     })),
   }
 
   const inner = `
 <h1>${heading}</h1>
-<p class="lede">Free, structured paths anyone can follow. Browse without an account.</p>
-<form class="search" method="get" action="/explore" role="search">
-<input type="search" name="q" value="${escapeHtml(params.q)}" placeholder="Search paths, tags, subjects…" aria-label="Search paths">
+<p class="lede">Free, structured courses anyone can follow. Browse without an account.</p>
+<form class="search" method="get" action="/courses" role="search">
+<input type="search" name="q" value="${escapeHtml(params.q)}" placeholder="Search courses, tags, subjects…" aria-label="Search courses">
 <button type="submit">Search</button>
 </form>
 ${grid}
@@ -251,8 +251,8 @@ ${pager}`
   return page(
     {
       title: `${heading} · ${SITE_NAME}`,
-      description: 'Browse free, structured learning paths on Sawari. Explore by subject, level, and tag.',
-      canonical: `${SITE_BASE}/explore`,
+      description: 'Browse free, structured courses on Sawari. Explore by subject, level, and tag.',
+      canonical: `${SITE_BASE}/courses`,
       noindex: Boolean(params.q || params.tag || params.level),
       jsonLd,
     },
@@ -306,7 +306,7 @@ function stars(rating: number): string {
   return '★'.repeat(full) + '☆'.repeat(Math.max(0, 5 - full))
 }
 
-export async function renderExploreDetail(slug: string): Promise<string | null> {
+export async function renderCourseDetail(slug: string): Promise<string | null> {
   const path = await CatalogPath.findOne({ slug, published: true }).lean()
   if (!path) return null
 
@@ -361,12 +361,12 @@ ${content.assessment?.questions?.length ? `<p class="mins" style="margin-top:12p
   if (path.reviewsCount > 0) bits.push(`${path.reviewsAvg}★ (${path.reviewsCount})`)
   if (path.enrollments > 0) bits.push(`${path.enrollments} enrolled`)
 
-  const canUrl = `${SITE_BASE}/explore/${encodeURIComponent(path.slug)}`
+  const canUrl = `${SITE_BASE}/courses/${encodeURIComponent(path.slug)}`
   const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Course',
     name: path.subject,
-    description: path.summary || path.goal || `A guided path to learn ${path.subject}.`,
+    description: path.summary || path.goal || `A guided course to learn ${path.subject}.`,
     url: canUrl,
     provider: { '@type': 'Organization', name: SITE_NAME, url: SITE_BASE },
     isAccessibleForFree: true,
@@ -382,21 +382,21 @@ ${content.assessment?.questions?.length ? `<p class="mins" style="margin-top:12p
   }
 
   const inner = `
-<div class="crumbs"><a href="/explore">Explore</a> / ${escapeHtml(path.subject)}</div>
+<div class="crumbs"><a href="/courses">Courses</a> / ${escapeHtml(path.subject)}</div>
 <h1>${escapeHtml(path.subject)}</h1>
 ${path.summary ? `<p class="lede">${escapeHtml(path.summary)}</p>` : ''}
 <div class="meta-row">${bits.map((b) => `<span>${escapeHtml(b)}</span>`).join('')}</div>
-${path.tags.length ? `<div class="chips">${path.tags.map((t) => `<a class="chip" href="/explore?tag=${encodeURIComponent(t)}">${escapeHtml(t)}</a>`).join('')}</div>` : ''}
+${path.tags.length ? `<div class="chips">${path.tags.map((t) => `<a class="chip" href="/courses?tag=${encodeURIComponent(t)}">${escapeHtml(t)}</a>`).join('')}</div>` : ''}
 ${path.goal ? `<h2>What you'll be able to do</h2><p>${escapeHtml(path.goal)}</p>` : ''}
 <h2>What's inside</h2>
 ${sectionCards || '<div class="empty">Sections are being prepared.</div>'}
-<a class="cta" href="${appUrl(`/explore/${encodeURIComponent(path.slug)}`)}">Start this path free</a>
+<a class="cta" href="${appUrl(`/courses/${encodeURIComponent(path.slug)}`)}">Start this course free</a>
 ${reviewList}`
 
   return page(
     {
       title: `${path.subject} · ${SITE_NAME}`,
-      description: (path.summary || `A free, structured path to learn ${path.subject} on Sawari.`).slice(0, 160),
+      description: (path.summary || `A free, structured course to learn ${path.subject} on Sawari.`).slice(0, 160),
       canonical: canUrl,
       ogImage: path.ogImage,
       jsonLd,
@@ -407,15 +407,15 @@ ${reviewList}`
 
 /* --------------------------- not found ---------------------------- */
 
-export function renderExploreNotFound(): string {
+export function renderCourseNotFound(): string {
   return page(
     {
-      title: `Path not found · ${SITE_NAME}`,
-      description: 'This learning path could not be found.',
-      canonical: `${SITE_BASE}/explore`,
+      title: `Course not found · ${SITE_NAME}`,
+      description: 'This course could not be found.',
+      canonical: `${SITE_BASE}/courses`,
       noindex: true,
     },
-    `<h1>Path not found</h1><p class="lede">That path may have been unpublished or renamed.</p><a class="cta" href="/explore">Browse all paths</a>`,
+    `<h1>Course not found</h1><p class="lede">That course may have been unpublished or renamed.</p><a class="cta" href="/courses">Browse all courses</a>`,
   )
 }
 
@@ -429,8 +429,8 @@ export async function renderSitemap(): Promise<string> {
 
   const urls = [
     { loc: `${SITE_BASE}/`, lastmod: undefined as string | undefined },
-    { loc: `${SITE_BASE}/explore`, lastmod: paths[0]?.updatedAt?.toISOString() },
-    ...paths.map((p) => ({ loc: `${SITE_BASE}/explore/${p.slug}`, lastmod: p.updatedAt?.toISOString() })),
+    { loc: `${SITE_BASE}/courses`, lastmod: paths[0]?.updatedAt?.toISOString() },
+    ...paths.map((p) => ({ loc: `${SITE_BASE}/courses/${p.slug}`, lastmod: p.updatedAt?.toISOString() })),
   ]
 
   const body = urls

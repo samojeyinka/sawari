@@ -322,20 +322,20 @@ test('learners review a published path and aggregates update', { skip: !hasDb },
 
 /* ------------------- server-rendered public pages ----------------- */
 
-test('the public explore pages are server-rendered and crawlable', { skip: !hasDb }, async () => {
+test('the public course pages are server-rendered and crawlable', { skip: !hasDb }, async () => {
   const admin = await registerUser('catalog-admin-8@example.com', { admin: true, verified: true })
   const created = await createCatalog(admin, { subject: 'Crawlable Sourdough Path' })
   const slug = created.slug as string
 
   // List page.
-  const list = await request(app).get('/explore')
+  const list = await request(app).get('/courses')
   assert.equal(list.status, 200)
   assert.match(list.headers['content-type'] ?? '', /text\/html/)
-  assert.match(list.text, /Explore learning paths/)
+  assert.match(list.text, /Browse courses/)
   assert.match(list.text, /Crawlable Sourdough Path/)
 
   // Detail page carries meta + JSON-LD Course.
-  const detail = await request(app).get(`/explore/${slug}`)
+  const detail = await request(app).get(`/courses/${slug}`)
   assert.equal(detail.status, 200)
   assert.match(detail.text, /<link rel="canonical"/)
   assert.match(detail.text, /application\/ld\+json/)
@@ -343,15 +343,23 @@ test('the public explore pages are server-rendered and crawlable', { skip: !hasD
   assert.match(detail.text, /Crawlable Sourdough Path/)
 
   // Unknown slug renders an HTML 404, not the JSON envelope.
-  const missing = await request(app).get('/explore/does-not-exist')
+  const missing = await request(app).get('/courses/does-not-exist')
   assert.equal(missing.status, 404)
-  assert.match(missing.text, /Path not found/)
+  assert.match(missing.text, /Course not found/)
+
+  // Legacy /explore URLs permanently redirect to /courses.
+  const oldList = await request(app).get('/explore')
+  assert.equal(oldList.status, 301)
+  assert.equal(oldList.headers.location, '/courses')
+  const oldDetail = await request(app).get(`/explore/${slug}`)
+  assert.equal(oldDetail.status, 301)
+  assert.equal(oldDetail.headers.location, `/courses/${slug}`)
 
   // Sitemap + robots.
   const sitemap = await request(app).get('/sitemap.xml')
   assert.equal(sitemap.status, 200)
   assert.match(sitemap.text, /<urlset/)
-  assert.match(sitemap.text, new RegExp(`/explore/${slug}`))
+  assert.match(sitemap.text, new RegExp(`/courses/${slug}`))
 
   const robots = await request(app).get('/robots.txt')
   assert.equal(robots.status, 200)
