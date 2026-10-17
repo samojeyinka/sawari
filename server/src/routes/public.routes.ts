@@ -1,17 +1,17 @@
 import { Router } from 'express'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import {
-  renderExploreDetail,
-  renderExploreList,
-  renderExploreNotFound,
+  renderCourseDetail,
+  renderCourseList,
+  renderCourseNotFound,
   renderRobots,
   renderSitemap,
 } from '../public/render.js'
 
 /* ------------------------------------------------------------------ */
 /*  Root-level, server-rendered public surface (not under /api/v1) so   */
-/*  the catalog is crawlable and shareable. nginx routes these paths to  */
-/*  the API while everything else stays on the SPA.                     */
+/*  the catalogue is crawlable and shareable. nginx routes these paths   */
+/*  to the API while everything else stays on the SPA.                   */
 /* ------------------------------------------------------------------ */
 
 const router = Router()
@@ -21,10 +21,10 @@ function str(value: unknown): string {
 }
 
 router.get(
-  '/explore',
+  '/courses',
   asyncHandler(async (req, res) => {
     const page = Math.max(1, Number.parseInt(str(req.query.page) || '1', 10) || 1)
-    const html = await renderExploreList({
+    const html = await renderCourseList({
       q: str(req.query.q).slice(0, 200),
       tag: str(req.query.tag).slice(0, 40),
       level: str(req.query.level).slice(0, 40),
@@ -36,16 +36,26 @@ router.get(
 )
 
 router.get(
-  '/explore/:slug',
+  '/courses/:slug',
   asyncHandler(async (req, res) => {
-    const html = await renderExploreDetail(String(req.params.slug))
+    const html = await renderCourseDetail(String(req.params.slug))
     if (!html) {
-      res.status(404).set('Cache-Control', 'no-store').type('html').send(renderExploreNotFound())
+      res.status(404).set('Cache-Control', 'no-store').type('html').send(renderCourseNotFound())
       return
     }
     res.set('Cache-Control', 'public, max-age=300').type('html').send(html)
   }),
 )
+
+/* Keep the old /explore URLs working: permanent redirect to /courses. */
+router.get('/explore', (req, res) => {
+  const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : ''
+  res.redirect(301, `/courses${query}`)
+})
+
+router.get('/explore/:slug', (req, res) => {
+  res.redirect(301, `/courses/${encodeURIComponent(String(req.params.slug))}`)
+})
 
 router.get(
   '/sitemap.xml',

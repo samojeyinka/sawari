@@ -15,7 +15,7 @@ function CatalogCard({ path }: { path: ApiCatalogPath }) {
   const sections = path.sections.length
   return (
     <Link
-      to={`/app/explore/${path.slug}`}
+      to={`/app/courses/${path.slug}`}
       className="group flex min-w-0 flex-col border border-on-band/15 bg-panel p-5 transition-colors duration-200 hover:border-on-band/35"
     >
       <div className="flex items-center justify-between gap-3">
@@ -57,7 +57,7 @@ function CatalogCard({ path }: { path: ApiCatalogPath }) {
   )
 }
 
-export function ExplorePage() {
+export function CoursesPage() {
   const alert = useAlert()
   const [paths, setPaths] = useState<ApiCatalogPath[]>([])
   const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0 })
@@ -94,7 +94,7 @@ export function ExplorePage() {
       })
       .catch((error) => {
         if (error instanceof DOMException && error.name === 'AbortError') return
-        alert.fromError(error, 'Could not load the catalog.')
+        alert.fromError(error, 'Could not load the courses.')
       })
       .finally(() => setLoading(false))
 
@@ -107,16 +107,16 @@ export function ExplorePage() {
     () =>
       hasFilters
         ? 'Nothing matches that search yet. Try a different word or clear the filters.'
-        : 'No published paths yet. Check back soon.',
+        : 'No published courses yet. Check back soon.',
     [hasFilters],
   )
 
   return (
     <Page width="wide">
       <PageHeader
-        eyebrow="Explore"
-        title="Published learning paths"
-        subtitle="Curated paths you can start today. Enroll and it lands in your own path, ready to edit and track."
+        eyebrow="Courses"
+        title="Published courses"
+        subtitle="Curated courses you can start today. Enroll and it lands in your own path, ready to edit and track."
       />
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
