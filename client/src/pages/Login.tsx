@@ -89,6 +89,15 @@ export function LoginPage() {
   }
 
   const startOAuth = (provider: 'github' | 'google') => {
+    const target = searchParams.get('returnTo')
+    if (target && target.startsWith('/')) {
+      try {
+        sessionStorage.setItem('sawari:returnTo', target)
+      } catch (err) {
+        // ignore storage errors; fall back to default
+        console.warn(err)
+      }
+    }
     window.location.assign(authApi.oauthUrl(provider))
   }
 

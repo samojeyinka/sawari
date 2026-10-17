@@ -420,9 +420,9 @@ function Header() {
             </a>
           ))}
           {user ? (
-            <Link to="/app/courses" className={navLinkClass}>
+            <a href="/courses" className={navLinkClass}>
               <NavSweep>Courses</NavSweep>
-            </Link>
+            </a>
           ) : (
             <a href="/courses" className={navLinkClass}>
               <NavSweep>Courses</NavSweep>
@@ -510,7 +510,7 @@ export function LandingPage() {
               >
                 browse the public courses
               </a>
-              , open to anyone, no account needed.
+              {' '}and start from one you like.
             </p>
           </div>
 
@@ -672,10 +672,9 @@ export function LandingPage() {
               Start from a course, or build your own.
             </h2>
             <p className={body}>
-              Every published course is public and open to anyone, no account needed. Browse them by
-              subject, level and tag, and enroll in one to make it your own. Or tell the agent what
-              you want to learn and it builds your path from free material that already exists for
-              it.
+              Every published course is public, so you can read the whole outline before you commit.
+              Browse by subject, level and tag, save the ones you want to come back to, or start one
+              and it lands in your own path to edit and track.
             </p>
             <div className="mt-1">
               <a href="/courses" className={btnGhost}>

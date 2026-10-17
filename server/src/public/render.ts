@@ -26,6 +26,11 @@ function appUrl(path: string): string {
   return `${SITE_BASE}/app${path}`
 }
 
+/** Top-level action URL the SPA owns; it gates behind login then acts. */
+function actionUrl(path: string): string {
+  return `${SITE_BASE}${path}`
+}
+
 interface PageMeta {
   title: string
   description: string
@@ -72,6 +77,7 @@ const STYLES = `
   .cta{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;padding:13px 22px;border-radius:10px;margin-top:8px}
   .cta:hover{background:var(--accent-strong)}
   .cta.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
   .section{border:1px solid var(--line);background:#fff;border-radius:14px;padding:22px;margin:14px 0}
   .section .mins{font-size:13px;color:var(--muted)}
   .section ul{margin:10px 0 0;padding-left:22px}
@@ -362,6 +368,11 @@ ${content.assessment?.questions?.length ? `<p class="mins" style="margin-top:12p
   if (path.enrollments > 0) bits.push(`${path.enrollments} enrolled`)
 
   const canUrl = `${SITE_BASE}/courses/${encodeURIComponent(path.slug)}`
+  const slugPath = encodeURIComponent(path.slug)
+  const actions = `<div class="actions">
+<a class="cta" href="${actionUrl(`/start/${slugPath}`)}">Start this course</a>
+<a class="cta ghost" href="${actionUrl(`/save/${slugPath}`)}">Save for later</a>
+</div>`
   const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Course',
@@ -387,11 +398,12 @@ ${content.assessment?.questions?.length ? `<p class="mins" style="margin-top:12p
 ${path.summary ? `<p class="lede">${escapeHtml(path.summary)}</p>` : ''}
 <div class="meta-row">${bits.map((b) => `<span>${escapeHtml(b)}</span>`).join('')}</div>
 ${path.tags.length ? `<div class="chips">${path.tags.map((t) => `<a class="chip" href="/courses?tag=${encodeURIComponent(t)}">${escapeHtml(t)}</a>`).join('')}</div>` : ''}
+${actions}
 ${path.goal ? `<h2>What you'll be able to do</h2><p>${escapeHtml(path.goal)}</p>` : ''}
 <h2>What's inside</h2>
 ${sectionCards || '<div class="empty">Sections are being prepared.</div>'}
-<a class="cta" href="${appUrl(`/courses/${encodeURIComponent(path.slug)}`)}">Start this course free</a>
-${reviewList}`
+${reviewList}
+<p><a class="cta ghost" href="${actionUrl(`/review/${slugPath}`)}">Write a review</a></p>`
 
   return page(
     {
@@ -444,5 +456,5 @@ export async function renderSitemap(): Promise<string> {
 }
 
 export function renderRobots(): string {
-  return `User-agent: *\nAllow: /\nDisallow: /app/\nDisallow: /api/\n\nSitemap: ${SITE_BASE}/sitemap.xml\n`
+  return `User-agent: *\nAllow: /\nDisallow: /app/\nDisallow: /api/\nDisallow: /start/\nDisallow: /save/\nDisallow: /review/\n\nSitemap: ${SITE_BASE}/sitemap.xml\n`
 }

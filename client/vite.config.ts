@@ -13,6 +13,11 @@ export default defineConfig({
   server: {
     host: true,
     allowedHosts: true,
+    proxy: {
+      '/courses': 'http://localhost:4000',
+      '/sitemap.xml': 'http://localhost:4000',
+      '/robots.txt': 'http://localhost:4000',
+    },
   },
   preview: {
     host: true,

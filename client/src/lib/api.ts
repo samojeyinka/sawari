@@ -898,6 +898,14 @@ export const catalogApi = {
       method: 'POST',
       body: input,
     }),
+  /** The learner's bookmarked courses (public cards). */
+  saved: (signal?: AbortSignal) => request<ApiCatalogPath[]>('/catalog/saved', { signal }),
+  /** Bookmark a public course. */
+  save: (slug: string) =>
+    request<{ saved: boolean }>(`/catalog/${encodeURIComponent(slug)}/save`, { method: 'POST' }),
+  /** Remove a bookmark. */
+  unsave: (slug: string) =>
+    request<{ saved: boolean }>(`/catalog/${encodeURIComponent(slug)}/save`, { method: 'DELETE' }),
 }
 
 export interface AdminCatalogListParams {
