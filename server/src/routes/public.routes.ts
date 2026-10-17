@@ -28,6 +28,7 @@ router.get(
       q: str(req.query.q).slice(0, 200),
       tag: str(req.query.tag).slice(0, 40),
       level: str(req.query.level).slice(0, 40),
+      sort: str(req.query.sort).slice(0, 20),
       page,
       limit: 12,
     })
