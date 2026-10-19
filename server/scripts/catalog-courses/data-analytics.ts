@@ -76,11 +76,11 @@ export const dataAnalyticsCourse = course({
           notes: ['Think critically about data sources.', 'Embrace continuous learning across modern tooling.'],
         }),
         video({
-          title: 'What is Data Analysis?',
+          title: 'Recall: What is Data Analysis?',
           source: 'Danielle Thé',
           url: 'https://www.youtube.com/watch?v=27axs9dO7AE',
           minutes: 5,
-          summary: 'Foundational concepts of descriptive, diagnostic, predictive, and prescriptive analytics.',
+          summary: 'Recall foundational concepts of descriptive, diagnostic, predictive, and prescriptive analytics.',
           notes: ['Descriptive answers what happened.', 'Diagnostic answers why it happened.'],
         }),
         article({
@@ -430,27 +430,27 @@ export const dataAnalyticsCourse = course({
       }),
       resources: [
         video({
-          title: 'SQL Tutorial Full Database Course for Beginners',
+          title: 'Recall: SQL Fundamentals for Data Analysts',
           source: 'freeCodeCamp',
           url: 'https://www.youtube.com/watch?v=HXV3zeQKqGY',
           minutes: 40,
-          summary: 'Comprehensive foundation covering table creation, SELECT queries, WHERE filtering, and constraints.',
+          summary: 'Recall comprehensive foundations covering table creation, SELECT queries, WHERE filtering, and constraints.',
           notes: ['Understand database schemas.', 'Filter rows precisely with boolean operators.'],
         }),
         video({
-          title: 'SQL Aggregate Functions Explained',
+          title: 'Revision: SQL Aggregate Functions and Metrics',
           source: 'Alex The Analyst',
           url: 'https://www.youtube.com/watch?v=9URM1_2S0ho',
           minutes: 12,
-          summary: 'Detailed explanation of COUNT, SUM, AVG, MIN, and MAX functions across dataset columns.',
+          summary: 'Revision of COUNT, SUM, AVG, MIN, and MAX functions across dataset columns.',
           notes: ['COUNT ignores null values in specific columns.', 'COUNT(*) counts every matching row.'],
         }),
         video({
-          title: 'SQL in 100 Seconds',
+          title: 'Recall: Relational Databases and SQL in 100 Seconds',
           source: 'Fireship',
           url: 'https://www.youtube.com/watch?v=zsjvFFKOm3c',
           minutes: 2,
-          summary: 'High energy fast tour of relational database design, tables, queries, and ACID guarantees.',
+          summary: 'Recall high energy fast tour of relational database design, tables, queries, and ACID guarantees.',
           notes: ['Relational databases enforce schemas.', 'SQL is the industry standard query language.'],
         }),
         article({
@@ -531,19 +531,19 @@ export const dataAnalyticsCourse = course({
       }),
       resources: [
         video({
-          title: 'SQL Joins Explained Clearly',
+          title: 'Recall: SQL Joins and Relational Modeling',
           source: 'Alex The Analyst',
           url: 'https://www.youtube.com/watch?v=Twusw__OzA8',
           minutes: 14,
-          summary: 'Visual walkthrough of inner, left, right, and full outer joins using real sample tables.',
+          summary: 'Recall visual walkthrough of inner, left, right, and full outer joins using real sample tables.',
           notes: ['Always verify foreign key relationships.', 'Use LEFT JOIN when you want to preserve all records from the base table.'],
         }),
         video({
-          title: 'SQL Case Statements Tutorial',
+          title: 'Revision: SQL Case Statements and Record Binning',
           source: 'Alex The Analyst',
           url: 'https://www.youtube.com/watch?v=LXwfzIRD-Ds',
           minutes: 10,
-          summary: 'How to write CASE WHEN statements to segment records, bin continuous metrics, and handle edge cases.',
+          summary: 'Revision of writing CASE WHEN statements to segment records, bin continuous metrics, and handle edge cases.',
           notes: ['CASE statements evaluate top to bottom.', 'Always provide an ELSE fallback.'],
         }),
         video({
@@ -669,19 +669,19 @@ export const dataAnalyticsCourse = course({
       }),
       resources: [
         video({
-          title: 'Python for Data Analysis Tutorial',
+          title: 'Recall: Python Setup and Tabular Series for Analytics',
           source: 'Corey Schafer',
           url: 'https://www.youtube.com/watch?v=YYXdXT2l-Gg',
           minutes: 20,
-          summary: 'Introduction to loading datasets, exploring column series, and calculating summary statistics in Python.',
+          summary: 'Recall loading datasets, exploring column series, and calculating summary statistics in Python.',
           notes: ['Use info and describe methods.', 'Inspect value counts to spot category imbalances.'],
         }),
         video({
-          title: 'Pandas Dataframe Basics',
+          title: 'Revision: Pandas Dataframe Basics and Data Exploration',
           source: 'Corey Schafer',
           url: 'https://www.youtube.com/watch?v=daefaLgNkw0',
           minutes: 18,
-          summary: 'Exploring DataFrames, indexing, filtering rows, and summarizing statistical distributions.',
+          summary: 'Revision of exploring DataFrames, indexing, filtering rows, and summarizing statistical distributions.',
           notes: ['Pandas simplifies tabular data exploration.', 'Chain methods for readable data pipelines.'],
         }),
         article({
@@ -771,11 +771,11 @@ export const dataAnalyticsCourse = course({
           notes: ['Use color to draw attention to key insights.', 'Eliminate visual chart junk.'],
         }),
         video({
-          title: 'Matplotlib Data Visualizations Tutorial',
+          title: 'Recall: Matplotlib Data Visualizations and Chart Labeling',
           source: 'Corey Schafer',
           url: 'https://www.youtube.com/watch?v=DZwmZ8Usvnk',
           minutes: 18,
-          summary: 'Creating clear line plots, bar charts, and scatter plots programmatically with clean labels.',
+          summary: 'Recall creating clear line plots, bar charts, and scatter plots programmatically with clean labels.',
           notes: ['Label all axes clearly with units of measurement.', 'Include clear titles stating the main insight.'],
         }),
         article({
@@ -900,11 +900,11 @@ export const dataAnalyticsCourse = course({
           notes: ['Document your project on GitHub.', 'Highlight business impact in your project README.'],
         }),
         video({
-          title: 'Python Lists and Data Structures',
+          title: 'Revision: Python Lists and Data Structures for Projects',
           source: 'Corey Schafer',
           url: 'https://www.youtube.com/watch?v=k9TUPpGqYTo',
           minutes: 15,
-          summary: 'Managing data structures, dictionaries, and lists when structuring data pipelines.',
+          summary: 'Revision of managing data structures, dictionaries, and lists when structuring data pipelines.',
           notes: ['Dictionaries map key value pairs cleanly.', 'Use list comprehensions for concise filtering.'],
         }),
         article({
