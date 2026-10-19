@@ -60,6 +60,12 @@ const AdminCatalogEditPage = lazy(() =>
 )
 const PrivacyPage = lazy(() => import('./pages/Privacy').then((m) => ({ default: m.PrivacyPage })))
 const TermsPage = lazy(() => import('./pages/Terms').then((m) => ({ default: m.TermsPage })))
+const CertificatePage = lazy(() =>
+  import('./pages/Certificate').then((m) => ({ default: m.CertificatePage })),
+)
+const VerifyCertificatePage = lazy(() =>
+  import('./pages/VerifyCertificate').then((m) => ({ default: m.VerifyCertificatePage })),
+)
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { state } = useApp()
@@ -171,6 +177,15 @@ function App() {
                   </RequireAuth>
                 }
               />
+              <Route
+                path="/certificate/:slug"
+                element={
+                  <RequireAuth>
+                    <CertificatePage />
+                  </RequireAuth>
+                }
+              />
+              <Route path="/verify/:credentialId" element={<VerifyCertificatePage />} />
 
               <Route
                 path="/app"
@@ -184,6 +199,7 @@ function App() {
                 <Route path="today" element={<TodayPage />} />
                 <Route path="path" element={<PathPage />} />
                 <Route path="saved" element={<SavedCoursesPage />} />
+                <Route path="certificate/:slug" element={<CertificatePage />} />
                 <Route path="session/:sectionId" element={<SessionPage />} />
                 <Route path="assessment/:sectionId" element={<AssessmentPage />} />
                 <Route path="projects" element={<ProjectsPage />} />

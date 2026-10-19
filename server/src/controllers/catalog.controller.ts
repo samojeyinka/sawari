@@ -5,14 +5,21 @@ import { escapeRegex, pageMeta, parsePagination, parseSort } from '../lib/queryF
 import { serialize } from '../lib/serialize.js'
 import { CatalogPath } from '../models/CatalogPath.js'
 import { CatalogReview } from '../models/CatalogReview.js'
+import { User } from '../models/User.js'
 import {
   CATALOG_CARD_SELECT,
   enrollUserInCatalog,
+  findEnrollment,
   listSavedCatalogPaths,
   recomputeReviewAggregates,
   saveCatalogPath,
   unsaveCatalogPath,
 } from '../services/catalog.js'
+import {
+  findPublicCertificate,
+  getOrIssueCertificate,
+  sendCertificateToEmail,
+} from '../services/certificate.js'
 import type { CreateReviewInput } from '../validators/catalogValidators.js'
 
 /* ------------------------------------------------------------------ */
@@ -146,6 +153,22 @@ export const createCatalogReview = asyncHandler(
       .lean()
     if (!catalog) throw httpError.notFound('Catalog path not found.')
 
+    const enrollment = await findEnrollment(req.user!.id, catalog._id.toString())
+    if (!enrollment) {
+      throw httpError.forbidden('You must enroll and complete at least 70% of this course to leave a review.')
+    }
+
+    const total = enrollment.sections.length
+    const completed = enrollment.sections.filter((s) => s.status === 'completed').length
+    const progressPercent = total > 0 ? (completed / total) * 100 : 0
+
+    if (progressPercent < 70) {
+      const rounded = Math.round(progressPercent)
+      throw httpError.forbidden(
+        `You have completed ${rounded}% of this course. You must complete at least 70% to leave a review.`,
+      )
+    }
+
     const body = req.body as CreateReviewInput
     const review = (await CatalogReview.findOneAndUpdate(
       { userId: req.user!.id, catalogPathId: catalog._id },
@@ -157,5 +180,84 @@ export const createCatalogReview = asyncHandler(
 
     const populated = await review.populate('userId', 'firstName lastName')
     res.created(toPublicReview(populated.toObject() as unknown as PopulatedReview))
+  },
+)
+
+/* ----------------------------- progress --------------------------- */
+
+export const getCatalogProgress = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const catalog = await CatalogPath.findOne({ slug: req.params.slug, published: true })
+      .select('_id')
+      .lean()
+    if (!catalog) throw httpError.notFound('Catalog path not found.')
+
+    const enrollment = await findEnrollment(req.user!.id, catalog._id.toString())
+    const total = enrollment ? enrollment.sections.length : 0
+    const completed = enrollment
+      ? enrollment.sections.filter((s) => s.status === 'completed').length
+      : 0
+    const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0
+    const isAdmin = req.user?.role === 'admin'
+
+    res.ok({
+      enrolled: Boolean(enrollment),
+      totalSections: total,
+      completedSections: completed,
+      progressPercent,
+      canReview: progressPercent >= 70,
+      eligibleForCertificate: progressPercent === 100 || isAdmin,
+      isAdmin,
+    })
+  },
+)
+
+/* --------------------------- certificate -------------------------- */
+
+export const getCatalogCertificate = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const userDoc = await User.findById(req.user!.id).select('firstName lastName email role').lean()
+    if (!userDoc) throw httpError.notFound('User not found.')
+
+    const cert = await getOrIssueCertificate(
+      {
+        id: req.user!.id,
+        firstName: userDoc.firstName,
+        lastName: userDoc.lastName,
+        email: userDoc.email,
+        role: req.user?.role,
+      },
+      req.params.slug as string,
+    )
+
+    res.ok(cert)
+  },
+)
+
+export const emailCatalogCertificate = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const userDoc = await User.findById(req.user!.id).select('firstName lastName email role').lean()
+    if (!userDoc) throw httpError.notFound('User not found.')
+
+    const result = await sendCertificateToEmail(
+      {
+        id: req.user!.id,
+        firstName: userDoc.firstName,
+        lastName: userDoc.lastName,
+        email: userDoc.email,
+        role: req.user?.role,
+      },
+      req.params.slug as string,
+    )
+
+    res.ok(result)
+  },
+)
+
+export const getPublicCertificate = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const cert = await findPublicCertificate(req.params.credentialId as string)
+    if (!cert) throw httpError.notFound('Verified certificate not found.')
+    res.ok(cert)
   },
 )
