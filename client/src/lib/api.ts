@@ -906,6 +906,46 @@ export const catalogApi = {
   /** Remove a bookmark. */
   unsave: (slug: string) =>
     request<{ saved: boolean }>(`/catalog/${encodeURIComponent(slug)}/save`, { method: 'DELETE' }),
+  /** Learner progress and review/certificate eligibility for this course. */
+  progress: (slug: string, signal?: AbortSignal) =>
+    request<CourseProgressInfo>(`/catalog/${encodeURIComponent(slug)}/progress`, { signal }),
+  /** Get or issue verified certificate of completion. */
+  certificate: (slug: string, signal?: AbortSignal) =>
+    request<ApiCertificate>(`/catalog/${encodeURIComponent(slug)}/certificate`, { signal }),
+  /** Send verified certificate of completion to learner email. */
+  emailCertificate: (slug: string) =>
+    request<{ sent: boolean; email: string }>(
+      `/catalog/${encodeURIComponent(slug)}/certificate/email`,
+      { method: 'POST' },
+    ),
+  /** Public lookup for certificate verification. */
+  verifyCertificate: (credentialId: string, signal?: AbortSignal) =>
+    request<ApiCertificate>(`/catalog/verify/${encodeURIComponent(credentialId)}`, { signal }),
+}
+
+export interface CourseProgressInfo {
+  enrolled: boolean
+  totalSections: number
+  completedSections: number
+  progressPercent: number
+  canReview: boolean
+  eligibleForCertificate: boolean
+  isAdmin: boolean
+}
+
+export interface ApiCertificate {
+  credentialId: string
+  recipientName: string
+  courseSubject: string
+  courseSlug: string
+  sectionsCount: number
+  hoursCount: number
+  levelLabel: string
+  issuedDate: string
+  archivalHash: string
+  verificationUrl: string
+  isAdminPreview: boolean
+  eligible: boolean
 }
 
 export interface AdminCatalogListParams {

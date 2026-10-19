@@ -96,19 +96,28 @@ const STYLES = `
   .lede{font-size:15.5px;line-height:1.6;color:var(--on-band-muted);max-width:62ch;margin:16px 0 0}
 
   .filters{margin:28px 0 8px;border:1px solid var(--line);background:var(--panel);padding:18px}
-  .filters-row{display:flex;flex-wrap:wrap;gap:12px}
-  .filter-search{display:flex;flex:1;min-width:220px;gap:8px}
+  .filters-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .filter-search{display:flex;flex:1;min-width:240px;gap:8px}
   .filter-search input{flex:1;min-width:0;height:46px;padding:0 14px;background:var(--band);border:1px solid var(--line);color:var(--on-band);font-size:15px;font-family:var(--font-sans)}
   .filter-search input::placeholder{color:var(--on-band-dim)}
   .filter-search input:focus{outline:2px solid var(--accent-bright);border-color:transparent}
-  select.sort{height:46px;padding:0 14px;background:var(--band);border:1px solid var(--line);color:var(--on-band);font-size:14px;font-family:var(--font-sans)}
+  select.sort{height:46px;padding:0 14px;background:var(--band);border:1px solid var(--line);color:var(--on-band);font-size:14px;font-family:var(--font-sans);min-width:140px}
   select.sort:focus{outline:2px solid var(--accent-bright)}
-  .facet{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .facet{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
   .facet-label{display:block;font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--on-band-dim);margin-bottom:10px}
   .pills{display:flex;flex-wrap:wrap;gap:8px}
-  .pill{padding:5px 12px;border:1px solid var(--line);color:var(--on-band-muted);font-size:13px;text-decoration:none;transition:border-color .15s,color .15s,background .15s}
+  .pills-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .pill{padding:5px 12px;border:1px solid var(--line);color:var(--on-band-muted);font-size:13px;text-decoration:none;white-space:nowrap;transition:border-color .15s,color .15s,background .15s}
   .pill:hover{border-color:var(--line-strong);color:var(--on-band)}
   .pill.on{background:var(--accent-soft);border-color:var(--accent-bright);color:var(--accent-bright)}
+  .topics-drawer{margin-top:10px}
+  .topics-toggle{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent-bright);cursor:pointer;user-select:none;padding:4px 0}
+  .topics-toggle:hover{text-decoration:underline}
+  .all-topics-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding:12px;background:var(--band);border:1px solid var(--line);max-height:180px;overflow-y:auto}
+  .active-filters{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .active-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--accent-soft);border:1px solid var(--accent-bright);color:var(--accent-bright);font-size:12px}
+  .active-chip a{color:var(--accent-bright);text-decoration:none;font-weight:bold;margin-left:4px}
+  .active-chip a:hover{opacity:.8}
 
   .results-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;margin:30px 0 0}
   .results-count{font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--on-band-dim)}
@@ -358,10 +367,14 @@ export async function renderCourseList(params: ListParams): Promise<string> {
     CatalogPath.distinct('tags', { published: true }),
   ])
 
-  const tags = (rawTags as string[])
+  const allTags = (rawTags as string[])
     .filter((t) => typeof t === 'string' && t.length > 0)
     .sort((a, b) => a.localeCompare(b))
-    .slice(0, 24)
+
+  const featuredTags = allTags.slice(0, 8)
+  if (params.tag && !featuredTags.includes(params.tag)) {
+    featuredTags.push(params.tag)
+  }
 
   const heading = params.q
     ? `Courses matching “${escapeHtml(params.q)}”`
@@ -371,6 +384,22 @@ export async function renderCourseList(params: ListParams): Promise<string> {
         ? `${escapeHtml(LEVEL_LABELS[params.level as ExperienceLevel] ?? params.level)} courses`
         : 'Browse courses'
 
+  const levelOptions = [
+    `<option value="">All levels</option>`,
+    ...EXPERIENCE_LEVELS.map(
+      (lv) =>
+        `<option value="${lv}"${params.level === lv ? ' selected' : ''}>${LEVEL_LABELS[lv]}</option>`,
+    ),
+  ].join('')
+
+  const tagOptions = [
+    `<option value="">All topics (${allTags.length})</option>`,
+    ...allTags.map(
+      (t) =>
+        `<option value="${escapeHtml(t)}"${params.tag === t ? ' selected' : ''}>${escapeHtml(t)}</option>`,
+    ),
+  ].join('')
+
   const levelPills = [
     `<a class="pill${!params.level ? ' on' : ''}" href="/courses${listQuery(params, { level: '', page: 1 })}">All levels</a>`,
     ...EXPERIENCE_LEVELS.map(
@@ -379,19 +408,52 @@ export async function renderCourseList(params: ListParams): Promise<string> {
     ),
   ].join('')
 
-  const tagPills = tags.length
+  const featuredTagPills = featuredTags.length
     ? [
         `<a class="pill${!params.tag ? ' on' : ''}" href="/courses${listQuery(params, { tag: '', page: 1 })}">All topics</a>`,
-        ...tags.map(
+        ...featuredTags.map(
           (t) =>
             `<a class="pill${params.tag === t ? ' on' : ''}" href="/courses${listQuery(params, { tag: t, page: 1 })}">${escapeHtml(t)}</a>`,
         ),
       ].join('')
     : ''
 
+  const allTagPills = allTags
+    .map(
+      (t) =>
+        `<a class="pill${params.tag === t ? ' on' : ''}" href="/courses${listQuery(params, { tag: t, page: 1 })}">${escapeHtml(t)}</a>`,
+    )
+    .join('')
+
   const sortOptions = SORTS.map(
     (s) => `<option value="${s.value}"${activeSort === s.value ? ' selected' : ''}>${s.label}</option>`,
   ).join('')
+
+  const hasFilters = Boolean(params.q || params.tag || params.level)
+  const activeChips: string[] = []
+  if (params.q) {
+    activeChips.push(
+      `<span class="active-chip">Search: ${escapeHtml(params.q)} <a href="/courses${listQuery(params, { q: '', page: 1 })}" aria-label="Remove search filter">✕</a></span>`,
+    )
+  }
+  if (params.level) {
+    activeChips.push(
+      `<span class="active-chip">Level: ${escapeHtml(LEVEL_LABELS[params.level as ExperienceLevel] ?? params.level)} <a href="/courses${listQuery(params, { level: '', page: 1 })}" aria-label="Remove level filter">✕</a></span>`,
+    )
+  }
+  if (params.tag) {
+    activeChips.push(
+      `<span class="active-chip">Topic: ${escapeHtml(params.tag)} <a href="/courses${listQuery(params, { tag: '', page: 1 })}" aria-label="Remove topic filter">✕</a></span>`,
+    )
+  }
+
+  const activeFiltersBar = hasFilters
+    ? `<div class="active-filters">
+<span class="facet-label" style="margin:0">Active:</span>
+${activeChips.join('')}
+<a class="clear" href="/courses">Clear all</a>
+</div>`
+    : ''
 
   const filters = `<form class="filters" method="get" action="/courses" role="search">
 <div class="filters-row">
@@ -399,19 +461,19 @@ export async function renderCourseList(params: ListParams): Promise<string> {
 <input type="search" name="q" value="${escapeHtml(params.q)}" placeholder="Search courses, tags, subjects…" aria-label="Search courses">
 <button type="submit" class="btn btn-primary"><span class="sweep" aria-hidden="true"></span><span class="label">Search</span></button>
 </div>
-<select class="sort" name="sort" aria-label="Sort courses">${sortOptions}</select>
+<select class="sort" name="level" aria-label="Filter by level" onchange="this.form.submit()">${levelOptions}</select>
+<select class="sort" name="tag" aria-label="Filter by topic" onchange="this.form.submit()">${tagOptions}</select>
+<select class="sort" name="sort" aria-label="Sort courses" onchange="this.form.submit()">${sortOptions}</select>
 </div>
-${params.tag ? `<input type="hidden" name="tag" value="${escapeHtml(params.tag)}">` : ''}
-${params.level ? `<input type="hidden" name="level" value="${escapeHtml(params.level)}">` : ''}
 <div class="facet"><span class="facet-label">Level</span><div class="pills">${levelPills}</div></div>
-${tagPills ? `<div class="facet"><span class="facet-label">Topic</span><div class="pills">${tagPills}</div></div>` : ''}
+${featuredTagPills ? `<div class="facet"><span class="facet-label">Popular topics</span><div class="pills-scroll">${featuredTagPills}</div>${allTags.length > 8 ? `<details class="topics-drawer"><summary class="topics-toggle">Browse all ${allTags.length} topics</summary><div class="all-topics-grid">${allTagPills}</div></details>` : ''}</div>` : ''}
+${activeFiltersBar}
 </form>`
 
   const grid = items.length
     ? `<div class="grid">${items.map(cardHtml).join('')}</div>`
     : `<div class="empty">No courses found. Try a different search or clear the filters.</div>`
 
-  const hasFilters = Boolean(params.q || params.tag || params.level)
   const resultsHead = `<div class="results-head">
 <span class="results-count">${total} ${total === 1 ? 'course' : 'courses'}</span>
 ${hasFilters ? '<a class="clear" href="/courses">Clear filters</a>' : ''}
@@ -586,7 +648,10 @@ ${path.goal ? `<h2>What you'll be able to do</h2><p class="lede">${escapeHtml(pa
 <h2>What's inside</h2>
 ${sectionCards || '<div class="empty">Sections are being prepared.</div>'}
 ${reviewList}
-<p style="margin-top:28px"><a class="btn btn-outline" href="${actionUrl(`/review/${slugPath}`)}"><span class="sweep" aria-hidden="true"></span><span class="label">Write a review</span></a></p>`
+<p style="margin-top:28px;display:flex;flex-wrap:wrap;gap:10px">
+<a class="btn btn-outline" href="${actionUrl(`/review/${slugPath}`)}"><span class="sweep" aria-hidden="true"></span><span class="label">Write a review</span></a>
+<a class="btn btn-outline" href="${actionUrl(`/certificate/${slugPath}`)}"><span class="sweep" aria-hidden="true"></span><span class="label">View certificate</span></a>
+</p>`
 
   return page(
     {

@@ -13,6 +13,7 @@ import { projectFeedback, type ProjectFeedbackData } from './projectFeedback.js'
 import { sessionReminder, type SessionReminderData } from './sessionReminder.js'
 import { weeklySummary, type WeeklySummaryData } from './weeklySummary.js'
 import { welcome, type WelcomeData } from './welcome.js'
+import { courseCertificate, type CourseCertificateData } from './courseCertificate.js'
 
 /* ------------------------------------------------------------------ */
 /*  Template registry. Add a new email by adding its data interface,   */
@@ -35,6 +36,7 @@ export interface EmailTemplates {
   'path-ready': PathReadyData
   'session-reminder': SessionReminderData
   'weekly-summary': WeeklySummaryData
+  'course-certificate': CourseCertificateData
 }
 
 export type EmailTemplateName = keyof EmailTemplates
@@ -56,4 +58,5 @@ export const emailTemplates: {
   'path-ready': pathReady,
   'session-reminder': sessionReminder,
   'weekly-summary': weeklySummary,
+  'course-certificate': courseCertificate,
 }

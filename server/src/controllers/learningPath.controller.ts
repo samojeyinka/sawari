@@ -13,9 +13,12 @@ import {
 import { serialize } from '../lib/serialize.js'
 import { assertCanCreatePath } from '../services/billing.js'
 import { CatalogPath } from '../models/CatalogPath.js'
+import { Certificate } from '../models/Certificate.js'
 import { LearningPath } from '../models/LearningPath.js'
 import { Project } from '../models/Project.js'
 import { SessionContentModel } from '../models/SessionContent.js'
+import { User } from '../models/User.js'
+import { sendCertificateToEmail } from '../services/certificate.js'
 import type {
   CreateLearningPathInput,
   UpdateLearningPathInput,
@@ -177,6 +180,41 @@ export const updateLearningPath = asyncHandler(
       { returnDocument: 'after', runValidators: true },
     ).lean()
     if (!path) throw httpError.notFound('Learning path not found.')
+
+    if (path.catalogPathId && path.sections && path.sections.length > 0) {
+      const allDone = path.sections.every((s) => s.status === 'completed')
+      if (allDone) {
+        const catalogId = path.catalogPathId
+        const userId = req.user!.id
+        const userRole = req.user?.role
+        CatalogPath.findById(catalogId)
+          .select('slug')
+          .lean()
+          .then(async (cat) => {
+            if (!cat) return
+            const existing = await Certificate.findOne({ userId, catalogPathId: catalogId }).lean()
+            if (!existing || !existing.emailSentAt) {
+              const u = await User.findById(userId).select('firstName lastName email').lean()
+              if (u) {
+                await sendCertificateToEmail(
+                  {
+                    id: userId,
+                    firstName: u.firstName,
+                    lastName: u.lastName,
+                    email: u.email,
+                    role: userRole,
+                  },
+                  cat.slug,
+                )
+              }
+            }
+          })
+          .catch((err) => {
+            console.error('[certificate] auto-send notification failed:', err)
+          })
+      }
+    }
+
     res.ok(serialize(path))
   },
 )

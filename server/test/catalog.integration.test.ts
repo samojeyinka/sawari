@@ -292,6 +292,23 @@ test('learners review a published path and aggregates update', { skip: !hasDb },
   const created = await createCatalog(admin, { subject: 'Reviewable Path' })
   const learner = await registerUser('catalog-reviewer@example.com', { verified: true })
 
+  // Reviewing without 70% course completion is rejected with 403
+  const rejected = await request(app)
+    .post(`/api/v1/catalog/${created.slug}/reviews`)
+    .set('Cookie', learner.cookie)
+    .send({ rating: 5, text: 'Too early.' })
+  assert.equal(rejected.status, 403)
+
+  // Enroll learner and complete course sections (100% >= 70%)
+  await request(app)
+    .post(`/api/v1/catalog/${created.slug}/enroll`)
+    .set('Cookie', learner.cookie)
+
+  await LearningPath.updateOne(
+    { userId: learner.id, catalogPathId: created.id },
+    { $set: { 'sections.$[].status': 'completed' } },
+  )
+
   const posted = await request(app)
     .post(`/api/v1/catalog/${created.slug}/reviews`)
     .set('Cookie', learner.cookie)
@@ -318,6 +335,54 @@ test('learners review a published path and aggregates update', { skip: !hasDb },
   catalog = await CatalogPath.findById(created.id)
   assert.equal(catalog!.reviewsCount, 1)
   assert.equal(catalog!.reviewsAvg, 3)
+})
+
+/* --------------------------- certificate -------------------------- */
+
+test('certificates unlock upon 100% completion and allow admin preview', { skip: !hasDb }, async () => {
+  const admin = await registerUser('catalog-admin-cert@example.com', { admin: true, verified: true })
+  const created = await createCatalog(admin, { subject: 'Certificate Course' })
+  const slug = created.slug as string
+  const learner = await registerUser('catalog-student@example.com', { verified: true })
+
+  // 1. Learner without completion gets 403
+  const early = await request(app)
+    .get(`/api/v1/catalog/${slug}/certificate`)
+    .set('Cookie', learner.cookie)
+  assert.equal(early.status, 403)
+
+  // 2. Admin can preview certificate without completion (bypass)
+  const adminPreview = await request(app)
+    .get(`/api/v1/catalog/${slug}/certificate`)
+    .set('Cookie', admin.cookie)
+  assert.equal(adminPreview.status, 200)
+  assert.equal(adminPreview.body.data.isAdminPreview, true)
+  assert.ok(adminPreview.body.data.credentialId.startsWith('SWR-'))
+
+  // 3. Learner completes 100% of course sections
+  await request(app)
+    .post(`/api/v1/catalog/${slug}/enroll`)
+    .set('Cookie', learner.cookie)
+
+  await LearningPath.updateOne(
+    { userId: learner.id, catalogPathId: created.id },
+    { $set: { 'sections.$[].status': 'completed' } },
+  )
+
+  // 4. Learner now earns verified certificate
+  const cert = await request(app)
+    .get(`/api/v1/catalog/${slug}/certificate`)
+    .set('Cookie', learner.cookie)
+  assert.equal(cert.status, 200)
+  assert.equal(cert.body.data.isAdminPreview, false)
+  assert.ok(cert.body.data.credentialId)
+
+  // 5. Public verification endpoint confirms credential
+  const verified = await request(app).get(
+    `/api/v1/catalog/verify/${cert.body.data.credentialId}`,
+  )
+  assert.equal(verified.status, 200)
+  assert.equal(verified.body.data.credentialId, cert.body.data.credentialId)
 })
 
 /* ------------------------------ saved ----------------------------- */
