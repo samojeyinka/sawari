@@ -2,8 +2,8 @@ import crypto from 'node:crypto'
 import { env } from '../config/env.js'
 import { httpError } from '../lib/AppError.js'
 import { renderTemplate, sendEmail } from '../mail/index.js'
-import { CatalogPath, type CatalogPathDocument } from '../models/CatalogPath.js'
-import { Certificate, type CertificateDocument } from '../models/Certificate.js'
+import { CatalogPath } from '../models/CatalogPath.js'
+import { Certificate } from '../models/Certificate.js'
 import { findEnrollment } from './catalog.js'
 
 export interface CertificateUser {
