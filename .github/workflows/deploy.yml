@@ -37,7 +37,7 @@ jobs:
             cd server
             npm ci
             npm run build
-            npx tsx scripts/seed-courses.ts
+            npx tsx scripts/seed-courses.ts --update-all
             pm2 restart sawari-api
 
             cd ../client
