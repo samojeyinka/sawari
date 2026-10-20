@@ -682,6 +682,8 @@ export async function renderSitemap(): Promise<string> {
     { loc: `${SITE_BASE}/`, lastmod: undefined as string | undefined },
     { loc: `${SITE_BASE}/courses`, lastmod: paths[0]?.updatedAt?.toISOString() },
     ...paths.map((p) => ({ loc: `${SITE_BASE}/courses/${p.slug}`, lastmod: p.updatedAt?.toISOString() })),
+    { loc: `${SITE_BASE}/privacy`, lastmod: undefined as string | undefined },
+    { loc: `${SITE_BASE}/terms`, lastmod: undefined as string | undefined },
   ]
 
   const body = urls
