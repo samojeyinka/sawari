@@ -2,7 +2,7 @@ import { env } from '../config/env.js'
 import { EXPERIENCE_LEVELS, type ExperienceLevel } from '../domain/index.js'
 import { CatalogPath } from '../models/CatalogPath.js'
 import { CatalogReview } from '../models/CatalogReview.js'
-import type { LessonBlock, SessionContent } from '../models/SessionContent.js'
+import type { SessionContent } from '../models/SessionContent.js'
 
 /* ------------------------------------------------------------------ */
 /*  Server-rendered public catalog surface. These pages exist so the    */
@@ -152,7 +152,14 @@ const STYLES = `
   .actions{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0 8px}
   h2{font-size:24px;margin:48px 0 16px}
   .section{border:1px solid var(--line);background:var(--panel);padding:22px;margin:14px 0}
-  .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .section>summary{display:flex;align-items:baseline;justify-content:space-between;gap:12px;cursor:pointer;list-style:none}
+  .section>summary::-webkit-details-marker{display:none}
+  .section>summary h3{margin:0;font-size:17px;font-weight:500}
+  .section>summary h2{margin:0;font-size:24px}
+  .section>summary:hover h3,.section>summary:hover h2{color:var(--accent-bright)}
+  .section>summary:focus-visible{outline:2px solid var(--accent-bright);outline-offset:4px}
+  .section>summary .mins::after{content:'+';margin-left:12px;color:var(--accent-bright);font-size:15px}
+  .section[open]>summary .mins::after{content:'\\2212'}
   .section h3{margin:0;font-size:17px;font-weight:500}
   .mins{font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--on-band-dim)}
   .section p{color:var(--on-band-muted);font-size:14.5px;margin:10px 0 0}
@@ -163,6 +170,7 @@ const STYLES = `
   .resource{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid var(--line);font-size:14px;color:var(--on-band-muted)}
   .resource:first-of-type{border-top:0}
   .review{border-top:1px solid var(--line);padding:16px 0}
+  .review:first-of-type{border-top:0;padding-top:4px}
   .review .who{font-weight:600;color:var(--on-band)}
   .review p{margin:8px 0 0}
   .empty{border:1px dashed var(--line-strong);color:var(--on-band-dim);padding:56px 24px;text-align:center}
@@ -535,27 +543,6 @@ interface RawReview {
   userId?: { firstName?: string; lastName?: string } | null
 }
 
-function renderBlocks(blocks: LessonBlock[]): string {
-  return blocks
-    .map((block) => {
-      switch (block.type) {
-        case 'h':
-          return `<h3>${escapeHtml(block.text)}</h3>`
-        case 'p':
-          return `<p>${escapeHtml(block.text)}</p>`
-        case 'list':
-          return `<ul>${block.items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`
-        case 'steps':
-          return `<ol>${block.items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ol>`
-        case 'note':
-          return `<div class="note"><strong>${escapeHtml(block.title)}</strong>${escapeHtml(block.text)}</div>`
-        default:
-          return ''
-      }
-    })
-    .join('')
-}
-
 export async function renderCourseDetail(slug: string): Promise<string | null> {
   const path = await CatalogPath.findOne({ slug, published: true }).lean()
   if (!path) return null
@@ -581,25 +568,29 @@ export async function renderCourseDetail(slug: string): Promise<string | null> {
   const sectionCards = sections
     .map((section) => {
       const content = section.content as SessionContent
-      const lesson = content.lesson
       const resources = content.resources ?? []
-      return `<div class="section">
-<div class="section-head"><h3>${escapeHtml(section.title)}</h3><span class="mins">${section.minutes ? `${section.minutes} min · ` : ''}${resources.length} resource${resources.length === 1 ? '' : 's'}</span></div>
+      const facts = [
+        section.minutes ? `${section.minutes} min` : '',
+        resources.length ? `${resources.length} resource${resources.length === 1 ? '' : 's'}` : '',
+      ].filter(Boolean)
+      return `<details class="section">
+<summary><h3>${escapeHtml(section.title)}</h3><span class="mins">${escapeHtml(facts.join(' · '))}</span></summary>
 ${section.description ? `<p>${escapeHtml(section.description)}</p>` : ''}
-${lesson ? `<p><strong>${escapeHtml(lesson.title)}</strong> — ${escapeHtml(lesson.intro)}</p>${renderBlocks(lesson.blocks)}` : ''}
 ${resources.length ? resources.map((r) => `<div class="resource"><span>${escapeHtml(r.title)}</span><span class="mins">${escapeHtml(r.kind)} · ${r.minutes} min</span></div>`).join('') : ''}
-${content.assessment?.questions?.length ? `<p class="mins" style="margin-top:12px">${content.assessment.questions.length} question check at the end.</p>` : ''}
-</div>`
+</details>`
     })
     .join('')
 
   const reviewList = reviews.length
-    ? `<h2>Reviews</h2>${reviews
+    ? `<details class="section">
+<summary><h2>Reviews</h2><span class="mins">${path.reviewsAvg}★ · ${path.reviewsCount} review${path.reviewsCount === 1 ? '' : 's'}</span></summary>
+${reviews
         .map((r) => {
           const author = r.author || 'A learner'
           return `<div class="review"><div><span class="who">${escapeHtml(author)}</span> <span class="rating-inline">${starsHtml(r.rating)}</span></div>${r.text ? `<p>${escapeHtml(r.text)}</p>` : ''}</div>`
         })
-        .join('')}`
+        .join('')}
+</details>`
     : ''
 
   const bits: string[] = []
