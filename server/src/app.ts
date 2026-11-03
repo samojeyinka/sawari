@@ -13,11 +13,23 @@ import v1Routes from './routes/v1/index.js'
 
 export function createApp(): express.Express {
   const app = express()
+  const cspDirectives = helmet.contentSecurityPolicy.getDefaultDirectives()
+  delete cspDirectives['img-src']
 
   app.disable('x-powered-by')
   app.set('trust proxy', 1)
 
-  app.use(helmet())
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          ...cspDirectives,
+          // Catalog thumbnails are user-supplied HTTPS URLs.
+          imgSrc: ["'self'", 'data:', 'https:'],
+        },
+      },
+    }),
+  )
   app.use(
     cors({
       origin(origin, callback) {

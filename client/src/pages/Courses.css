@@ -69,9 +69,23 @@
 .catalog-pagination button:disabled { opacity: .42; cursor: not-allowed; }
 .catalog-page-numbers { display: flex; align-items: center; gap: 5px; }
 .catalog-page-numbers > span { padding: 0 2px; color: #898292; }
-.catalog-loading-state, .catalog-empty-state { display: flex; min-height: 320px; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin-top: 17px; border: 1px dashed #d8d1df; border-radius: 14px; background: #fff; padding: 28px; color: #77717e; text-align: center; }
-.catalog-loader { width: 26px; height: 26px; border: 3px solid #e7def1; border-top-color: var(--catalog-accent); border-radius: 50%; animation: catalog-spin .75s linear infinite; }
-@keyframes catalog-spin { to { transform: rotate(360deg); } }
+.catalog-skeleton-grid { align-items: stretch; }
+.catalog-course-skeleton { min-width: 0; overflow: hidden; border: 1px solid var(--catalog-line); border-radius: 13px; background: #fff; }
+.catalog-skeleton-image, .catalog-skeleton-line { background: linear-gradient(100deg, #f0edf2 20%, #faf8fb 38%, #f0edf2 56%); background-size: 220% 100%; animation: catalog-shimmer 1.45s ease-in-out infinite; }
+.catalog-skeleton-image { aspect-ratio: 1.48; }
+.catalog-skeleton-copy { display: flex; min-height: 254px; flex-direction: column; align-items: flex-start; gap: 13px; padding: 16px 15px; }
+.catalog-skeleton-line { height: 11px; border-radius: 999px; }
+.catalog-skeleton-pill { width: 34%; height: 20px; }
+.catalog-skeleton-title { width: 86%; height: 17px; margin-top: 4px; }
+.catalog-skeleton-description { width: 100%; }
+.catalog-skeleton-description-short { width: 72%; }
+.catalog-skeleton-meta { width: 55%; height: 9px; margin-top: auto; }
+.catalog-course-skeleton-list { display: grid; grid-template-columns: minmax(180px, 250px) minmax(0, 1fr); }
+.catalog-course-skeleton-list .catalog-skeleton-image { height: 100%; min-height: 220px; aspect-ratio: auto; }
+.catalog-course-skeleton-list .catalog-skeleton-copy { min-height: 220px; justify-content: center; padding: 18px 20px; }
+@keyframes catalog-shimmer { to { background-position-x: -220%; } }
+@media (prefers-reduced-motion: reduce) { .catalog-skeleton-image, .catalog-skeleton-line { animation: none; background: #f0edf2; } }
+.catalog-empty-state { display: flex; min-height: 320px; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin-top: 17px; border: 1px dashed #d8d1df; border-radius: 14px; background: #fff; padding: 28px; color: #77717e; text-align: center; }
 .catalog-empty-state > span { color: #c7afdF; font-size: 36px; }
 .catalog-empty-state h3 { color: var(--catalog-ink); font-size: 18px; font-weight: 800; }
 .catalog-empty-state p { max-width: 450px; margin: 0; font-size: 12px; }
@@ -95,6 +109,9 @@
   .catalog-course-title { font-size: 13px; }
   .catalog-course-summary { font-size: 10px; }
   .catalog-course-grid-list { grid-template-columns: 1fr; }
+  .catalog-course-skeleton-list { grid-template-columns: 130px minmax(0, 1fr); }
+  .catalog-course-skeleton-list .catalog-skeleton-image { min-height: 200px; }
+  .catalog-course-skeleton-list .catalog-skeleton-copy { min-height: 200px; padding: 13px; }
   .catalog-course-card-list { grid-template-columns: 130px minmax(0, 1fr); }
   .catalog-course-card-list .catalog-course-image { min-height: 200px; }
   .catalog-course-card-list .catalog-course-copy { min-height: 200px; padding: 13px; }
@@ -107,6 +124,9 @@
   .catalog-course-copy { min-height: 220px; padding: 14px; }
   .catalog-course-image { aspect-ratio: 1.8; }
   .catalog-course-card-list { grid-template-columns: 1fr; }
+  .catalog-course-skeleton-list { grid-template-columns: 1fr; }
+  .catalog-course-skeleton-list .catalog-skeleton-image { min-height: 0; aspect-ratio: 1.8; }
+  .catalog-course-skeleton-list .catalog-skeleton-copy { min-height: 230px; }
   .catalog-course-card-list .catalog-course-image { min-height: 0; aspect-ratio: 1.8; }
   .catalog-course-card-list .catalog-course-copy { min-height: 230px; }
   .catalog-results-controls { flex-wrap: wrap; }

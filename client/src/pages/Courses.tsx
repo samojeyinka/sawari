@@ -142,7 +142,20 @@ export function CoursesPage() {
             {error ? (
               <div className="catalog-empty-state" role="alert"><p>{error}</p><button type="button" onClick={() => setSearchParams(new URLSearchParams(searchParams))}>Try again</button></div>
             ) : isLoading ? (
-              <div className="catalog-loading-state" role="status"><span className="catalog-loader" />Loading courses…</div>
+              <div className={`catalog-course-grid catalog-course-grid-${view} catalog-skeleton-grid`} role="status" aria-label="Loading courses" aria-busy="true">
+                {Array.from({ length: PAGE_SIZE }, (_, index) => (
+                  <article className={`catalog-course-skeleton catalog-course-skeleton-${view}`} key={index} aria-hidden="true">
+                    <div className="catalog-skeleton-image" />
+                    <div className="catalog-skeleton-copy">
+                      <div className="catalog-skeleton-line catalog-skeleton-pill" />
+                      <div className="catalog-skeleton-line catalog-skeleton-title" />
+                      <div className="catalog-skeleton-line catalog-skeleton-description" />
+                      <div className="catalog-skeleton-line catalog-skeleton-description catalog-skeleton-description-short" />
+                      <div className="catalog-skeleton-line catalog-skeleton-meta" />
+                    </div>
+                  </article>
+                ))}
+              </div>
             ) : results?.items.length ? (
               <div className={`catalog-course-grid catalog-course-grid-${view}`}>
                 {results.items.map((course) => <CourseCard key={course.slug} course={course} view={view} />)}

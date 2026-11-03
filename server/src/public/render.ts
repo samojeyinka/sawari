@@ -101,6 +101,8 @@ const STYLES = `
   .filter-search input{flex:1;min-width:0;height:46px;padding:0 14px;background:var(--band);border:1px solid var(--line);color:var(--on-band);font-size:15px;font-family:var(--font-sans)}
   .filter-search input::placeholder{color:var(--on-band-dim)}
   .filter-search input:focus{outline:2px solid var(--accent-bright);border-color:transparent}
+  .filter-submit{height:42px;padding:0 16px;border:1px solid var(--accent-bright);background:var(--accent-bright);color:var(--band);font:500 13px var(--font-sans);cursor:pointer}
+  .filter-submit:hover{filter:brightness(1.08)}
   select.sort{height:46px;padding:0 14px;background:var(--band);border:1px solid var(--line);color:var(--on-band);font-size:14px;font-family:var(--font-sans);min-width:140px}
   select.sort:focus{outline:2px solid var(--accent-bright)}
   .facet{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
@@ -483,9 +485,10 @@ ${activeChips.join('')}
 <input type="search" name="q" value="${escapeHtml(params.q)}" placeholder="Search courses, tags, subjects…" aria-label="Search courses">
 <button type="submit" class="btn btn-primary"><span class="sweep" aria-hidden="true"></span><span class="label">Search</span></button>
 </div>
-<select class="sort" name="level" aria-label="Filter by level" onchange="this.form.submit()">${levelOptions}</select>
-<select class="sort" name="category" aria-label="Filter by category" onchange="this.form.submit()">${categoryOptions}</select>
-<select class="sort" name="sort" aria-label="Sort courses" onchange="this.form.submit()">${sortOptions}</select>
+<select class="sort" name="level" aria-label="Filter by level">${levelOptions}</select>
+<select class="sort" name="category" aria-label="Filter by category">${categoryOptions}</select>
+<select class="sort" name="sort" aria-label="Sort courses">${sortOptions}</select>
+<button class="filter-submit" type="submit">Apply filters</button>
 </div>
 <div class="facet"><span class="facet-label">Level</span><div class="pills">${levelPills}</div></div>
 ${featuredCategoryPills ? `<div class="facet"><span class="facet-label">Categories</span><div class="pills-scroll">${featuredCategoryPills}</div></div>` : ''}
