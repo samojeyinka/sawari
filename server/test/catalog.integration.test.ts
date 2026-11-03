@@ -105,6 +105,7 @@ function sectionInput(title = 'Foundations') {
 function catalogPayload(overrides: Record<string, unknown> = {}) {
   return {
     subject: 'Intro to Bread Baking',
+    category: 'Cooking & Baking',
     summary: 'Bake your first loaf.',
     goal: 'Bake a simple sourdough loaf.',
     level: 'beginner',
