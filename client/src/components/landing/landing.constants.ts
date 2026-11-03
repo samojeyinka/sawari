@@ -1,0 +1,5 @@
+export const inset = 'mx-auto w-full max-w-[1880px] px-6 sm:px-8 lg:px-12 xl:px-20 2xl:px-[118px]'
+export const sectionBand = 'border-b border-on-band/10'
+export const eyebrow = 'font-mono text-[11px] uppercase tracking-[0.12em] text-on-band-dim'
+export const heading = 'font-display font-extrabold leading-[1.04] tracking-[-0.04em] text-on-band'
+export const paragraph = 'text-[15.5px] leading-relaxed text-on-band-muted'

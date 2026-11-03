@@ -533,7 +533,7 @@ ${pager}`
 
   return page(
     {
-      title: `${heading} · ${SITE_NAME}`,
+      title: `${heading} | ${SITE_NAME}`,
       description: 'Browse free, structured courses on Sawari. Search and filter by subject, level, and topic.',
       canonical: `${SITE_BASE}/courses`,
       noindex: Boolean(params.q || params.tag || params.category || params.level),

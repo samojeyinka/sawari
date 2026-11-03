@@ -19,6 +19,7 @@ import { RouteFallback } from './components/ui/RouteFallback'
 /* Landing stays eager so the entry paint is instant; every other screen
    loads as its own chunk. */
 const LoginPage = lazy(() => import('./pages/Login').then((m) => ({ default: m.LoginPage })))
+const CoursesPage = lazy(() => import('./pages/Courses').then((m) => ({ default: m.CoursesPage })))
 const DeleteAccountPage = lazy(() =>
   import('./pages/DeleteAccount').then((m) => ({ default: m.DeleteAccountPage })),
 )
@@ -145,6 +146,7 @@ function App() {
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<LandingPage />} />
+              <Route path="/courses" element={<CoursesPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/delete-account" element={<DeleteAccountPage />} />
               <Route path="/restore-account" element={<RestoreAccountPage />} />
