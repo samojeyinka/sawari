@@ -10,7 +10,7 @@ import type { CatalogSectionInput } from '../validators/catalogValidators.js'
 
 /** Card fields shared by the public list and the learner's saved list. */
 export const CATALOG_CARD_SELECT =
-  'slug subject summary level tags weeklyHours intensity formats expectedWeeks expectedHours ogImage publishedAt enrollments reviewsCount reviewsAvg createdAt updatedAt sections.id sections.title sections.order sections.minutes'
+  'slug subject category thumbnailUrl summary level tags weeklyHours intensity formats expectedWeeks expectedHours ogImage publishedAt enrollments reviewsCount reviewsAvg createdAt updatedAt sections.id sections.title sections.order sections.minutes'
 
 /* ------------------------------------------------------------------ */
 /*  Enrolling copies a public catalog path into the learner's own      */
@@ -143,6 +143,8 @@ export async function enrollUserInCatalog(
     userId,
     catalogPathId: catalog._id,
     subject: catalog.subject,
+    category: catalog.category,
+    thumbnailUrl: catalog.thumbnailUrl,
     goal: catalog.goal,
     experience: catalog.level,
     reason: null,

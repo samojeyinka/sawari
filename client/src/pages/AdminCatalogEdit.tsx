@@ -35,6 +35,7 @@ export function AdminCatalogEditPage() {
         if (cancelled) return
         setDraft({
           subject: detail.subject,
+          category: detail.category ?? '',
           slug: detail.slug,
           summary: detail.summary,
           goal: detail.goal ?? '',
@@ -46,6 +47,7 @@ export function AdminCatalogEditPage() {
           expectedWeeks: detail.expectedWeeks,
           expectedHours: detail.expectedHours,
           ogImage: detail.ogImage ?? '',
+          thumbnailUrl: detail.thumbnailUrl ?? '',
           published: Boolean(detail.published),
           sections: detail.sections.map(sectionToDraft),
         })

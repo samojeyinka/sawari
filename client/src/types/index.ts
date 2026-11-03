@@ -158,6 +158,8 @@ export type GenerationStatus = 'idle' | 'queued' | 'generating' | 'ready' | 'fai
 export interface LearningPath {
   id: string
   subject: string
+  category?: string | null
+  thumbnailUrl?: string | null
   goal: string
   experience: ExperienceLevel | null
   reason: GoalReason | null

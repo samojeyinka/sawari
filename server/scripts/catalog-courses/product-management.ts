@@ -22,6 +22,8 @@ import {
 export const productManagementCourse = course({
   slug: 'product-management',
   subject: 'Product Management',
+  category: 'Business & Management',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=85',
   summary: 'Lead cross functional teams to discover real user needs, build strategic roadmaps, and ship successful products.',
   goal: 'Guide a product from initial opportunity discovery to roadmapping, sprint execution, and launch metrics.',
   level: 'some',

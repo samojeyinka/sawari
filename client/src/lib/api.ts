@@ -267,6 +267,8 @@ export const authApi = {
 export interface ApiLearningPath {
   id: string
   subject: string
+  category?: string | null
+  thumbnailUrl?: string | null
   goal: string
   experience: ExperienceLevel | null
   reason: GoalReason | null
@@ -291,6 +293,8 @@ export interface ApiLearningPath {
 
 export interface CreateLearningPathInput {
   subject: string
+  category?: string | null
+  thumbnailUrl?: string | null
   goal?: string
   experience: ExperienceLevel | null
   reason: GoalReason | null
@@ -303,6 +307,8 @@ export interface CreateLearningPathInput {
 
 export interface UpdateLearningPathInput {
   subject?: string
+  category?: string | null
+  thumbnailUrl?: string | null
   goal?: string
   experience?: ExperienceLevel | null
   reason?: GoalReason | null
@@ -324,6 +330,8 @@ export function mapApiLearningPath(api: ApiLearningPath): LearningPath {
   return advanceSections({
     id: api.id,
     subject: api.subject,
+    category: api.category ?? null,
+    thumbnailUrl: api.thumbnailUrl ?? null,
     goal: api.goal,
     experience: api.experience,
     reason: api.reason,
@@ -681,6 +689,8 @@ export interface ApiCatalogPath {
   id: string
   slug: string
   subject: string
+  category?: string | null
+  thumbnailUrl: string | null
   summary: string
   goal?: string
   level: ExperienceLevel | null
@@ -727,10 +737,46 @@ export interface ApiCatalogReview {
 export interface CatalogListParams {
   q?: string
   tag?: string
+  category?: string
   level?: ExperienceLevel
   sort?: string
   page?: number
   limit?: number
+}
+
+export interface ApiCatalogFacet {
+  name: string
+  count: number
+}
+
+export interface ApiCatalogCategories {
+  categories: ApiCatalogFacet[]
+}
+
+async function fetchCatalogCategories(signal?: AbortSignal): Promise<ApiCatalogCategories> {
+  try {
+    return await request<ApiCatalogCategories>('/catalog/categories', { signal })
+  } catch (error) {
+    if (signal?.aborted) throw error
+
+    // Keep the landing navigation compatible with API deployments that have
+    // not yet picked up the facets endpoint. The public list endpoint already
+    // returns every field needed to derive the same counts.
+    const firstPage = await requestPage<ApiCatalogPath>('/catalog?page=1&limit=100', { signal })
+    const rest = await Promise.all(
+      Array.from({ length: Math.max(0, firstPage.meta.pages - 1) }, (_, i) =>
+        requestPage<ApiCatalogPath>(`/catalog?page=${i + 2}&limit=100`, { signal }),
+      ),
+    )
+    const courses = [...firstPage.items, ...rest.flatMap((page) => page.items)]
+    const categoryCounts = new Map<string, number>()
+    for (const course of courses) {
+      if (course.category) categoryCounts.set(course.category, (categoryCounts.get(course.category) ?? 0) + 1)
+    }
+    const categories = [...categoryCounts].map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    return { categories }
+  }
 }
 
 /* ---- admin authoring input (mirrors the server validator) ---- */
@@ -799,6 +845,8 @@ export interface CatalogSectionInput {
 export interface CatalogPathInput {
   slug?: string
   subject: string
+  category: string
+  thumbnailUrl?: string | null
   summary?: string
   goal?: string
   level?: ExperienceLevel | null
@@ -883,6 +931,8 @@ export const catalogApi = {
   /** Published paths, newest first. Public: no session required. */
   list: (params: CatalogListParams = {}, signal?: AbortSignal) =>
     requestPage<ApiCatalogPath>(`/catalog${qs(params)}`, { signal }),
+  /** Published categories, sorted by number of courses. */
+  categories: (signal?: AbortSignal) => fetchCatalogCategories(signal),
   get: (slug: string, signal?: AbortSignal) =>
     request<ApiCatalogPathDetail>(`/catalog/${encodeURIComponent(slug)}`, { signal }),
   /** Enrolls (idempotently) and returns the learner's personal copy. */

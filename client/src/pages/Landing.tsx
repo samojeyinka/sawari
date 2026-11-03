@@ -1,801 +1,379 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useApp } from '../state/store'
-import { cx } from '../lib/utils'
-import { Logo } from '../components/ui/Logo'
 import { AvatarMenu } from '../components/ui/AvatarMenu'
-import { CellLattice } from '../components/landing/CellLattice'
-import { Sweep } from '../components/ui/Sweep'
-import { useTypewriter } from '../hooks/useTypewriter'
-import { useRevealAll } from '../hooks/useReveal'
+import { Logo } from '../components/ui/Logo'
+import { Modal } from '../components/ui/Modal'
+import { catalogApi, type ApiCatalogCategories, type ApiCatalogPath, type ApiCatalogReview } from '../lib/api'
+import { cx } from '../lib/utils'
+import { useApp } from '../state/store'
 
-/* ------------------------------------------------------------ shared bits */
-
-/* Bands and their rules run the full viewport width; only the content inside
-   them is inset, so the cell grid reads edge to edge. */
 const inset = 'mx-auto w-full max-w-[1880px] px-6 sm:px-8 lg:px-12 xl:px-20 2xl:px-[118px]'
-const band = 'border-b border-on-band/10'
+const sectionBand = 'border-b border-on-band/10'
 const eyebrow = 'font-mono text-[11px] uppercase tracking-[0.12em] text-on-band-dim'
-const monoNote = 'font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim'
-const body = 'text-[15.5px] leading-relaxed text-on-band-muted'
-const display = 'font-display font-light tracking-[-0.025em] text-on-band'
+const heading = 'font-display font-extrabold leading-[1.04] tracking-[-0.04em] text-on-band'
+const paragraph = 'text-[15.5px] leading-relaxed text-on-band-muted'
 
-const btn = 'group relative inline-flex items-center justify-center overflow-hidden transition-colors'
-const btnPrimary = cx(btn, 'h-[46px] bg-on-band px-6 text-[14.5px] font-medium text-band')
-const btnGhost = cx(
-  btn,
-  'h-[46px] border border-on-band/25 px-6 text-[14.5px] font-medium text-on-band hover:border-on-band/60',
-)
-const btnSmall = cx(btn, 'h-[38px] bg-on-band px-4 text-[13.5px] font-medium text-band sm:px-5')
-
-const navLinks = [
-  { label: 'How it works', href: '#how' },
-  { label: "What's included", href: '#included' },
-]
-
-const navLinkClass = cx(
-  monoNote,
-  'group relative overflow-hidden px-3 py-2 transition-colors hover:text-on-band',
-)
-
-/** The sweep + label shared by every landing nav link. */
-function NavSweep({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <span
-        aria-hidden="true"
-        className="absolute inset-0 origin-left scale-x-0 bg-accent-bright/25 transition-transform duration-300 ease-out group-hover:scale-x-100"
-      />
-      <span className="relative">{children}</span>
-    </>
-  )
-}
-
-/* words the hero types through, then the cell strip echoes back */
-const SUBJECTS = [
-  'Photography',
-  'Project Management',
-  'Spanish',
-  'Data Analysis',
-  'Public Speaking',
-] as const
-
-const stripA = ['Project Management', 'Spanish', 'Photography', 'Data Analysis']
-const stripB = ['Public Speaking', 'Copywriting', 'Product Design', 'Personal Finance']
-
-const specs = [
-  ['Setup', '2 minutes', 'Seven short questions, then your path exists.'],
-  ['Session', '45 minutes', 'Four activities, then you are done for the day.'],
-  ['Path', '9 sections', 'Ordered, each one with the hours it costs.'],
-  ['Checks', '5 per session', 'Explanations first, so you know why.'],
-]
-
-const steps = [
-  [
-    '1',
-    'Say what you want to learn',
-    'Seven short questions: the goal, where you are starting from, and the hours you can honestly give each week.',
-  ],
-  [
-    '2',
-    'Get a path in the right order',
-    'Foundations first, the harder material later. Every section lists the hours it costs and how it is checked.',
-  ],
-  [
-    '3',
-    'Do one session a day',
-    'Forty-five minutes, four activities, one obvious next thing. The path rearranges itself as you go.',
-  ],
-]
-
-const keepPoints = [
-  ['Project workspace', 'Tasks, files and notes pinned to the section you are on.'],
-  ['Feedback you can act on', 'Specific notes back, not a score out of ten.'],
-  ['Proof of what you did', 'Finished projects stay with the hours behind them.'],
-]
-
-const checkPoints = [
-  ['Explanations, not scores', 'You see why the right answer is right before you carry on.'],
-  ['Spaced review', 'Weak spots get rescheduled instead of quietly forgotten.'],
-  ['Hours, not points', 'Progress is the time you actually spent learning.'],
-]
-
-/* ------------------------------------------------------------ small parts */
-
-function Point({ title, note }: { title: string; note: string }) {
-  return (
-    <div className="border-t border-on-band/10 pt-3">
-      <p className="text-[14.5px] text-on-band">{title}</p>
-      <p className="mt-1 text-[14px] leading-relaxed text-on-band-dim">{note}</p>
-    </div>
-  )
-}
-
-function Card({
-  label,
-  title,
-  meta,
-  children,
-}: {
-  label: string
-  title: string
-  meta: string
-  children?: ReactNode
-}) {
-  return (
-    <div className="overflow-hidden border border-on-band/15 bg-panel">
-      <div className="flex items-center justify-between gap-4 border-b border-on-band/10 px-5 py-4">
-        <div>
-          <p className="text-[15.5px] font-medium text-on-band">{title}</p>
-          <p className={cx(monoNote, 'mt-1')}>{meta}</p>
-        </div>
-        <p className={monoNote}>{label}</p>
-      </div>
-      {children}
-    </div>
-  )
-}
-
-const cellTone = ['bg-accent-bright/80', 'bg-warn-bright/70', 'bg-blue-bright/70']
-
-/** A ruled strip of cells that scrolls, pausing under the cursor. */
-function CellStrip({
-  items,
-  duration,
-  reverse,
-}: {
-  items: string[]
-  duration: number
-  reverse?: boolean
-}) {
-  const track = [...items, ...items, ...items, ...items]
-  return (
-    <div className={cx('marquee overflow-hidden', reverse && 'marquee-reverse')}>
-      <div
-        className="marquee-track"
-        style={{ '--marquee-duration': `${duration}s` } as CSSProperties}
-      >
-        {track.map((item, i) => (
-          <div
-            key={`${item}-${i}`}
-            className="flex h-[78px] w-[248px] shrink-0 items-center gap-3 border-r border-on-band/10 px-5"
-          >
-            <span className={cx('h-3.5 w-3.5 shrink-0', cellTone[i % cellTone.length])} />
-            <span className={cx(monoNote, 'truncate text-on-band-muted')}>{item}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------------ shots */
-
-/** The daily session screen, exactly as it looks once you sign in. */
-function TodayShot() {
-  const activities: [string, string, string][] = [
-    ['LEARN', 'Read the room before you brief it', '15 min'],
-    ['READ', 'Brief someone who does not want to listen', '10 min'],
-    ['PRACTICE', 'Place each stakeholder on the grid', '10 min'],
-    ['CHECK', 'Five questions on mapping', '10 min'],
-  ]
-  const sections: [string, string][] = [
-    ['Foundations', 'Done'],
-    ['Project Planning', 'Done'],
-    ['Agile and Scrum', 'Current'],
-    ['Risk Management', 'Locked'],
-    ['Communication', 'Locked'],
-  ]
-
-  return (
-    <div className="overflow-hidden border border-on-band/20 bg-band-teal">
-      <div className="flex h-11 items-center justify-between border-b border-on-band/10 bg-band-deep px-5">
-        <p className={monoNote}>sawari / today</p>
-        <p className={cx(monoNote, 'hidden sm:block')}>session 12 of 24</p>
-      </div>
-
-      <div className="grid lg:grid-cols-[240px_minmax(0,1fr)]">
-        <div className="hidden flex-col justify-between gap-10 border-r border-on-band/10 bg-band-deep p-5 lg:flex">
-          <div className="space-y-5">
-            <Logo size="sm" />
-            <nav className="flex flex-col gap-0.5">
-              {['Today', 'Learning path', 'Projects', 'Progress', 'Settings'].map((item, i) => (
-                <div
-                  key={item}
-                  className={cx(
-                    'px-3 py-2 text-[13px]',
-                    i === 0
-                      ? 'bg-accent-bright/20 font-medium text-accent-bright'
-                      : 'text-on-band-dim',
-                  )}
-                >
-                  {item}
-                </div>
-              ))}
-            </nav>
-          </div>
-          <div className="border border-on-band/10 bg-panel p-3.5">
-            <p className={monoNote}>Active path</p>
-            <p className="mt-2 text-[13px] font-medium text-on-band">Project Management</p>
-            <div className="mt-2.5 h-[3px] w-full bg-on-band/10">
-              <div className="h-full w-[32%] bg-accent-bright" />
-            </div>
-            <p className={cx(monoNote, 'mt-2')}>section 4 of 9</p>
-          </div>
-        </div>
-
-        <div className="p-6 sm:p-7">
-          <p className="text-[24px] font-medium tracking-[-0.02em] text-on-band">Today</p>
-          <p className={cx(monoNote, 'mt-1.5')}>Thursday, 12 October</p>
-
-          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-            <Card label="45 minutes" title="Session 12 · Stakeholder Management" meta="four activities">
-              {activities.map(([kind, title, time]) => (
-                <div
-                  key={kind}
-                  className="flex items-center justify-between gap-4 border-t border-on-band/10 px-5 py-3"
-                >
-                  <div className="flex min-w-0 items-center gap-4">
-                    <span className={cx(monoNote, 'w-[68px] shrink-0 text-accent-bright')}>
-                      {kind}
-                    </span>
-                    <span className="truncate text-[13.5px] text-on-band-muted">{title}</span>
-                  </div>
-                  <span className={cx(monoNote, 'shrink-0')}>{time}</span>
-                </div>
-              ))}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-on-band/10 bg-band-deep px-5 py-3.5">
-                <p className="text-[12.5px] text-on-band-dim">
-                  One session, then you are done today.
-                </p>
-                <span className="inline-flex h-[34px] items-center bg-on-band px-4 text-[12.5px] font-medium text-band">
-                  Start session
-                </span>
-              </div>
-            </Card>
-
-            <div className="flex flex-col justify-between border border-on-band/15 bg-panel p-[18px]">
-              <div>
-                <div className="flex items-center justify-between">
-                  <p className={monoNote}>Your path</p>
-                  <p className={cx(monoNote, 'text-accent-bright')}>32%</p>
-                </div>
-                <div className="mt-3 h-[3px] w-full bg-on-band/10">
-                  <div className="h-full w-[32%] bg-accent-bright" />
-                </div>
-                <div className="mt-3">
-                  {sections.map(([title, state]) => (
-                    <div
-                      key={title}
-                      className="flex items-center justify-between border-t border-on-band/10 py-2.5"
-                    >
-                      <span
-                        className={cx(
-                          'text-[12.5px]',
-                          state === 'Current'
-                            ? 'text-on-band'
-                            : state === 'Locked'
-                              ? 'text-on-band-dim'
-                              : 'text-on-band-muted',
-                        )}
-                      >
-                        {title}
-                      </span>
-                      <span
-                        className={cx(
-                          monoNote,
-                          state === 'Current' ? 'text-accent-bright' : 'text-on-band-dim',
-                        )}
-                      >
-                        {state}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <p className={cx(monoNote, 'mt-4')}>next: agile and scrum</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/** A project with work in progress. */
-function ProjectShot() {
-  const tasks: [string, string, boolean][] = [
-    ['Define the objectives', 'Done', false],
-    ['Identify the stakeholders', 'Done', false],
-    ['Create a timeline', 'Done', false],
-    ['Create the risk register', 'In progress', true],
-    ['Prepare the final presentation', 'Next', false],
-  ]
-
-  return (
-    <Card label="3 of 5 done" title="Plan a Product Launch" meta="project · section 6, risk">
-      <div className="px-5 pt-4">
-        <div className="h-[3px] w-full bg-on-band/10">
-          <div className="h-full w-[60%] bg-accent-bright" />
-        </div>
-      </div>
-      <div className="mt-3">
-        {tasks.map(([task, state, hot]) => (
-          <div
-            key={task}
-            className="flex items-center justify-between gap-4 border-t border-on-band/10 px-5 py-3"
-          >
-            <span
-              className={cx(
-                'text-[13.5px]',
-                state === 'Next' ? 'text-on-band-dim' : 'text-on-band-muted',
-              )}
-            >
-              {task}
-            </span>
-            <span className={cx(monoNote, 'shrink-0', hot && 'text-accent-bright')}>{state}</span>
-          </div>
-        ))}
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-on-band/10 bg-band-teal px-5 py-3.5">
-        <p className={monoNote}>due sunday · 2 tasks left</p>
-        <span className="inline-flex h-[32px] items-center bg-on-band px-4 text-[12.5px] font-medium text-band">
-          Open workspace
-        </span>
-      </div>
-    </Card>
-  )
-}
-
-/** A check, answered, with the reasoning kept. */
-function CheckShot() {
-  const options: [string, boolean][] = [
-    ['Keep them informed with detailed updates', false],
-    ['Keep them satisfied with short, factual updates', true],
-    ['Manage closely and involve them in every decision', false],
-    ['Monitor them and take no action', false],
-  ]
-
-  return (
-    <Card label="Question 2 of 5" title="Check · Stakeholder mapping" meta="5 questions">
-      <div className="space-y-3 px-5 py-5">
-        <p className="text-[15.5px] font-medium leading-snug tracking-[-0.01em] text-on-band">
-          High influence, low interest. What is the right approach?
-        </p>
-        <div className="space-y-2.5">
-          {options.map(([text, correct]) => (
-            <div
-              key={text}
-              className={cx(
-                'flex items-center justify-between gap-4 px-3.5 py-2.5',
-                correct ? 'bg-accent-bright/20' : 'border border-on-band/20',
-              )}
-            >
-              <span
-                className={cx(
-                  'text-[13.5px]',
-                  correct ? 'text-accent-bright' : 'text-on-band-muted',
-                )}
-              >
-                {text}
-              </span>
-              {correct && (
-                <span className={cx(monoNote, 'shrink-0 text-accent-bright')}>correct</span>
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="bg-band-teal px-3.5 py-3">
-          <p className="text-[13px] leading-relaxed text-on-band-dim">
-            They can change the project but they do not want the detail. Short, reliable updates
-            keep their support.
-          </p>
-        </div>
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-on-band/10 px-5 py-3.5">
-        <p className={monoNote}>review added in 4 days</p>
-        <p className={cx(monoNote, 'text-accent-bright')}>next question</p>
-      </div>
-    </Card>
-  )
-}
-
-/* ------------------------------------------------------------- the header */
-
-function Header() {
+function Header({ categories, categoriesLoading }: { categories: ApiCatalogCategories['categories']; categoriesLoading: boolean }) {
   const { state, signOut } = useApp()
-  const user = state.user
+  const [exploreOpen, setExploreOpen] = useState(false)
+  const topCategories = categories.slice(0, 5)
 
   return (
-    <header className="sticky top-0 z-40 border-b border-on-band/10 bg-band/90 backdrop-blur">
-      <div className={cx(inset, 'flex h-[76px] items-center justify-between gap-6')}>
-        <Link to="/" aria-label="Sawari home" className="shrink-0">
-          <Logo />
-        </Link>
-
-        <nav className="hidden items-center gap-2 lg:flex">
-          {navLinks.map((link) => (
-            <a key={link.label} href={link.href} className={navLinkClass}>
-              <NavSweep>{link.label}</NavSweep>
-            </a>
-          ))}
-          {user ? (
-            <a href="/courses" className={navLinkClass}>
-              <NavSweep>Courses</NavSweep>
-            </a>
-          ) : (
-            <a href="/courses" className={navLinkClass}>
-              <NavSweep>Courses</NavSweep>
-            </a>
-          )}
-        </nav>
-
-        <div className="flex items-center gap-4 sm:gap-6">
-          {user ? (
-            <AvatarMenu name={user.name} onSignOut={signOut} />
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className={cx(monoNote, 'py-2 transition-colors hover:text-on-band')}
-              >
-                Log in
-              </Link>
-              <Link to="/setup" className={btnSmall}>
-                <Sweep tone="accent" />
-                <span className="relative">Start free</span>
-              </Link>
-            </>
-          )}
+    <header className="landing-header sticky top-0 z-40">
+      <div className="landing-topline">
+        <div className={cx(inset, 'flex h-9 items-center justify-between gap-4')}>
+          <span className="hidden sm:block">Free courses. A plan built around your week.</span>
+          <span className="sm:hidden">Free learning, on your time.</span>
+          <span className="hidden items-center gap-3 md:flex">
+            <a href="/courses">Explore courses</a><span aria-hidden="true">·</span><a href="#how">How Sawari works</a>
+          </span>
         </div>
       </div>
+      <div className="landing-mainnav">
+        <div className={cx(inset, 'flex min-h-[76px] items-center gap-5 lg:gap-8')}>
+          <Link to="/" aria-label="Sawari home" className="shrink-0"><Logo /></Link>
+          <form action="/courses" method="get" className="landing-search hidden min-w-0 flex-1 items-center sm:flex">
+            <span aria-hidden="true">⌕</span>
+            <input name="q" aria-label="Search courses" placeholder="What do you want to learn?" />
+            <button type="submit">Search</button>
+          </form>
+          <div className="ml-auto flex shrink-0 items-center gap-3 sm:ml-0 sm:gap-5">
+            {state.user ? (
+              <AvatarMenu name={state.user.name} onSignOut={signOut} />
+            ) : (
+              <>
+                <Link to="/login" className="landing-login">Log in</Link>
+                <Link to="/setup" className="landing-join"><span aria-hidden="true">♙</span> Join for free</Link>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+      <nav className="landing-category-nav" aria-label="Course categories">
+        <div className={cx(inset, 'flex h-[46px] items-center gap-7 overflow-x-auto')}>
+          <button type="button" className="landing-explore-trigger" onClick={() => setExploreOpen(true)} aria-haspopup="dialog" aria-expanded={exploreOpen}>
+            Explore
+            <svg aria-hidden="true" viewBox="0 0 12 8" width="12" height="8"><path d="m2 2 4 4 4-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" /></svg>
+          </button>
+          {topCategories.map((category) => (
+            <a key={category.name} href={`/courses?category=${encodeURIComponent(category.name)}`}>{category.name}</a>
+          ))}
+          <a className="landing-how-link" href="#how">How it works</a>
+          <form action="/courses" method="get" className="landing-search landing-mobile-search items-center">
+            <span aria-hidden="true">⌕</span>
+            <input name="q" aria-label="Search courses" placeholder="Search courses" />
+            <button type="submit">Search</button>
+          </form>
+        </div>
+      </nav>
+      <Modal
+        open={exploreOpen}
+        onClose={() => setExploreOpen(false)}
+        title="Explore course categories"
+        description="Browse categories from the published catalog. Counts show how many courses are available."
+        size="lg"
+        className="landing-topics-modal"
+      >
+        {categoriesLoading ? (
+          <div className="landing-facets-message" role="status">Loading categories…</div>
+        ) : categories.length ? (
+          <div className="landing-topic-list">
+            {categories.map((category) => (
+              <a className="landing-topic-link" key={category.name} href={`/courses?category=${encodeURIComponent(category.name)}`}>
+                <span>{category.name}</span><small>{category.count} {category.count === 1 ? 'course' : 'courses'}</small>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="landing-facets-message">No published categories yet. <a href="/courses">Browse the course catalog</a></div>
+        )}
+      </Modal>
     </header>
   )
 }
 
-/* ------------------------------------------------------------ the landing */
-
-export function LandingPage() {
-  const typed = useTypewriter(SUBJECTS)
-  useRevealAll()
-
+function FeaturedCourse({ course }: { course: ApiCatalogPath | null }) {
   return (
-    <div className="min-h-screen bg-band text-on-band-muted">
-      <Header />
-
-      {/* hero */}
-      <section className={cx(band, 'xl:h-[456px]')}>
-        <div
-          className={cx(inset, 'h-full xl:grid xl:grid-cols-[minmax(0,1fr)_456px]')}
-        >
-          <div className="flex flex-col justify-center gap-5 py-14 xl:py-0">
-            <p className={eyebrow}>Personal learning agent</p>
-            <h1
-              className={cx(
-                display,
-                'text-[34px] leading-[1.06] tracking-[-0.03em] sm:text-[52px] xl:text-[66px]',
+    <section className="landing-featured-section">
+      <div className={cx(inset, 'py-14 sm:py-20')}>
+        <div className="mb-7 flex flex-wrap items-end justify-between gap-4 sm:mb-9">
+          <div>
+            <p className={eyebrow}>Learners are starting here</p>
+            <h2 className={cx(heading, 'mt-3 max-w-[720px] text-[30px] sm:text-[42px]')}>The course people are choosing most.</h2>
+          </div>
+          <a className="landing-text-link" href="/courses">See every free course <span aria-hidden="true">→</span></a>
+        </div>
+        {course ? (
+          <article className="landing-featured-card">
+            <a className="landing-featured-image-wrap" href={`/courses/${encodeURIComponent(course.slug)}`} aria-label={`View ${course.subject}`}>
+              {course.thumbnailUrl ? (
+                <img className="landing-featured-image" src={course.thumbnailUrl} alt={`${course.subject} course`} loading="lazy" />
+              ) : (
+                <div className="landing-image-placeholder" aria-hidden="true" />
               )}
-            >
-              Learn anything.
-              <br />
-              <span className="block min-h-[1.06em]">
-                <span className="text-accent-bright">{typed}</span>
-                <span
-                  aria-hidden="true"
-                  className="saw-caret ml-[0.08em] inline-block h-[0.72em] w-[0.42em] bg-accent-bright align-baseline"
-                />
-                <span className="sr-only">{SUBJECTS.join(', ')}</span>
-              </span>
-            </h1>
-            <p className={cx(body, 'max-w-[520px]')}>
-              The material you need is already out there, all free. Sawari orders it into one
-              path, fits it around the hours you actually have, and walks you through real practice
-              until you can do the thing.
-            </p>
-            <div className="mt-1 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-              <Link to="/setup" className={btnPrimary}>
-                <Sweep tone="accent" />
-                <span className="relative">Build my learning path</span>
-              </Link>
-              <a href="#how" className={btnGhost}>
-                <Sweep tone="soft" />
-                <span className="relative">See how it works</span>
-              </a>
-            </div>
-            <p className={cx(monoNote, 'mt-1')}>
-              Or{' '}
-              <a
-                href="/courses"
-                className="text-on-band underline underline-offset-4 transition-colors hover:text-accent-bright"
-              >
-                browse the public courses
-              </a>
-              {' '}and start from one you like.
-            </p>
-          </div>
-
-          <div className="hidden h-full justify-end overflow-hidden xl:flex">
-            <CellLattice cols={8} rows={8} size={57} interactive />
-          </div>
-        </div>
-      </section>
-
-      {/* spec cells */}
-      <section id="paths" className={cx(band, 'scroll-mt-[88px]')}>
-        <div className={cx(inset, 'grid lg:grid-cols-4')}>
-          {specs.map(([label, value, note], i) => (
-            <div
-              key={label}
-              data-reveal
-              className={cx(
-                'reveal-up flex flex-col gap-3 py-7 lg:pr-8',
-                i < specs.length - 1 && 'border-b border-on-band/10 lg:border-b-0 lg:border-r',
-                i > 0 && 'lg:pl-8',
-              )}
-              style={{ transitionDelay: `${i * 60}ms` }}
-            >
-              <p className={monoNote}>{label}</p>
-              <p className="text-[21px] font-medium tracking-[-0.01em] text-on-band">{value}</p>
-              <p className="text-[13.5px] leading-relaxed text-on-band-dim">{note}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* product */}
-      <section className={band}>
-        <div className={cx(inset, 'py-12')}>
-          <div data-reveal className="reveal-up">
-            <TodayShot />
-          </div>
-        </div>
-      </section>
-
-      {/* how it works */}
-      <section id="how" className={cx(band, 'scroll-mt-[88px]')}>
-        <div className={cx(inset, 'flex flex-col gap-4 pb-10 pt-12')}>
-          <p className={eyebrow}>How it works</p>
-          <h2 className={cx(display, 'max-w-[760px] text-[30px] leading-[1.1] sm:text-[42px]')}>
-            Three steps, then it is just the work.
-          </h2>
-        </div>
-        <div className={cx(inset, 'grid border-t border-on-band/10 lg:grid-cols-3')}>
-          {steps.map(([num, title, text], i) => (
-            <div
-              key={num}
-              data-reveal
-              className={cx(
-                'reveal-up flex flex-col items-start gap-4 py-9 lg:pr-8',
-                i < steps.length - 1 && 'border-b border-on-band/10 lg:border-b-0 lg:border-r',
-                i > 0 && 'lg:pl-8',
-              )}
-              style={{ transitionDelay: `${i * 80}ms` }}
-            >
-              <span className="flex h-[34px] w-[34px] items-center justify-center bg-accent-bright text-[15px] font-medium text-band">
-                {num}
-              </span>
-              <h3 className="text-[19px] font-normal leading-snug tracking-[-0.01em] text-on-band">
-                {title}
-              </h3>
-              <p className="text-[14.5px] leading-relaxed text-on-band-dim">{text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* what's included */}
-      <section id="included" className={cx(band, 'scroll-mt-[88px]')}>
-        <div className={cx(inset, 'grid xl:grid-cols-[500px_minmax(0,1fr)]')}>
-          <div
-            data-reveal
-            className="reveal-up flex flex-col justify-center gap-4 py-12 xl:pr-12"
-          >
-            <p className={eyebrow}>What&apos;s included</p>
-            <h2 className={cx(display, 'text-[28px] leading-[1.12] sm:text-[36px]')}>
-              Sessions end in something you keep.
-            </h2>
-            <p className={body}>
-              Practising takes longer than reading, and it is the part that sticks. Each section
-              finishes with a piece of work you build inside Sawari.
-            </p>
-            <div className="mt-2 space-y-1">
-              {keepPoints.map(([title, note]) => (
-                <Point key={title} title={title} note={note} />
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-col justify-center border-t border-on-band/10 py-10 xl:border-l xl:border-t-0 xl:pl-12">
-            <div data-reveal className="reveal-up">
-              <ProjectShot />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* checks */}
-      <section className={band}>
-        <div className={cx(inset, 'grid xl:grid-cols-[minmax(0,1fr)_500px]')}>
-          <div className="flex flex-col justify-center border-b border-on-band/10 py-10 xl:order-1 xl:border-b-0 xl:border-r xl:pr-12">
-            <div data-reveal className="reveal-up">
-              <CheckShot />
-            </div>
-          </div>
-          <div
-            data-reveal
-            className="reveal-up flex flex-col justify-center gap-4 py-12 xl:order-2 xl:pl-12"
-          >
-            <p className={eyebrow}>Checks</p>
-            <h2 className={cx(display, 'text-[28px] leading-[1.12] sm:text-[36px]')}>
-              Checks that change what comes next.
-            </h2>
-            <p className={body}>
-              Every session closes with five honest questions. Miss one and the idea comes back in a
-              few days. Get it and the path moves on.
-            </p>
-            <div className="mt-2 space-y-1">
-              {checkPoints.map(([title, note]) => (
-                <Point key={title} title={title} note={note} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* quote */}
-      <section className={cx(band, 'bg-band-deep')}>
-        <div className={cx(inset, 'grid lg:grid-cols-[300px_minmax(0,1fr)]')}>
-          <div className="pt-12 lg:py-14">
-            <p className={cx(monoNote, 'uppercase tracking-[0.12em]')}>from a learner</p>
-          </div>
-          <div
-            data-reveal
-            className="reveal-up flex flex-col justify-center gap-5 border-t border-on-band/10 py-12 lg:border-l lg:border-t-0 lg:pl-12"
-          >
-            <p className={cx(display, 'max-w-[900px] text-[22px] leading-[1.34] sm:text-[30px]')}>
-              I have started six courses and finished none of them. This is the first one where the
-              next forty-five minutes were already decided for me.
-            </p>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <p className="text-[13.5px] text-on-band-muted">Amara Osei, Product Manager</p>
-              <p className={monoNote}>finished the project management path</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* cell strip */}
-      <section className={band}>
-        <div className={cx(inset, 'grid lg:grid-cols-[420px_minmax(0,1fr)]')}>
-          <div data-reveal className="reveal-up flex flex-col justify-center gap-4 py-12 lg:pr-12">
-            <p className={eyebrow}>Courses</p>
-            <h2 className={cx(display, 'text-[28px] leading-[1.12] sm:text-[36px]')}>
-              Start from a course, or build your own.
-            </h2>
-            <p className={body}>
-              Every published course is public, so you can read the whole outline before you commit.
-              Browse by subject, level and tag, save the ones you want to come back to, or start one
-              and it lands in your own path to edit and track.
-            </p>
-            <div className="mt-1">
-              <a href="/courses" className={btnGhost}>
-                <Sweep tone="soft" />
-                <span className="relative">Browse all courses</span>
-              </a>
-            </div>
-          </div>
-          <div className="flex flex-col justify-center gap-px overflow-hidden border-t border-on-band/10 py-10 lg:border-t-0 lg:pl-12">
-            <CellStrip items={stripA} duration={48} />
-            <CellStrip items={stripB} duration={58} reverse />
-          </div>
-        </div>
-      </section>
-
-      {/* closing */}
-      <section className={cx(band, 'cell-field')}>
-        <div
-          className={cx(
-            inset,
-            'flex flex-col items-center justify-center gap-4 py-24 text-center',
-          )}
-        >
-         
-          <h2 className={cx(display, 'text-[32px] leading-[1.1] sm:text-[46px]')}>
-            What do you want to learn?
-          </h2>
-          <p className="max-w-[600px] text-base leading-relaxed text-on-band-muted">
-            Answer seven questions and your path appears, ordered and scheduled. Free to start, and
-            no card at the end of it.
-          </p>
-          <div className="mt-2 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-            <Link to="/setup" className={btnPrimary}>
-              <Sweep tone="accent" />
-              <span className="relative">Build my learning path</span>
-            </Link>
-            <a href="#how" className={btnGhost}>
-              <Sweep tone="soft" />
-              <span className="relative">See how it works</span>
+              <span className="landing-image-label">Most enrolled</span>
             </a>
-          </div>
-        </div>
-      </section>
-
-      {/* footer */}
-      <footer className="bg-band-deep">
-        <div className={cx(inset, 'grid gap-y-0 sm:grid-cols-2 xl:grid-cols-[420px_1fr_1fr_1fr_1fr]')}>
-          <div className="flex flex-col items-start gap-4 py-10 sm:pr-10">
-            <Logo size="sm" />
-            <p className="max-w-[300px] text-[13.5px] leading-relaxed text-on-band-dim">
-              Learn anything. Make it yours. Material gathered from the open web, ordered around the
-              time you have.
-            </p>
-          </div>
-          {[
-            {
-              heading: 'Product',
-              items: [
-                { label: 'How it works', to: '#how' },
-                { label: "What's included", to: '#included' },
-                { label: 'Courses', to: '/courses', hard: true },
-              ],
-            },
-            {
-              heading: 'Get started',
-              items: [
-                { label: 'Build a path', to: '/setup' },
-                { label: 'Log in', to: '/login' },
-                { label: 'Create account', to: '/setup' },
-              ],
-            },
-            {
-              heading: 'Learn',
-              items: [
-                { label: 'Project Management', to: '/courses?q=Project%20Management', hard: true },
-                { label: 'Spanish', to: '/courses?q=Spanish', hard: true },
-                { label: 'Photography', to: '/courses?q=Photography', hard: true },
-              ],
-            },
-            {
-              heading: 'Legal',
-              items: [
-                { label: 'Privacy Policy', to: '/privacy' },
-                { label: 'Terms of Service', to: '/terms' },
-              ],
-            },
-          ].map((column) => (
-            <div
-              key={column.heading}
-              className="flex flex-col items-start gap-3 border-t border-on-band/10 py-10 sm:px-10 sm:first-of-type:border-t-0 xl:border-l xl:border-t-0 xl:first-of-type:border-l-0"
-            >
-              <p className={monoNote}>{column.heading}</p>
-              <div className="flex flex-col items-start gap-3">
-                {column.items.map((item) =>
-                  item.to.startsWith('#') || 'hard' in item ? (
-                    <a
-                      key={item.label}
-                      href={item.to}
-                      className="text-[13.5px] text-on-band-dim transition-colors hover:text-on-band"
-                    >
-                      {item.label}
-                    </a>
-                  ) : (
-                    <Link
-                      key={item.label}
-                      to={item.to}
-                      className="text-[13.5px] text-on-band-dim transition-colors hover:text-on-band"
-                    >
-                      {item.label}
-                    </Link>
-                  ),
-                )}
+            <div className="landing-featured-copy">
+              <p className="landing-category-label">{course.category || 'Free course'}</p>
+              <h3>{course.subject}</h3>
+              <p className="landing-featured-summary">{course.summary || course.goal || 'A structured course with a clear path from the basics to real practice.'}</p>
+              <div className="landing-course-meta">
+                {course.level && <span>{course.level}</span>}
+                {course.expectedWeeks > 0 && <span>{course.expectedWeeks} weeks</span>}
+                {course.expectedHours > 0 && <span>{course.expectedHours} learning hours</span>}
+                <span>{course.enrollments.toLocaleString()} learners</span>
+              </div>
+              {course.tags.length > 0 && (
+                <div className="landing-course-tags" aria-label="Related topics">
+                  {course.tags.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}
+                </div>
+              )}
+              <div className="landing-featured-actions">
+                <a href={`/courses/${encodeURIComponent(course.slug)}`} className="landing-hero-cta">View this free course</a>
+                <Link to="/setup" className="landing-hero-secondary">Make me a learning plan</Link>
               </div>
             </div>
+          </article>
+        ) : (
+          <div className="landing-course-empty"><p>New free courses are on the way.</p><a href="/courses">Browse the catalog</a></div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function CategorySection({
+  categories,
+  courses,
+  categoriesLoading,
+}: {
+  categories: ApiCatalogCategories['categories']
+  courses: ApiCatalogPath[]
+  categoriesLoading: boolean
+}) {
+  const visibleCategories = categories.slice(0, 6)
+
+  return (
+    <section className={cx(sectionBand, 'landing-category-section')}>
+      <div className={cx(inset, 'py-14 sm:py-20')}>
+        <div className="mb-8 max-w-[700px]">
+          <p className={eyebrow}>Find your subject</p>
+          <h2 className={cx(heading, 'mt-3 text-[30px] sm:text-[42px]')}>Start with what you want to learn.</h2>
+          <p className={cx(paragraph, 'mt-4 max-w-[590px]')}>Browse real course categories. Keep the tags as useful details; the category tells you what each course is about.</p>
+        </div>
+        {categoriesLoading ? (
+          <p className="landing-facets-empty" role="status">Loading course categories…</p>
+        ) : visibleCategories.length ? (
+          <div className="landing-category-grid">
+            {visibleCategories.map((category, index) => {
+              const match = courses.find((course) => course.category === category.name && course.thumbnailUrl)
+              return (
+                <a className="landing-category-card" href={`/courses?category=${encodeURIComponent(category.name)}`} key={category.name}>
+                  {match?.thumbnailUrl ? (
+                    <img src={match.thumbnailUrl} alt="" loading="lazy" />
+                  ) : (
+                    <div className={`landing-category-art tone-${index % 3}`} aria-hidden="true" />
+                  )}
+                  <span className="landing-category-overlay" />
+                  <span className="landing-category-copy">
+                    <strong>{category.name}</strong>
+                    <small>{category.count} {category.count === 1 ? 'course' : 'courses'} <span aria-hidden="true">→</span></small>
+                  </span>
+                </a>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="landing-facets-empty">Categories will appear here as courses are published.</p>
+        )}
+      </div>
+    </section>
+  )
+}
+
+type LandingReview = ApiCatalogReview & { courseSubject: string; courseSlug: string }
+
+function ReviewsSection({ reviews }: { reviews: LandingReview[] }) {
+  if (!reviews.length) return null
+  const average = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+
+  return (
+    <section className="landing-reviews-section">
+      <div className={cx(inset, 'py-14 sm:py-20')}>
+        <div className="landing-reviews-heading">
+          <div>
+            <p className={eyebrow}>Learner feedback</p>
+            <h2 className={cx(heading, 'mt-3 text-[30px] sm:text-[42px]')}>Real notes from people learning with Sawari.</h2>
+          </div>
+          <div className="landing-reviews-average" aria-label={`Average rating ${average.toFixed(1)} out of 5`}>
+            <strong>{average.toFixed(1)}</strong><span>★★★★★</span><small>from {reviews.length} recent {reviews.length === 1 ? 'review' : 'reviews'}</small>
+          </div>
+        </div>
+        <div className="landing-reviews-list" aria-label="Learner reviews">
+          {reviews.map((review) => (
+            <article className="landing-review-card" key={review.id}>
+              <div className="landing-review-top"><span aria-hidden="true">“</span><span className="landing-review-stars" aria-label={`${review.rating} out of 5 stars`}>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span></div>
+              <p className="landing-review-quote">{review.text || 'This learner left a rating without a written comment.'}</p>
+              <div className="landing-review-byline">
+                <span className="landing-review-avatar" aria-hidden="true">{review.author.trim().charAt(0).toUpperCase()}</span>
+                <div><strong>{review.author}</strong><small>Course learner</small></div>
+              </div>
+              <a className="landing-review-course" href={`/courses/${encodeURIComponent(review.courseSlug)}`}>{review.courseSubject}<span aria-hidden="true">↗</span></a>
+            </article>
           ))}
         </div>
-        <div className={cx(inset, 'flex flex-wrap items-center justify-between gap-3 border-t border-on-band/10 py-[18px]')}>
-          <p className={monoNote}>© 2025 Sawari</p>
-          <p className={monoNote}>made for people who learn on their own time</p>
+      </div>
+    </section>
+  )
+}
+
+function TimeFitSection() {
+  return (
+    <section className={cx(sectionBand, 'landing-time-section')}>
+      <div className={cx(inset, 'grid items-center gap-10 py-14 lg:grid-cols-2 lg:gap-16 lg:py-20')}>
+        <div className="landing-time-image">
+          <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=85" alt="A learner studying at a laptop at home" loading="lazy" />
+          <div className="landing-time-note"><span>YOUR WEEK</span><strong>3 hours available</strong><small>Sawari builds around that.</small></div>
         </div>
-      </footer>
+        <div className="max-w-[540px]">
+          <p className={eyebrow}>Built around your time</p>
+          <h2 className={cx(heading, 'mt-3 text-[32px] sm:text-[46px]')}>A plan that fits the week you actually have.</h2>
+          <p className={cx(paragraph, 'mt-5')}>Tell Sawari what you want to learn and how much time you can give it. Your path is broken into manageable sessions, so you always know what to do next.</p>
+          <div className="landing-time-points">
+            <p><span>01</span> Set your weekly time</p>
+            <p><span>02</span> Follow one clear next step</p>
+            <p><span>03</span> Adjust the pace when life changes</p>
+          </div>
+          <Link to="/setup" className="landing-hero-cta mt-7">Build my free learning plan</Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+const steps = [
+  ['01', 'Choose a goal', 'Pick a course or tell Sawari what skill you want to build.'],
+  ['02', 'Set your available time', 'Choose a pace that fits the hours you can give each week.'],
+  ['03', 'Learn, practise, continue', 'Follow the next session, practise what you learned, and keep moving.'],
+]
+
+function HowItWorks() {
+  return (
+    <section id="how" className={cx(sectionBand, 'scroll-mt-[155px] bg-white')}>
+      <div className={cx(inset, 'py-14 sm:py-20')}>
+        <div className="max-w-[760px]">
+          <p className={eyebrow}>How Sawari works</p>
+          <h2 className={cx(heading, 'mt-3 text-[30px] sm:text-[42px]')}>Less searching. More learning.</h2>
+        </div>
+        <div className="landing-steps-grid">
+          {steps.map(([number, title, copy]) => (
+            <article className="landing-step-card" key={number}>
+              <span>{number}</span><h3>{title}</h3><p>{copy}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ClosingCallToAction() {
+  return (
+    <section className="landing-closing">
+      <div className={cx(inset, 'py-16 text-center sm:py-24')}>
+        <p className={eyebrow}>Start free today</p>
+        <h2 className={cx(heading, 'mx-auto mt-3 max-w-[780px] text-[34px] sm:text-[52px]')}>You don’t need more time. You need a plan for the time you have.</h2>
+        <p className="mx-auto mt-5 max-w-[590px] text-[15px] leading-relaxed text-white/75">Choose a goal, set your pace, and start learning with free courses and resources.</p>
+        <Link to="/setup" className="landing-closing-cta mt-7">Build my free learning plan</Link>
+      </div>
+    </section>
+  )
+}
+
+function Footer() {
+  return (
+    <footer className="landing-footer">
+      <div className={cx(inset, 'grid gap-8 py-10 sm:grid-cols-[1.5fr_1fr_1fr]')}>
+        <div>
+          <Logo size="sm" />
+          <p className="mt-4 max-w-[340px] text-[13px] leading-relaxed text-on-band-dim">Free learning resources organized into a path that fits your time.</p>
+        </div>
+        <div className="landing-footer-links"><strong>Explore</strong><a href="/courses">All courses</a><a href="#how">How it works</a></div>
+        <div className="landing-footer-links"><strong>Account</strong><Link to="/setup">Build a learning plan</Link><Link to="/login">Log in</Link></div>
+      </div>
+      <div className={cx(inset, 'flex flex-wrap justify-between gap-3 border-t border-on-band/10 py-4')}>
+        <span className="text-[11px] text-on-band-dim">© 2026 Sawari</span>
+        <div className="flex gap-5"><Link to="/privacy" className="text-[11px] text-on-band-dim">Privacy</Link><Link to="/terms" className="text-[11px] text-on-band-dim">Terms</Link></div>
+      </div>
+    </footer>
+  )
+}
+
+export function LandingPage() {
+  const [categories, setCategories] = useState<ApiCatalogCategories['categories']>([])
+  const [courses, setCourses] = useState<ApiCatalogPath[]>([])
+  const [reviews, setReviews] = useState<LandingReview[]>([])
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
+  const [coursesLoading, setCoursesLoading] = useState(true)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    catalogApi.categories(controller.signal)
+      .then((data) => setCategories(data.categories))
+      .catch(() => {})
+      .finally(() => setCategoriesLoading(false))
+    catalogApi.list({ sort: '-enrollments', limit: 100 }, controller.signal)
+      .then(async (data) => {
+        setCourses(data.items)
+        const reviewedCourses = data.items.filter((course) => course.reviewsCount > 0).slice(0, 4)
+        const reviewPages = await Promise.all(reviewedCourses.map((course) =>
+          catalogApi.reviews(course.slug, { limit: 2 }, controller.signal)
+            .then((page) => page.items.map((review) => ({ ...review, courseSubject: course.subject, courseSlug: course.slug })))
+            .catch(() => [] as LandingReview[]),
+        ))
+        setReviews(reviewPages.flat().slice(0, 6))
+      })
+      .catch(() => {})
+      .finally(() => setCoursesLoading(false))
+    return () => controller.abort()
+  }, [])
+
+  const featuredCourse = courses[0] ?? null
+
+  return (
+    <div className="landing-page min-h-screen bg-band text-on-band-muted">
+      <Header categories={categories} categoriesLoading={categoriesLoading} />
+      <main>
+        <section className={cx(sectionBand, 'landing-hero')}>
+          <img className="landing-hero-photo" src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=2000&q=90" alt="Learners studying together around a laptop" />
+          <div className="landing-purple-shape" aria-hidden="true" />
+          <div className={cx(inset, 'landing-hero-inner relative')}>
+            <div className="landing-hero-copy">
+              <p className={eyebrow}>Free learning, built around you</p>
+              <h1 className="mt-3 text-[38px] font-extrabold leading-[1.03] tracking-[-0.04em] text-[#211b2a] sm:text-[52px] xl:text-[62px]">Free courses.<br />Made for your actual schedule.</h1>
+              <p className="mt-4 max-w-[470px] text-[16px] leading-relaxed text-[#514a58]">Learn from free courses and resources, organized into a plan that fits the time you have. No subscription. No guessing what to study next.</p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link to="/setup" className="landing-hero-cta">Join for free</Link>
+                <a href="/courses" className="landing-hero-secondary">Browse courses</a>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div className="landing-trust-band">
+          <div className={cx(inset, 'grid gap-3 py-5 sm:grid-cols-3')}>
+            <p>✓  Free learning resources</p><p>✓  A plan shaped around your week</p><p>✓  Start without a credit card</p>
+          </div>
+        </div>
+        {coursesLoading ? (
+          <section className="landing-featured-section"><div className={cx(inset, 'py-14 sm:py-20')}><p className="landing-facets-message" role="status">Loading the most-enrolled free course…</p></div></section>
+        ) : <FeaturedCourse course={featuredCourse} />}
+        <CategorySection categories={categories} courses={courses} categoriesLoading={categoriesLoading} />
+        <ReviewsSection reviews={reviews} />
+        <TimeFitSection />
+        <HowItWorks />
+        <ClosingCallToAction />
+      </main>
+      <Footer />
     </div>
   )
 }

@@ -22,6 +22,8 @@ import {
 export const digitalMarketingCourse = course({
   slug: 'digital-marketing',
   subject: 'Digital Marketing',
+  category: 'Marketing & Growth',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=85',
   summary: 'Acquire and retain customers through search engine optimization, paid advertising, content marketing, email automation, and conversion analytics.',
   goal: 'Build an integrated multi-channel marketing campaign from customer personas and keyword research to paid ads, email flows, and ROI reporting.',
   level: 'beginner',

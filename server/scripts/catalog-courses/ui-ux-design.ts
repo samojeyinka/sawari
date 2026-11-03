@@ -22,6 +22,8 @@ import {
 export const uiUxDesignCourse = course({
   slug: 'ui-ux-design',
   subject: 'UI/UX Design',
+  category: 'Design & UX',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?auto=format&fit=crop&w=1200&q=85',
   summary: 'Design intuitive digital products through user research, empathy mapping, wireframing in Figma, usability testing, and design systems.',
   goal: 'Take a product concept from user discovery and wireframes to interactive Figma prototypes validated by usability testing.',
   level: 'beginner',

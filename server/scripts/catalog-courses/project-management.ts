@@ -22,6 +22,8 @@ import {
 export const projectManagementCourse = course({
   slug: 'project-management',
   subject: 'Project Management',
+  category: 'Business & Management',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1200&q=85',
   summary: 'Plan, execute, and deliver projects on schedule by mastering project charters, work breakdown, agile sprints, and stakeholder management.',
   goal: 'Take a project from an ambiguous brief to a structured charter, budget, risk register, sprint execution, and formal closing.',
   level: 'beginner',

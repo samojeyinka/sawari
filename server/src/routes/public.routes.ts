@@ -27,6 +27,7 @@ router.get(
     const html = await renderCourseList({
       q: str(req.query.q).slice(0, 200),
       tag: str(req.query.tag).slice(0, 40),
+      category: str(req.query.category).slice(0, 80),
       level: str(req.query.level).slice(0, 40),
       sort: str(req.query.sort).slice(0, 20),
       page,

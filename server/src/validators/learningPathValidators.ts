@@ -37,6 +37,8 @@ export const assessmentResultSchema = z.strictObject({
 /** Fields the client supplies when creating a path (setup answers). */
 export const createLearningPathSchema = z.strictObject({
   subject: z.string().trim().min(1).max(120),
+  category: z.string().trim().min(1).max(80).nullable().optional(),
+  thumbnailUrl: z.string().url().max(2000).nullable().optional(),
   goal: z.string().max(500).default(''),
   experience: z.enum(EXPERIENCE_LEVELS).nullable().default(null),
   reason: z.enum(GOAL_REASONS).nullable().default(null),
@@ -50,6 +52,8 @@ export const createLearningPathSchema = z.strictObject({
 /** Everything the client may change afterwards (progress + plan tuning). */
 export const updateLearningPathSchema = z.strictObject({
   subject: z.string().trim().min(1).max(120).optional(),
+  category: z.string().trim().min(1).max(80).nullable().optional(),
+  thumbnailUrl: z.string().url().max(2000).nullable().optional(),
   goal: z.string().max(500).optional(),
   experience: z.enum(EXPERIENCE_LEVELS).nullable().optional(),
   reason: z.enum(GOAL_REASONS).nullable().optional(),

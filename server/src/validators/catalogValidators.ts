@@ -113,6 +113,8 @@ const slugSchema = z
 const catalogFields = {
   slug: slugSchema.optional(),
   subject: z.string().trim().min(1).max(120),
+  category: z.string().trim().min(1).max(80),
+  thumbnailUrl: z.string().url().max(2000).nullable().default(null),
   summary: z.string().trim().max(300).default(''),
   goal: z.string().trim().max(500).default(''),
   level: z.enum(EXPERIENCE_LEVELS).nullable().default(null),
@@ -134,6 +136,8 @@ export const updateCatalogPathSchema = z
   .strictObject({
     slug: slugSchema.optional(),
     subject: catalogFields.subject.optional(),
+    category: catalogFields.category.optional(),
+    thumbnailUrl: catalogFields.thumbnailUrl.optional(),
     summary: catalogFields.summary.optional(),
     goal: catalogFields.goal.optional(),
     level: catalogFields.level.optional(),
@@ -158,6 +162,7 @@ export const createReviewSchema = z.strictObject({
 export const listCatalogQuery = listQuerySchema({
   q: z.string().trim().max(200).optional(),
   tag: z.string().trim().max(40).optional(),
+  category: z.string().trim().max(80).optional(),
   level: z.enum(EXPERIENCE_LEVELS).optional(),
 })
 

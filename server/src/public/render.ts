@@ -128,17 +128,20 @@ const STYLES = `
   @media(min-width:700px){.grid{grid-template-columns:repeat(2,1fr)}}
   @media(min-width:1024px){.grid{grid-template-columns:repeat(3,1fr)}}
   @media(min-width:1536px){.grid{grid-template-columns:repeat(4,1fr)}}
-  .card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);padding:20px;text-decoration:none;transition:border-color .15s,transform .15s}
+  .card{display:flex;flex-direction:column;overflow:hidden;background:var(--panel);border:1px solid var(--line);padding:0 0 20px;text-decoration:none;transition:border-color .15s,transform .15s}
   .card:hover{border-color:var(--line-strong);transform:translateY(-2px)}
-  .card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:22px}
+  .card-thumbnail{display:block;width:100%;height:154px;object-fit:cover;background:var(--band-soft)}
+  .card-thumbnail-empty{background:linear-gradient(135deg,var(--band-soft),var(--panel-soft))}
+  .card-category{align-self:flex-start;margin:16px 20px 0;border:1px solid var(--line-strong);padding:3px 8px;color:var(--accent-bright);font-size:10px;font-weight:600;letter-spacing:.04em}
+  .card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:22px;margin:14px 20px 0}
   .level{border:1px solid var(--line-strong);padding:3px 8px;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--on-band-dim)}
-  .card h3{margin:14px 0 8px;font-size:18px;font-weight:500}
-  .card .summary{color:var(--on-band-muted);font-size:14px;margin:0 0 16px;flex:1}
-  .card .meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--on-band-dim);margin-top:auto}
+  .card h3{margin:12px 20px 8px;font-size:18px;font-weight:500}
+  .card .summary{color:var(--on-band-muted);font-size:14px;margin:0 20px 16px;flex:1}
+  .card .meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--on-band-dim);margin:0 20px auto}
   .rating-inline{display:inline-flex;align-items:center;gap:6px}
   .rc{font-size:12.5px;color:var(--on-band-muted)}
   .rc.dim{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--on-band-dim)}
-  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin:14px 20px 0}
   .tag{font-size:12px;color:var(--accent-bright);border:1px solid var(--line);padding:2px 8px;text-decoration:none}
 
   .stars{position:relative;display:inline-block;font-size:13px;letter-spacing:2px;line-height:1}
@@ -147,6 +150,8 @@ const STYLES = `
   .stars .fill{position:absolute;top:0;left:0;overflow:hidden;color:var(--accent-bright)}
 
   .detail-head{max-width:820px}
+  .detail-thumbnail{display:block;width:min(100%,980px);max-height:420px;object-fit:cover;margin:24px 0;border:1px solid var(--line)}
+  .detail-category{display:inline-flex;margin:12px 0 0;border:1px solid var(--line-strong);padding:4px 10px;color:var(--accent-bright);font-size:11px;text-decoration:none}
   .meta-row{display:flex;flex-wrap:wrap;gap:8px 18px;font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--on-band-dim);margin:18px 0}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
   .actions{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0 8px}
@@ -253,6 +258,7 @@ ${footer()}
 export interface ListParams {
   q: string
   tag: string
+  category: string
   level: string
   sort: string
   page: number
@@ -262,6 +268,8 @@ export interface ListParams {
 interface CatalogCard {
   slug: string
   subject: string
+  category: string
+  thumbnailUrl: string | null
   summary: string
   level: ExperienceLevel | null
   tags: string[]
@@ -307,18 +315,20 @@ function starsHtml(rating: number): string {
 /** Rebuild the list URL, overriding or clearing individual facets. */
 function listQuery(
   params: ListParams,
-  overrides: Partial<{ q: string; tag: string; level: string; sort: string; page: number }> = {},
+  overrides: Partial<{ q: string; tag: string; category: string; level: string; sort: string; page: number }> = {},
 ): string {
-  const pick = (key: 'q' | 'tag' | 'level' | 'sort'): string =>
+  const pick = (key: 'q' | 'tag' | 'category' | 'level' | 'sort'): string =>
     key in overrides ? String(overrides[key] ?? '') : params[key]
   const page = 'page' in overrides ? Number(overrides.page) : params.page
   const qs = new URLSearchParams()
   const q = pick('q')
   const tag = pick('tag')
+  const category = pick('category')
   const level = pick('level')
   const sort = pick('sort')
   if (q) qs.set('q', q)
   if (tag) qs.set('tag', tag)
+  if (category) qs.set('category', category)
   if (level) qs.set('level', level)
   if (sort && sort !== 'new') qs.set('sort', sort)
   if (page && page > 1) qs.set('page', String(page))
@@ -344,7 +354,12 @@ function cardHtml(card: CatalogCard): string {
         .map((t) => `<span class="tag">${escapeHtml(t)}</span>`)
         .join('')}</div>`
     : ''
+  const thumbnail = card.thumbnailUrl
+    ? `<img class="card-thumbnail" src="${escapeHtml(card.thumbnailUrl)}" alt="" loading="lazy">`
+    : `<div class="card-thumbnail card-thumbnail-empty" aria-hidden="true"></div>`
   return `<a class="card" href="/courses/${encodeURIComponent(card.slug)}">
+${thumbnail}
+<span class="card-category">${escapeHtml(card.category || 'General')}</span>
 <div class="card-top">${level}${rating}</div>
 <h3>${escapeHtml(card.subject)}</h3>
 <p class="summary">${escapeHtml(card.summary || 'A structured path to learn something new.')}</p>
@@ -360,34 +375,35 @@ export async function renderCourseList(params: ListParams): Promise<string> {
     filter.$or = [{ subject: rx }, { summary: rx }, { tags: rx }]
   }
   if (params.tag) filter.tags = params.tag
+  if (params.category) filter.category = params.category
   if (params.level) filter.level = params.level
 
   const activeSort = SORTS.some((s) => s.value === params.sort) ? params.sort : 'new'
   const skip = (params.page - 1) * params.limit
-  const [items, total, rawTags] = await Promise.all([
+  const [items, total, rawCategories] = await Promise.all([
     CatalogPath.find(filter)
       .sort(sortSpec(activeSort))
       .skip(skip)
       .limit(params.limit)
-      .select('slug subject summary level tags expectedWeeks expectedHours enrollments reviewsCount reviewsAvg')
+      .select('slug subject category thumbnailUrl summary level tags expectedWeeks expectedHours enrollments reviewsCount reviewsAvg')
       .lean<CatalogCard[]>(),
     CatalogPath.countDocuments(filter),
-    CatalogPath.distinct('tags', { published: true }),
+    CatalogPath.distinct('category', { published: true }),
   ])
 
-  const allTags = (rawTags as string[])
-    .filter((t) => typeof t === 'string' && t.length > 0)
+  const allCategories = (rawCategories as string[])
+    .filter((category) => typeof category === 'string' && category.length > 0)
     .sort((a, b) => a.localeCompare(b))
 
-  const featuredTags = allTags.slice(0, 8)
-  if (params.tag && !featuredTags.includes(params.tag)) {
-    featuredTags.push(params.tag)
+  const featuredCategories = allCategories.slice(0, 8)
+  if (params.category && !featuredCategories.includes(params.category)) {
+    featuredCategories.push(params.category)
   }
 
   const heading = params.q
     ? `Courses matching “${escapeHtml(params.q)}”`
-    : params.tag
-      ? `Courses tagged “${escapeHtml(params.tag)}”`
+    : params.category
+      ? `Courses in “${escapeHtml(params.category)}”`
       : params.level
         ? `${escapeHtml(LEVEL_LABELS[params.level as ExperienceLevel] ?? params.level)} courses`
         : 'Browse courses'
@@ -400,11 +416,11 @@ export async function renderCourseList(params: ListParams): Promise<string> {
     ),
   ].join('')
 
-  const tagOptions = [
-    `<option value="">All topics (${allTags.length})</option>`,
-    ...allTags.map(
-      (t) =>
-        `<option value="${escapeHtml(t)}"${params.tag === t ? ' selected' : ''}>${escapeHtml(t)}</option>`,
+  const categoryOptions = [
+    `<option value="">All categories (${allCategories.length})</option>`,
+    ...allCategories.map(
+      (category) =>
+        `<option value="${escapeHtml(category)}"${params.category === category ? ' selected' : ''}>${escapeHtml(category)}</option>`,
     ),
   ].join('')
 
@@ -416,28 +432,21 @@ export async function renderCourseList(params: ListParams): Promise<string> {
     ),
   ].join('')
 
-  const featuredTagPills = featuredTags.length
+  const featuredCategoryPills = featuredCategories.length
     ? [
-        `<a class="pill${!params.tag ? ' on' : ''}" href="/courses${listQuery(params, { tag: '', page: 1 })}">All topics</a>`,
-        ...featuredTags.map(
-          (t) =>
-            `<a class="pill${params.tag === t ? ' on' : ''}" href="/courses${listQuery(params, { tag: t, page: 1 })}">${escapeHtml(t)}</a>`,
+        `<a class="pill${!params.category ? ' on' : ''}" href="/courses${listQuery(params, { category: '', page: 1 })}">All categories</a>`,
+        ...featuredCategories.map(
+          (category) =>
+            `<a class="pill${params.category === category ? ' on' : ''}" href="/courses${listQuery(params, { category, page: 1 })}">${escapeHtml(category)}</a>`,
         ),
       ].join('')
     : ''
-
-  const allTagPills = allTags
-    .map(
-      (t) =>
-        `<a class="pill${params.tag === t ? ' on' : ''}" href="/courses${listQuery(params, { tag: t, page: 1 })}">${escapeHtml(t)}</a>`,
-    )
-    .join('')
 
   const sortOptions = SORTS.map(
     (s) => `<option value="${s.value}"${activeSort === s.value ? ' selected' : ''}>${s.label}</option>`,
   ).join('')
 
-  const hasFilters = Boolean(params.q || params.tag || params.level)
+  const hasFilters = Boolean(params.q || params.tag || params.category || params.level)
   const activeChips: string[] = []
   if (params.q) {
     activeChips.push(
@@ -447,6 +456,11 @@ export async function renderCourseList(params: ListParams): Promise<string> {
   if (params.level) {
     activeChips.push(
       `<span class="active-chip">Level: ${escapeHtml(LEVEL_LABELS[params.level as ExperienceLevel] ?? params.level)} <a href="/courses${listQuery(params, { level: '', page: 1 })}" aria-label="Remove level filter">✕</a></span>`,
+    )
+  }
+  if (params.category) {
+    activeChips.push(
+      `<span class="active-chip">Category: ${escapeHtml(params.category)} <a href="/courses${listQuery(params, { category: '', page: 1 })}" aria-label="Remove category filter">✕</a></span>`,
     )
   }
   if (params.tag) {
@@ -470,11 +484,11 @@ ${activeChips.join('')}
 <button type="submit" class="btn btn-primary"><span class="sweep" aria-hidden="true"></span><span class="label">Search</span></button>
 </div>
 <select class="sort" name="level" aria-label="Filter by level" onchange="this.form.submit()">${levelOptions}</select>
-<select class="sort" name="tag" aria-label="Filter by topic" onchange="this.form.submit()">${tagOptions}</select>
+<select class="sort" name="category" aria-label="Filter by category" onchange="this.form.submit()">${categoryOptions}</select>
 <select class="sort" name="sort" aria-label="Sort courses" onchange="this.form.submit()">${sortOptions}</select>
 </div>
 <div class="facet"><span class="facet-label">Level</span><div class="pills">${levelPills}</div></div>
-${featuredTagPills ? `<div class="facet"><span class="facet-label">Popular topics</span><div class="pills-scroll">${featuredTagPills}</div>${allTags.length > 8 ? `<details class="topics-drawer"><summary class="topics-toggle">Browse all ${allTags.length} topics</summary><div class="all-topics-grid">${allTagPills}</div></details>` : ''}</div>` : ''}
+${featuredCategoryPills ? `<div class="facet"><span class="facet-label">Categories</span><div class="pills-scroll">${featuredCategoryPills}</div></div>` : ''}
 ${activeFiltersBar}
 </form>`
 
@@ -522,7 +536,7 @@ ${pager}`
       title: `${heading} · ${SITE_NAME}`,
       description: 'Browse free, structured courses on Sawari. Search and filter by subject, level, and topic.',
       canonical: `${SITE_BASE}/courses`,
-      noindex: Boolean(params.q || params.tag || params.level),
+      noindex: Boolean(params.q || params.tag || params.category || params.level),
       jsonLd,
     },
     inner,
@@ -628,9 +642,11 @@ ${reviews
 
   const inner = `
 <div class="crumbs"><a href="/courses">Courses</a> / ${escapeHtml(path.subject)}</div>
+${path.thumbnailUrl ? `<img class="detail-thumbnail" src="${escapeHtml(path.thumbnailUrl)}" alt="${escapeHtml(path.subject)} course thumbnail">` : ''}
 <div class="detail-head">
 <h1 class="title">${escapeHtml(path.subject)}</h1>
 ${path.summary ? `<p class="lede">${escapeHtml(path.summary)}</p>` : ''}
+${path.category ? `<a class="detail-category" href="/courses?category=${encodeURIComponent(path.category)}">${escapeHtml(path.category)}</a>` : ''}
 <div class="meta-row">${bits.map((b) => `<span>${escapeHtml(b)}</span>`).join('')}</div>
 ${path.tags.length ? `<div class="chips">${path.tags.map((t) => `<a class="pill" href="/courses?tag=${encodeURIComponent(t)}">${escapeHtml(t)}</a>`).join('')}</div>` : ''}
 ${actions}
@@ -649,7 +665,7 @@ ${reviewList}
       title: `${path.subject} · ${SITE_NAME}`,
       description: (path.summary || `A free, structured course to learn ${path.subject} on Sawari.`).slice(0, 160),
       canonical: canUrl,
-      ogImage: path.ogImage,
+      ogImage: path.ogImage || path.thumbnailUrl,
       jsonLd,
     },
     inner,

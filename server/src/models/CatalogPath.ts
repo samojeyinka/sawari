@@ -22,6 +22,8 @@ export interface CatalogPathDocument extends Document {
   _id: Types.ObjectId
   slug: string
   subject: string
+  category: string
+  thumbnailUrl: string | null
   summary: string
   goal: string
   level: ExperienceLevel | null
@@ -71,6 +73,8 @@ const catalogPathSchema = new Schema<CatalogPathDocument, CatalogPathModel>(
       index: true,
     },
     subject: { type: String, required: true, trim: true, maxlength: 120 },
+    category: { type: String, required: true, trim: true, maxlength: 80, index: true },
+    thumbnailUrl: { type: String, default: null, trim: true, maxlength: 2000 },
     summary: { type: String, default: '', maxlength: 300 },
     goal: { type: String, default: '', maxlength: 500 },
     level: { type: String, enum: EXPERIENCE_LEVELS, default: null },
@@ -93,6 +97,7 @@ const catalogPathSchema = new Schema<CatalogPathDocument, CatalogPathModel>(
 )
 
 catalogPathSchema.index({ published: 1, createdAt: -1 })
+catalogPathSchema.index({ published: 1, category: 1 })
 catalogPathSchema.index({ subject: 'text', summary: 'text', tags: 'text' })
 
 export const CatalogPath = mongoose.model<CatalogPathDocument, CatalogPathModel>(

@@ -48,6 +48,9 @@ export const listPublishedCatalog = asyncHandler(
     if (typeof req.query.tag === 'string' && req.query.tag.trim()) {
       filter.tags = req.query.tag.trim()
     }
+    if (typeof req.query.category === 'string' && req.query.category.trim()) {
+      filter.category = req.query.category.trim()
+    }
     if (typeof req.query.level === 'string' && req.query.level.trim()) {
       filter.level = req.query.level.trim()
     }
@@ -57,6 +60,19 @@ export const listPublishedCatalog = asyncHandler(
       CatalogPath.countDocuments(filter),
     ])
     res.ok(items.map(serialize), pageMeta(page, limit, total))
+  },
+)
+
+/** Public categories, counted from published courses for the landing navigation. */
+export const listCatalogCategories = asyncHandler(
+  async (_req: Request, res: Response, _next: NextFunction) => {
+    const categories = await CatalogPath.aggregate([
+      { $match: { published: true, category: { $type: 'string', $ne: '' } } },
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $sort: { count: -1, _id: 1 } },
+      { $project: { _id: 0, name: '$_id', count: 1 } },
+    ])
+    res.ok({ categories })
   },
 )
 
