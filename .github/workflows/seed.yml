@@ -4,16 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Seeding mode (create = skip existing, update = update existing, dry-run = preview only)'
+        description: 'Seeding mode (create, update all course content, metadata only, or dry-run)'
         required: true
         default: 'create'
         type: choice
         options:
           - create
           - update
+          - metadata
           - dry-run
       slugs:
-        description: 'Specific course slugs to target (space-separated, e.g. "sql-fundamentals public-speaking"; leave empty for all)'
+        description: 'Course slugs for update mode; metadata mode always refreshes all courses'
         required: false
         default: ''
         type: string
@@ -36,7 +37,11 @@ jobs:
           script_stop: true
           script: |
             set -e
-            cd /var/www/sawari/server
+            cd /var/www/sawari
+            git fetch origin main
+            git reset --hard origin/main
+
+            cd server
 
             MODE="${{ github.event.inputs.mode }}"
             SLUGS="${{ github.event.inputs.slugs }}"
@@ -53,6 +58,9 @@ jobs:
                 echo "Updating all catalog courses"
                 npx tsx scripts/seed-courses.ts --update-all
               fi
+            elif [ "$MODE" = "metadata" ]; then
+              echo "Refreshing course categories and thumbnail image URLs"
+              npx tsx scripts/seed-courses.ts --update-metadata
             elif [ "$MODE" = "dry-run" ]; then
               if [ -n "$SLUGS" ]; then
                 npx tsx scripts/seed-courses.ts --dry-run --update $SLUGS
