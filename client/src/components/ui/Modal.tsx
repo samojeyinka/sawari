@@ -11,6 +11,7 @@ interface ModalProps {
   footer?: ReactNode
   size?: 'sm' | 'md' | 'lg'
   hideClose?: boolean
+  className?: string
 }
 
 const sizes = {
@@ -28,6 +29,7 @@ export function Modal({
   footer,
   size = 'md',
   hideClose = false,
+  className,
 }: ModalProps) {
   useEffect(() => {
     if (!open) return
@@ -60,6 +62,7 @@ export function Modal({
           'app-theme relative w-full bg-panel animate-pop',
           'max-h-[92vh] overflow-y-auto',
           'border border-on-band/20',
+          className,
           sizes[size],
         )}
       >

@@ -101,6 +101,7 @@ export interface SessionBuilderInput {
 export interface CourseBuilderInput {
   slug: string
   subject: string
+  category: string
   summary: string
   goal: string
   level: ExperienceLevel
@@ -111,6 +112,7 @@ export interface CourseBuilderInput {
   expectedWeeks?: number
   expectedHours?: number
   ogImage?: string | null
+  thumbnailUrl?: string | null
   published?: boolean
   sessions: SessionBuilderInput[]
 }
@@ -490,6 +492,7 @@ export function course(input: CourseBuilderInput): CreateCatalogPathInput {
   const rawDoc = {
     slug,
     subject: input.subject.trim(),
+    category: input.category.trim(),
     summary: input.summary.trim(),
     goal: input.goal.trim(),
     level: input.level,
@@ -500,6 +503,7 @@ export function course(input: CourseBuilderInput): CreateCatalogPathInput {
     expectedWeeks: input.expectedWeeks ?? autoWeeks,
     expectedHours: input.expectedHours ?? autoHours,
     ogImage: input.ogImage ?? null,
+    thumbnailUrl: input.thumbnailUrl ?? null,
     sections,
     published: input.published ?? true,
   }

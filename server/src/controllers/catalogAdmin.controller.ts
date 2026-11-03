@@ -21,7 +21,7 @@ const LIST_SORT = ['createdAt', 'updatedAt', 'subject', 'enrollments', 'reviewsA
 
 /** The admin list omits the heavy per-section content. */
 const LIST_SELECT =
-  'slug subject summary level tags weeklyHours intensity formats expectedWeeks expectedHours ogImage published publishedAt enrollments reviewsCount reviewsAvg createdAt updatedAt sections.id sections.title sections.order sections.minutes'
+  'slug subject category thumbnailUrl summary level tags weeklyHours intensity formats expectedWeeks expectedHours ogImage published publishedAt enrollments reviewsCount reviewsAvg createdAt updatedAt sections.id sections.title sections.order sections.minutes'
 
 function slugify(value: string): string {
   return (
@@ -98,6 +98,8 @@ export const createCatalogPath = asyncHandler(
     const path = await CatalogPath.create({
       slug,
       subject: body.subject,
+      category: body.category,
+      thumbnailUrl: body.thumbnailUrl,
       summary: body.summary,
       goal: body.goal,
       level: body.level,
@@ -134,6 +136,8 @@ export const updateCatalogPath = asyncHandler(
     }
 
     if (body.subject !== undefined) path.subject = body.subject
+    if (body.category !== undefined) path.category = body.category
+    if (body.thumbnailUrl !== undefined) path.thumbnailUrl = body.thumbnailUrl
     if (body.summary !== undefined) path.summary = body.summary
     if (body.goal !== undefined) path.goal = body.goal
     if (body.level !== undefined) path.level = body.level

@@ -82,6 +82,7 @@ export interface SectionDraft {
 
 export interface FormDraft {
   subject: string
+  category: string
   slug: string
   summary: string
   goal: string
@@ -93,6 +94,7 @@ export interface FormDraft {
   expectedWeeks: number
   expectedHours: number
   ogImage: string
+  thumbnailUrl: string
   published: boolean
   sections: SectionDraft[]
 }
@@ -130,6 +132,7 @@ function emptySection(): SectionDraft {
 export function emptyDraft(): FormDraft {
   return {
     subject: '',
+    category: '',
     slug: '',
     summary: '',
     goal: '',
@@ -141,6 +144,7 @@ export function emptyDraft(): FormDraft {
     expectedWeeks: 0,
     expectedHours: 0,
     ogImage: '',
+    thumbnailUrl: '',
     published: false,
     sections: [emptySection()],
   }
@@ -315,6 +319,7 @@ export function draftToPayload(draft: FormDraft): CatalogPathInput {
   return {
     slug: draft.slug.trim() || undefined,
     subject: draft.subject.trim(),
+    category: draft.category.trim(),
     summary: draft.summary.trim(),
     goal: draft.goal.trim(),
     level: draft.level || null,
@@ -328,6 +333,7 @@ export function draftToPayload(draft: FormDraft): CatalogPathInput {
     expectedWeeks: draft.expectedWeeks,
     expectedHours: draft.expectedHours,
     ogImage: draft.ogImage.trim() || null,
+    thumbnailUrl: draft.thumbnailUrl.trim() || null,
     sections: draft.sections.map(sectionToInput),
     published: draft.published,
   }
@@ -336,6 +342,7 @@ export function draftToPayload(draft: FormDraft): CatalogPathInput {
 /** First blocking problem in the draft, or null when it is ready to send. */
 export function validateDraft(draft: FormDraft): string | null {
   if (!draft.subject.trim()) return 'Give the path a subject.'
+  if (!draft.category.trim()) return 'Choose a course category.'
   if (draft.sections.length === 0) return 'Add at least one section.'
   for (let i = 0; i < draft.sections.length; i++) {
     const s = draft.sections[i]
@@ -616,6 +623,14 @@ export function CatalogForm({
               placeholder="e.g. Public speaking"
             />
           </Field>
+          <Field label="Category" hint="One primary category used for browsing and recommendations.">
+            <TextInput
+              value={draft.category}
+              maxLength={80}
+              onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
+              placeholder="e.g. Data & Analytics"
+            />
+          </Field>
           <Field label="Summary" hint="One or two lines shown on the catalog card.">
             <TextArea
               value={draft.summary}
@@ -646,7 +661,7 @@ export function CatalogForm({
                 ))}
               </Select>
             </Field>
-            <Field label="Tags" hint="Comma separated.">
+            <Field label="Tags" hint="Optional search keywords. Category is the primary browse group.">
               <TextInput
                 value={draft.tagsText}
                 onChange={(e) => setDraft((d) => ({ ...d, tagsText: e.target.value }))}
@@ -977,6 +992,13 @@ export function CatalogForm({
               value={draft.ogImage}
               onChange={(e) => setDraft((d) => ({ ...d, ogImage: e.target.value }))}
               placeholder="https://…"
+            />
+          </Field>
+          <Field label="Thumbnail URL" hint="Public image URL used on course cards and learning paths.">
+            <TextInput
+              value={draft.thumbnailUrl}
+              onChange={(e) => setDraft((d) => ({ ...d, thumbnailUrl: e.target.value }))}
+              placeholder="https://example.com/course-thumbnail.jpg"
             />
           </Field>
         </div>

@@ -28,6 +28,8 @@ import type {
 const LIST_SORT = ['createdAt', 'updatedAt', 'subject', 'targetDate'] as const
 const LIST_SELECT = [
   'subject',
+  'category',
+  'thumbnailUrl',
   'goal',
   'catalogPathId',
   'experience',

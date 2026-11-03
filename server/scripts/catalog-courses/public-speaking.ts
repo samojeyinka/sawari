@@ -23,6 +23,8 @@ import {
 export const publicSpeakingCourse = course({
   slug: 'public-speaking',
   subject: 'Public Speaking',
+  category: 'Communication & Leadership',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1200&q=85',
   summary: 'Plan and deliver a short talk that people actually follow and remember.',
   goal: 'Stand up and give a clear five minute talk without reading from a script.',
   level: 'some',

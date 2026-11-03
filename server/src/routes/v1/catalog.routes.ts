@@ -8,6 +8,7 @@ import {
   getPublicCertificate,
   getPublishedCatalogBySlug,
   listCatalogReviews,
+  listCatalogCategories,
   listPublishedCatalog,
   listSavedCatalog,
   saveCatalog,
@@ -26,6 +27,7 @@ const router = Router()
 
 /* Public reads: no authentication, so anyone and any crawler can browse. */
 router.get('/', validate(listCatalogQuery, 'query'), listPublishedCatalog)
+router.get('/categories', listCatalogCategories)
 
 /* Public credential verification */
 router.get('/verify/:credentialId', getPublicCertificate)

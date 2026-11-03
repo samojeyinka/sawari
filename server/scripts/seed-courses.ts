@@ -13,6 +13,7 @@ import { catalogCourses } from './catalog-courses/index.js'
 /*  - Default (create-only): skips existing slugs without modifying.   */
 /*  - --update <slug...>: explicitly updates named slugs.             */
 /*  - --update-all: explicitly updates all courses in catalog.         */
+/*  - --update-metadata: only refreshes category and thumbnail URLs.   */
 /*  - --dry-run: validates and reports actions without DB writes.      */
 /*                                                                     */
 /*  Usage:                                                             */
@@ -20,17 +21,20 @@ import { catalogCourses } from './catalog-courses/index.js'
 /*    npx tsx scripts/seed-courses.ts --dry-run                        */
 /*    npx tsx scripts/seed-courses.ts --update sql-fundamentals        */
 /*    npx tsx scripts/seed-courses.ts --update-all                     */
+/*    npx tsx scripts/seed-courses.ts --update-metadata                */
 /* ------------------------------------------------------------------ */
 
 interface CliOptions {
   dryRun: boolean
   updateAll: boolean
+  updateMetadata: boolean
   updateSlugs: Set<string>
 }
 
 function parseCliArgs(args: string[]): CliOptions {
   let dryRun = false
   let updateAll = false
+  let updateMetadata = false
   const updateSlugs = new Set<string>()
 
   for (let i = 0; i < args.length; i++) {
@@ -39,6 +43,8 @@ function parseCliArgs(args: string[]): CliOptions {
       dryRun = true
     } else if (arg === '--update-all') {
       updateAll = true
+    } else if (arg === '--update-metadata') {
+      updateMetadata = true
     } else if (arg === '--update') {
       // Gather all following non-flag arguments as slugs
       while (i + 1 < args.length && !args[i + 1]?.startsWith('--')) {
@@ -48,7 +54,7 @@ function parseCliArgs(args: string[]): CliOptions {
     }
   }
 
-  return { dryRun, updateAll, updateSlugs }
+  return { dryRun, updateAll, updateMetadata, updateSlugs }
 }
 
 async function main() {
@@ -59,6 +65,8 @@ async function main() {
   }
   if (options.updateAll) {
     console.log('[seed] update-all mode enabled: existing courses will be updated')
+  } else if (options.updateMetadata) {
+    console.log('[seed] metadata mode enabled: category and thumbnail URL only')
   } else if (options.updateSlugs.size > 0) {
     console.log(`[seed] targeted update mode for slugs: ${Array.from(options.updateSlugs).join(', ')}`)
   } else {
@@ -103,6 +111,21 @@ async function main() {
     const shouldUpdate =
       options.updateAll || (options.updateSlugs.size > 0 && options.updateSlugs.has(slug))
 
+    if (existing && options.updateMetadata && !options.updateAll && options.updateSlugs.size === 0) {
+      if (options.dryRun) {
+        console.log(`[seed:dry-run] would refresh category and thumbnail: ${slug}`)
+      } else {
+        await CatalogPath.updateOne(
+          { slug },
+          { $set: { category: course.category, thumbnailUrl: course.thumbnailUrl } },
+          { runValidators: true },
+        )
+        console.log(`[seed] refreshed category and thumbnail: ${slug}`)
+      }
+      summary.updated.push(slug)
+      continue
+    }
+
     if (existing && !shouldUpdate) {
       // Create-only default: skip existing
       if (options.dryRun) {
@@ -130,6 +153,8 @@ async function main() {
           {
             $set: {
               subject: course.subject,
+              category: course.category,
+              thumbnailUrl: course.thumbnailUrl,
               summary: course.summary,
               goal: course.goal,
               level: course.level,
@@ -162,6 +187,8 @@ async function main() {
       await CatalogPath.create({
         slug,
         subject: course.subject,
+        category: course.category,
+        thumbnailUrl: course.thumbnailUrl,
         summary: course.summary,
         goal: course.goal,
         level: course.level,

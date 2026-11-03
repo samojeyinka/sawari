@@ -20,7 +20,13 @@ export function createApp(): express.Express {
   app.use(helmet())
   app.use(
     cors({
-      origin: env.FRONTEND_URL,
+      origin(origin, callback) {
+        const localViteOrigin =
+          env.NODE_ENV !== 'production' &&
+          /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]):\d+$/.test(origin ?? '')
+
+        callback(null, !origin || origin === env.FRONTEND_URL || localViteOrigin)
+      },
       credentials: true,
     }),
   )

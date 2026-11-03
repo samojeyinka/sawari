@@ -121,11 +121,20 @@ export function PathPage() {
       {/* header */}
       <header className="mb-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className={monoLabel}>learning path</p>
-            <h1 className="mt-3 font-display text-[30px] font-light leading-[1.12] tracking-[-0.025em] text-on-band sm:text-[38px]">
-              {activePath.subject}
-            </h1>
+          <div className="flex min-w-0 items-center gap-4">
+            {activePath.thumbnailUrl && (
+              <img
+                src={activePath.thumbnailUrl}
+                alt=""
+                className="h-20 w-28 shrink-0 object-cover sm:h-24 sm:w-36"
+              />
+            )}
+            <div className="min-w-0">
+              <p className={monoLabel}>{activePath.category || 'learning path'}</p>
+              <h1 className="mt-3 font-display text-[30px] font-light leading-[1.12] tracking-[-0.025em] text-on-band sm:text-[38px]">
+                {activePath.subject}
+              </h1>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button

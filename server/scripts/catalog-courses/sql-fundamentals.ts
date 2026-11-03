@@ -22,6 +22,8 @@ import {
 export const sqlFundamentalsCourse = course({
   slug: 'sql-fundamentals',
   subject: 'SQL Fundamentals',
+  category: 'Data & Analytics',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?auto=format&fit=crop&w=1200&q=85',
   summary: 'Read and write SQL queries that answer real questions from real tables.',
   goal: 'Pull, filter, group and join data on your own without looking up every clause.',
   level: 'beginner',

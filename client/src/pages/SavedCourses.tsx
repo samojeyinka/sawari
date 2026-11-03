@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Page, PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { RouteFallback } from '../components/ui/RouteFallback'
@@ -26,9 +26,12 @@ function SavedCard({ path, onRemove }: { path: ApiCatalogPath; onRemove: () => v
 
   return (
     <div className="flex min-w-0 flex-col border border-on-band/15 bg-panel p-5">
+      {path.thumbnailUrl && (
+        <img src={path.thumbnailUrl} alt="" className="-mx-5 -mt-5 mb-4 h-40 object-cover" />
+      )}
       <div className="flex items-center justify-between gap-3">
         <span className={monoLabel}>
-          {path.sections.length} {path.sections.length === 1 ? 'section' : 'sections'}
+          {path.category || 'Course'} · {path.sections.length} {path.sections.length === 1 ? 'section' : 'sections'}
         </span>
         <LevelTag level={path.level} />
       </div>

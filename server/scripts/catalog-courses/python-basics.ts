@@ -22,6 +22,8 @@ import {
 export const pythonBasicsCourse = course({
   slug: 'python-basics',
   subject: 'Python Basics',
+  category: 'Programming & Development',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=85',
   summary: 'Write real Python programs that manipulate data, automate tasks, and solve concrete problems.',
   goal: 'Read, write, and debug modular Python code using core data structures, loops, and functions.',
   level: 'beginner',

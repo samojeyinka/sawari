@@ -48,6 +48,8 @@ export interface LearningPathDocument extends Document {
   /** Set when this path was enrolled from a public catalog path. */
   catalogPathId: Types.ObjectId | null
   subject: string
+  category: string | null
+  thumbnailUrl: string | null
   goal: string
   experience: ExperienceLevel | null
   reason: GoalReason | null
@@ -112,6 +114,8 @@ const learningPathSchema = new Schema<LearningPathDocument, LearningPathModel>(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     catalogPathId: { type: Schema.Types.ObjectId, ref: 'CatalogPath', default: null, index: true },
     subject: { type: String, required: true, trim: true, maxlength: 120 },
+    category: { type: String, trim: true, maxlength: 80, default: null },
+    thumbnailUrl: { type: String, default: null, trim: true, maxlength: 2000 },
     goal: { type: String, default: '', maxlength: 500 },
     experience: { type: String, enum: EXPERIENCE_LEVELS, default: null },
     reason: { type: String, enum: GOAL_REASONS, default: null },

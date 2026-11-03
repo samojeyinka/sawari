@@ -22,6 +22,8 @@ import {
 export const dataAnalyticsCourse = course({
   slug: 'data-analytics',
   subject: 'Data Analytics',
+  category: 'Data & Analytics',
+  thumbnailUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=85',
   summary: 'Transform raw data into actionable business insights using spreadsheets, SQL queries, exploratory data analysis, and dashboard visualization.',
   goal: 'Extract messy datasets, clean anomalies, compute key metrics with SQL and spreadsheets, and present findings through charts.',
   level: 'beginner',
