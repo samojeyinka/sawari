@@ -65,7 +65,6 @@ export function CoursesPage() {
     return [...counts.entries()]
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-      .slice(0, 12)
   }, [catalogCourses])
 
   useEffect(() => {

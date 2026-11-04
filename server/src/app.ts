@@ -15,6 +15,7 @@ export function createApp(): express.Express {
   const app = express()
   const cspDirectives = helmet.contentSecurityPolicy.getDefaultDirectives()
   delete cspDirectives['img-src']
+  delete cspDirectives['frame-src']
 
   app.disable('x-powered-by')
   app.set('trust proxy', 1)
@@ -26,6 +27,8 @@ export function createApp(): express.Express {
           ...cspDirectives,
           // Catalog thumbnails are user-supplied HTTPS URLs.
           imgSrc: ["'self'", 'data:', 'https:'],
+          // Course previews are embedded using YouTube's privacy-enhanced host.
+          frameSrc: ["'self'", 'https://www.youtube-nocookie.com'],
         },
       },
     }),

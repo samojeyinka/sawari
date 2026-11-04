@@ -180,6 +180,50 @@ const STYLES = `
   .review:first-of-type{border-top:0;padding-top:4px}
   .review .who{font-weight:600;color:var(--on-band)}
   .review p{margin:8px 0 0}
+  .course-detail{max-width:1600px;margin:0 auto}
+  .course-detail-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,370px);align-items:start;gap:28px}
+  .course-detail-main{min-width:0}
+  .course-detail-heading{padding:4px 0 20px}
+  .course-detail-heading .title{font-size:clamp(28px,4vw,44px);line-height:1.08;letter-spacing:-.035em}
+  .course-detail-heading .lede{max-width:780px;margin:12px 0 0;color:var(--on-band-muted);font-size:16px}
+  .course-detail-taxonomy{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .course-detail-taxonomy a{display:inline-flex;padding:5px 10px;border:1px solid var(--line-strong);color:var(--accent-bright);font-size:11px;text-decoration:none}
+  .course-detail-taxonomy a:hover{background:var(--accent-soft)}
+  .course-detail-stats{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:18px;color:var(--on-band-dim);font-size:12px}
+  .course-detail-stat{display:inline-flex;align-items:center;gap:7px}
+  .course-detail-rating{color:var(--warn-bright);font-weight:700}
+  .course-player{position:relative;overflow:hidden;aspect-ratio:16/9;background:#06141c;border:1px solid var(--line-strong);box-shadow:0 18px 52px rgba(0,0,0,.2)}
+  .course-player iframe,.course-player img{display:block;width:100%;height:100%;border:0;object-fit:cover}
+  .course-player-fallback{display:grid;width:100%;height:100%;place-items:center;color:var(--on-band-dim);font-size:14px}
+  .course-player-open{position:absolute;left:50%;top:50%;display:flex;align-items:center;gap:10px;transform:translate(-50%,-50%);border:1px solid rgba(255,255,255,.45);border-radius:999px;background:rgba(0,21,33,.78);padding:12px 18px;color:#fff;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;backdrop-filter:blur(8px)}
+  .course-player-open span{display:grid;width:30px;height:30px;place-items:center;border-radius:50%;background:var(--accent-bright);color:var(--band);font-size:12px}
+  .course-action-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:16px 0 24px;border-bottom:1px solid var(--line)}
+  .course-action-bar .actions{margin:0}
+  .course-detail-copy{padding:6px 0 20px}
+  .course-detail-copy h2{margin:24px 0 10px;font-size:22px}
+  .course-detail-copy p{max-width:850px;color:var(--on-band-muted);font-size:15px;line-height:1.7}
+  .course-outline{position:sticky;top:96px;max-height:calc(100vh - 116px);overflow:auto;border:1px solid var(--line-strong);background:var(--panel);box-shadow:0 16px 44px rgba(0,0,0,.14)}
+  .course-outline-head{position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line);background:var(--panel);padding:20px}
+  .course-outline-head h2{margin:0;font-size:20px}
+  .course-outline-head p{margin:6px 0 0;color:var(--on-band-dim);font-size:12px}
+  .course-outline-info{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 20px;border-bottom:1px solid var(--line)}
+  .course-outline-info span{display:block;color:var(--on-band-dim);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+  .course-outline-info strong{display:block;margin-top:3px;color:var(--on-band);font-size:12px;font-weight:500}
+  .outline-section{border-bottom:1px solid var(--line)}
+  .outline-section>summary{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:9px;padding:14px 16px;cursor:pointer;list-style:none}
+  .outline-section>summary::-webkit-details-marker{display:none}
+  .outline-number{display:grid;width:27px;height:27px;place-items:center;border:1px solid var(--line-strong);border-radius:50%;color:var(--accent-bright);font-family:var(--font-mono);font-size:10px}
+  .outline-title{color:var(--on-band);font-size:12px;font-weight:600;line-height:1.35}
+  .outline-duration{color:var(--on-band-dim);font-family:var(--font-mono);font-size:9px;white-space:nowrap}
+  .outline-section[open]>summary{background:rgba(255,255,255,.035)}
+  .outline-lesson{padding:0 16px 14px 55px;color:var(--on-band-dim);font-size:11px}
+  .outline-lesson strong{display:block;margin-bottom:8px;color:var(--on-band-muted);font-size:11px;font-weight:500}
+  .outline-resource{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);color:var(--on-band-muted);text-decoration:none}
+  .outline-resource:hover{color:var(--accent-bright)}
+  .outline-resource small{flex:none;color:var(--on-band-dim);font-size:9px}
+  .course-reviews{margin-top:34px}
+  @media(max-width:900px){.course-detail-layout{grid-template-columns:minmax(0,1fr) 300px;gap:18px}.outline-section>summary{grid-template-columns:26px minmax(0,1fr);gap:8px}.outline-duration{grid-column:2}}
+  @media(max-width:700px){.course-detail-layout{grid-template-columns:1fr}.course-outline{position:static;max-height:none;order:2}.course-detail-heading{padding-top:0}.course-detail-heading .lede{font-size:14px}.course-detail-stats{gap:10px 15px}.course-outline-head{padding:16px}.course-action-bar{padding-bottom:18px}}
   .empty{border:1px dashed var(--line-strong);color:var(--on-band-dim);padding:56px 24px;text-align:center}
   .pager{display:flex;justify-content:space-between;align-items:center;margin-top:36px;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--on-band-dim)}
   .pager a{color:var(--accent-bright);text-decoration:none}
@@ -582,18 +626,55 @@ export async function renderCourseDetail(slug: string): Promise<string | null> {
   const sections = [...path.sections].sort((a, b) => a.order - b.order)
   const totalMinutes = sections.reduce((sum, s) => sum + s.minutes, 0)
 
-  const sectionCards = sections
-    .map((section) => {
-      const content = section.content as SessionContent
-      const resources = content.resources ?? []
-      const facts = [
-        section.minutes ? `${section.minutes} min` : '',
-        resources.length ? `${resources.length} resource${resources.length === 1 ? '' : 's'}` : '',
-      ].filter(Boolean)
-      return `<details class="section">
-<summary><h3>${escapeHtml(section.title)}</h3><span class="mins">${escapeHtml(facts.join(' · '))}</span></summary>
-${section.description ? `<p>${escapeHtml(section.description)}</p>` : ''}
-${resources.length ? resources.map((r) => `<div class="resource"><span>${escapeHtml(r.title)}</span><span class="mins">${escapeHtml(r.kind)} · ${r.minutes} min</span></div>`).join('') : ''}
+  const youtubeEmbedUrl = (rawUrl?: string): string | null => {
+    if (!rawUrl) return null
+    try {
+      const url = new URL(rawUrl)
+      const host = url.hostname.toLowerCase()
+      let videoId = ''
+      if (host === 'youtu.be') videoId = url.pathname.split('/').filter(Boolean)[0] ?? ''
+      else if (['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com'].includes(host)) {
+        videoId = url.searchParams.get('v') ?? url.pathname.match(/^\/(?:embed|shorts)\/([^/]+)/)?.[1] ?? ''
+      }
+      return /^[A-Za-z0-9_-]{11}$/.test(videoId)
+        ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0`
+        : null
+    } catch {
+      return null
+    }
+  }
+  const safeHttpsUrl = (rawUrl?: string): string | null => {
+    if (!rawUrl) return null
+    try {
+      const url = new URL(rawUrl)
+      return url.protocol === 'https:' ? url.href : null
+    } catch {
+      return null
+    }
+  }
+
+  const sectionContent = sections.map((section) => ({
+    section,
+    content: section.content as SessionContent,
+    resources: ((section.content as SessionContent).resources ?? ((section.content as SessionContent).resource ? [(section.content as SessionContent).resource!] : [])),
+  }))
+  const firstVideo = sectionContent.flatMap(({ section, resources }) =>
+    resources.filter((resource) => resource.kind === 'video').map((resource) => ({ section, resource })),
+  )[0]
+  const previewEmbed = youtubeEmbedUrl(firstVideo?.resource.url)
+
+  const outlineSections = sectionContent
+    .map(({ section, content, resources }, index) => {
+      const resourceRows = resources.map((resource) => {
+        const href = safeHttpsUrl(resource.url)
+        const row = `<span>${escapeHtml(resource.title)}</span><small>${escapeHtml(resource.kind)} · ${resource.minutes} min</small>`
+        return href
+          ? `<a class="outline-resource" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${row}</a>`
+          : `<div class="outline-resource">${row}</div>`
+      }).join('')
+      return `<details class="outline-section"${index === 0 ? ' open' : ''}>
+<summary><span class="outline-number">${String(index + 1).padStart(2, '0')}</span><span class="outline-title">${escapeHtml(section.title)}</span><span class="outline-duration">${section.minutes ? `${section.minutes} min` : ''}</span></summary>
+<div class="outline-lesson"><strong>${escapeHtml(content.lesson?.title || section.title)}</strong>${section.description ? `<p>${escapeHtml(section.description)}</p>` : ''}${resourceRows}</div>
 </details>`
     })
     .join('')
@@ -609,14 +690,6 @@ ${reviews
         .join('')}
 </details>`
     : ''
-
-  const bits: string[] = []
-  if (path.level) bits.push(LEVEL_LABELS[path.level] ?? path.level)
-  if (path.expectedWeeks) bits.push(`${path.expectedWeeks} weeks`)
-  if (path.expectedHours) bits.push(`${path.expectedHours} hrs`)
-  if (totalMinutes) bits.push(`${Math.round(totalMinutes / 60)} hrs of material`)
-  if (path.reviewsCount > 0) bits.push(`${path.reviewsAvg}★ (${path.reviewsCount})`)
-  if (path.enrollments > 0) bits.push(`${path.enrollments} enrolled`)
 
   const canUrl = `${SITE_BASE}/courses/${encodeURIComponent(path.slug)}`
   const slugPath = encodeURIComponent(path.slug)
@@ -643,21 +716,44 @@ ${reviews
     }
   }
 
+  const media = previewEmbed
+    ? `<iframe src="${escapeHtml(previewEmbed)}" title="${escapeHtml(firstVideo?.resource.title ?? `${path.subject} preview`)}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`
+    : path.thumbnailUrl
+      ? `<img src="${escapeHtml(path.thumbnailUrl)}" alt="${escapeHtml(path.subject)} course preview" loading="eager">${firstVideo?.resource.url && safeHttpsUrl(firstVideo.resource.url) ? `<a class="course-player-open" href="${escapeHtml(safeHttpsUrl(firstVideo.resource.url)!)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">▶</span> Watch lesson preview</a>` : ''}`
+      : `<div class="course-player-fallback">Course preview will be available soon.</div>`
+
+  const detailFacts = [
+    `<span class="course-detail-stat course-detail-rating">${path.reviewsCount ? `${starsHtml(path.reviewsAvg)} ${path.reviewsAvg.toFixed(1)}` : 'New course'}</span>${path.reviewsCount ? `<span class="course-detail-stat">${path.reviewsCount.toLocaleString()} reviews</span>` : ''}`,
+    `<span class="course-detail-stat">${path.enrollments.toLocaleString()} learners</span>`,
+    `<span class="course-detail-stat">${path.expectedHours ? `${path.expectedHours} hours` : totalMinutes ? `${Math.round(totalMinutes / 60)} hours` : 'Self-paced'}</span>`,
+    `<span class="course-detail-stat">${escapeHtml(path.level ? LEVEL_LABELS[path.level] ?? path.level : 'All levels')}</span>`,
+  ].join('')
+
   const inner = `
+<div class="course-detail">
 <div class="crumbs"><a href="/courses">Courses</a> / ${escapeHtml(path.subject)}</div>
-${path.thumbnailUrl ? `<img class="detail-thumbnail" src="${escapeHtml(path.thumbnailUrl)}" alt="${escapeHtml(path.subject)} course thumbnail">` : ''}
-<div class="detail-head">
+<div class="course-detail-layout">
+<section class="course-detail-main">
+<header class="course-detail-heading">
+<div class="course-detail-taxonomy">${path.category ? `<a href="/courses?category=${encodeURIComponent(path.category)}">${escapeHtml(path.category)}</a>` : ''}${path.tags.map((tag) => `<a href="/courses?tag=${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`).join('')}</div>
 <h1 class="title">${escapeHtml(path.subject)}</h1>
 ${path.summary ? `<p class="lede">${escapeHtml(path.summary)}</p>` : ''}
-${path.category ? `<a class="detail-category" href="/courses?category=${encodeURIComponent(path.category)}">${escapeHtml(path.category)}</a>` : ''}
-<div class="meta-row">${bits.map((b) => `<span>${escapeHtml(b)}</span>`).join('')}</div>
-${path.tags.length ? `<div class="chips">${path.tags.map((t) => `<a class="pill" href="/courses?tag=${encodeURIComponent(t)}">${escapeHtml(t)}</a>`).join('')}</div>` : ''}
-${actions}
+<div class="course-detail-stats">${detailFacts}</div>
+</header>
+<div class="course-player">${media}</div>
+<div class="course-action-bar">${actions}</div>
+<section class="course-detail-copy">
+${path.goal ? `<h2>What you'll be able to do</h2><p>${escapeHtml(path.goal)}</p>` : ''}
+<h2>About this course</h2><p>${escapeHtml(path.summary || `Learn ${path.subject} with a practical, step-by-step course.`)}</p>
+</section>
+</section>
+<aside class="course-outline" aria-label="Course content">
+<div class="course-outline-head"><h2>Course content</h2><p>${sections.length} modules · ${totalMinutes ? `${Math.round(totalMinutes / 60)} hours total` : 'Self-paced'}</p></div>
+<div class="course-outline-info"><div><span>Level</span><strong>${escapeHtml(path.level ? LEVEL_LABELS[path.level] ?? path.level : 'All levels')}</strong></div><div><span>Category</span><strong>${escapeHtml(path.category || 'General')}</strong></div><div><span>Time to finish</span><strong>${path.expectedWeeks ? `${path.expectedWeeks} weeks` : 'Self-paced'}</strong></div><div><span>Format</span><strong>${path.formats.map((format) => escapeHtml(format)).join(', ') || 'Self-paced'}</strong></div></div>
+${outlineSections || '<div class="empty">Course content is being prepared.</div>'}
+</aside>
 </div>
-${path.goal ? `<h2>What you'll be able to do</h2><p class="lede">${escapeHtml(path.goal)}</p>` : ''}
-<h2>What's inside</h2>
-${sectionCards || '<div class="empty">Sections are being prepared.</div>'}
-${reviewList}
+<div class="course-reviews">${reviewList}</div>
 <p style="margin-top:28px;display:flex;flex-wrap:wrap;gap:10px">
 <a class="btn btn-outline" href="${actionUrl(`/review/${slugPath}`)}"><span class="sweep" aria-hidden="true"></span><span class="label">Write a review</span></a>
 <a class="btn btn-outline" href="${actionUrl(`/certificate/${slugPath}`)}"><span class="sweep" aria-hidden="true"></span><span class="label">View certificate</span></a>

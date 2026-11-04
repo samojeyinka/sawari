@@ -27,8 +27,29 @@ const levels: { value: ExperienceLevel | ''; label: string }[] = [
 
 export function CourseFilters({ filters, categories, topics, onChange, onClear }: CourseFiltersProps) {
   const [search, setSearch] = useState(filters.q)
+  const [filtersOpen, setFiltersOpen] = useState(() =>
+    typeof window === 'undefined' || window.matchMedia('(min-width: 768px)').matches,
+  )
+  const [showAllCategories, setShowAllCategories] = useState(false)
+  const [showAllTopics, setShowAllTopics] = useState(false)
+
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 768px)')
+    const syncOpenState = () => setFiltersOpen(desktop.matches)
+    syncOpenState()
+    desktop.addEventListener('change', syncOpenState)
+    return () => desktop.removeEventListener('change', syncOpenState)
+  }, [])
 
   useEffect(() => setSearch(filters.q), [filters.q])
+
+  const visibleCategories = showAllCategories || (filters.category && !categories.slice(0, 7).some((item) => item.name === filters.category))
+    ? categories
+    : categories.slice(0, 7)
+  const visibleTopics = showAllTopics || (filters.tag && !topics.slice(0, 7).some((item) => item.name === filters.tag))
+    ? topics
+    : topics.slice(0, 7)
+  const hasActiveFilters = Boolean(filters.q || filters.category || filters.tag || filters.level)
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -36,8 +57,14 @@ export function CourseFilters({ filters, categories, topics, onChange, onClear }
   }
 
   return (
-    <details className="catalog-filters" open>
-      <summary>Filter courses <span aria-hidden="true">⌄</span></summary>
+    <>
+    <details className="catalog-filters" open={filtersOpen} onToggle={(event) => setFiltersOpen(event.currentTarget.open)}>
+      <summary>
+        <span>Filter courses</span>
+        <svg className="catalog-filter-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </summary>
       <div className="catalog-filters-body">
         <form className="catalog-filter-search" onSubmit={submitSearch} role="search">
           <label htmlFor="catalog-filter-query">Search</label>
@@ -47,23 +74,33 @@ export function CourseFilters({ filters, categories, topics, onChange, onClear }
         <fieldset className="catalog-filter-group">
           <legend>Course categories</legend>
           <label className="catalog-filter-option"><input type="radio" name="catalog-category" checked={!filters.category} onChange={() => onChange('category', '')} /><span>All categories</span><small>{categories.reduce((sum, facet) => sum + facet.count, 0)}</small></label>
-          {categories.map((category) => (
+          {visibleCategories.map((category) => (
             <label className="catalog-filter-option" key={category.name}>
               <input type="radio" name="catalog-category" checked={filters.category === category.name} onChange={() => onChange('category', category.name)} />
               <span>{category.name}</span><small>{category.count}</small>
             </label>
           ))}
+          {categories.length > 7 && (
+            <button className="catalog-see-more" type="button" aria-expanded={showAllCategories} onClick={() => setShowAllCategories((expanded) => !expanded)}>
+              {showAllCategories ? 'See fewer categories' : `See more categories (${categories.length})`}
+            </button>
+          )}
         </fieldset>
 
         <fieldset className="catalog-filter-group">
           <legend>Topics and tags</legend>
           <label className="catalog-filter-option"><input type="radio" name="catalog-topic" checked={!filters.tag} onChange={() => onChange('tag', '')} /><span>All topics</span></label>
-          {topics.map((topic) => (
+          {visibleTopics.map((topic) => (
             <label className="catalog-filter-option" key={topic.name}>
               <input type="radio" name="catalog-topic" checked={filters.tag === topic.name} onChange={() => onChange('tag', topic.name)} />
-              <span>#{topic.name}</span><small>{topic.count}</small>
+              <span>{topic.name}</span><small>{topic.count}</small>
             </label>
           ))}
+          {topics.length > 7 && (
+            <button className="catalog-see-more" type="button" aria-expanded={showAllTopics} onClick={() => setShowAllTopics((expanded) => !expanded)}>
+              {showAllTopics ? 'See fewer topics' : `See more topics (${topics.length})`}
+            </button>
+          )}
         </fieldset>
 
         <fieldset className="catalog-filter-group">
@@ -76,10 +113,9 @@ export function CourseFilters({ filters, categories, topics, onChange, onClear }
           ))}
         </fieldset>
 
-        {(filters.q || filters.category || filters.tag || filters.level) && (
-          <button className="catalog-clear-filters" type="button" onClick={onClear}>Clear all filters</button>
-        )}
       </div>
     </details>
+    {hasActiveFilters && <button className="catalog-clear-filters" type="button" onClick={onClear}>Clear all filters</button>}
+    </>
   )
 }

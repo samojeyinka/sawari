@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
-import { LuCheck, LuLock, LuStar } from 'react-icons/lu'
+import { Link } from 'react-router-dom'
+import { LuCheck, LuLoaderCircle, LuLock, LuStar } from 'react-icons/lu'
 import { Button } from '../ui/Button'
-import { monoLabel } from '../layout/nav'
 import { catalogApi, type CourseProgressInfo } from '../../lib/api'
 import { useAlert } from '../../state/alertContext'
-import { cx } from '../../lib/utils'
 
 export function ReviewComposer({
   slug,
@@ -58,9 +57,11 @@ export function ReviewComposer({
 
   if (loadingProgress) {
     return (
-      <div className="border border-on-band/15 bg-panel p-6">
-        <p className={monoLabel}>checking review eligibility</p>
-        <p className="mt-2 text-[13px] text-on-band-dim">Loading your course progress...</p>
+      <div className="rounded-2xl border border-[#e8e4ec] bg-white p-6 shadow-[0_10px_30px_rgba(33,27,42,0.05)]" role="status">
+        <div className="flex items-center gap-3">
+          <LuLoaderCircle className="h-5 w-5 animate-spin text-[#713bd1]" />
+          <div><p className="text-[12px] font-extrabold text-[#30283b]">Checking your course progress</p><p className="mt-1 text-[11px] text-[#77717e]">Getting your review eligibility ready…</p></div>
+        </div>
       </div>
     )
   }
@@ -69,19 +70,20 @@ export function ReviewComposer({
     const percent = progress.progressPercent
     const remaining = Math.max(0, 70 - percent)
     return (
-      <div className="border border-on-band/15 bg-panel p-6">
-        <div className="flex items-center gap-2 text-on-band-muted">
-          <LuLock className="h-4 w-4 text-on-band-dim" />
-          <p className={monoLabel}>reviews unlock at 70% completion</p>
+      <div className="overflow-hidden rounded-2xl border border-[#e8e4ec] bg-white shadow-[0_10px_30px_rgba(33,27,42,0.05)]">
+        <div className="flex items-center gap-3 border-b border-[#eeeaf1] bg-[#faf7fd] px-5 py-4 sm:px-6">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-[#713bd1] shadow-sm"><LuLock className="h-4 w-4" /></span>
+          <div><p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#713bd1]">Review eligibility</p><p className="mt-0.5 text-[11px] font-semibold text-[#6f6876]">Unlocks at 70% course completion</p></div>
         </div>
 
-        <h2 className="mt-2 text-[18px] font-medium text-on-band">
+        <div className="p-5 sm:p-6">
+        <h2 className="text-[18px] font-extrabold leading-snug tracking-[-0.02em] text-[#211b2a]">
           {progress.enrolled
             ? `You have completed ${percent}% of this course`
             : 'Enroll and begin learning to unlock reviews'}
         </h2>
 
-        <p className="mt-1 text-[13.5px] leading-relaxed text-on-band-muted">
+        <p className="mt-2 text-[13px] leading-6 text-[#625c67]">
           Reviews are reserved for learners who have experienced at least 70% of the material.
           {progress.enrolled
             ? ` Complete ${remaining}% more of the course sections to leave your review.`
@@ -89,57 +91,58 @@ export function ReviewComposer({
         </p>
 
         <div className="mt-4">
-          <div className="flex justify-between text-[11px] font-mono uppercase tracking-wider text-on-band-dim mb-1.5">
+          <div className="mb-2 flex justify-between text-[10px] font-bold text-[#77717e]">
             <span>Progress: {percent}%</span>
             <span>Target: 70%</span>
           </div>
-          <div className="h-2 w-full overflow-hidden bg-on-band/10">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#eeeaf1]">
             <div
-              className="h-full bg-accent-bright transition-all duration-300"
+              className="h-full rounded-full bg-[#713bd1] transition-all duration-300"
               style={{ width: `${Math.min(100, Math.round((percent / 70) * 100))}%` }}
             />
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="mt-5 flex flex-wrap items-center gap-2.5">
           {progress.enrolled ? (
-            <a
-              href="/app/path"
-              className="inline-flex h-[38px] items-center bg-on-band px-4 text-[13px] font-medium text-band transition-opacity hover:opacity-90"
+            <Link
+              to="/app/path"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#713bd1] px-5 text-[12px] font-extrabold text-white shadow-[0_5px_14px_rgba(113,59,209,0.18)] transition hover:-translate-y-0.5 hover:bg-[#5e2eb3]"
             >
               Continue course
-            </a>
+            </Link>
           ) : (
-            <a
-              href={`/start/${encodeURIComponent(slug)}`}
-              className="inline-flex h-[38px] items-center bg-on-band px-4 text-[13px] font-medium text-band transition-opacity hover:opacity-90"
+            <Link
+              to={`/start/${encodeURIComponent(slug)}`}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#713bd1] px-5 text-[12px] font-extrabold text-white shadow-[0_5px_14px_rgba(113,59,209,0.18)] transition hover:-translate-y-0.5 hover:bg-[#5e2eb3]"
             >
               Start course
-            </a>
+            </Link>
           )}
-          <a
-            href={`/courses/${encodeURIComponent(slug)}`}
-            className="inline-flex h-[38px] items-center border border-on-band/20 px-4 text-[13px] text-on-band-muted hover:text-on-band"
+          <Link
+            to={`/courses/${encodeURIComponent(slug)}`}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#e3d9ee] bg-white px-5 text-[12px] font-bold text-[#6130ae] transition hover:bg-[#f8f3fc]"
           >
             Course outline
-          </a>
+          </Link>
+        </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="border border-on-band/15 bg-panel p-5">
+    <div className="rounded-2xl border border-[#e8e4ec] bg-white p-5 shadow-[0_10px_30px_rgba(33,27,42,0.05)] sm:p-6">
       <div className="flex items-center justify-between">
-        <p className={monoLabel}>leave a review</p>
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#77717e]">Leave a review</p>
         {progress && (
-          <span className="inline-flex items-center gap-1 font-mono text-[10.5px] uppercase tracking-wider text-accent-bright">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f3eef9] px-3 py-1.5 text-[10px] font-extrabold text-[#6130ae]">
             <LuCheck className="h-3.5 w-3.5" /> {progress.progressPercent}% completed
           </span>
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5" role="radiogroup" aria-label="Rating">
+      <div className="mt-4 flex items-center gap-1.5" role="radiogroup" aria-label="Rating">
         {[1, 2, 3, 4, 5].map((value) => (
           <button
             key={value}
@@ -148,10 +151,10 @@ export function ReviewComposer({
             aria-checked={rating === value}
             role="radio"
             onClick={() => setRating(value)}
-            className="transition-transform hover:scale-110"
+            className="grid h-11 w-11 place-items-center rounded-xl transition hover:scale-105 hover:bg-[#f7f2fc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#713bd1]"
           >
             <LuStar
-              className={cx('h-6 w-6', value <= rating ? 'text-accent-bright' : 'text-on-band/20')}
+              className={`h-6 w-6 ${value <= rating ? 'fill-[#f5bc48] text-[#e6a12b]' : 'text-[#d5cfda]'}`}
             />
           </button>
         ))}
@@ -162,10 +165,10 @@ export function ReviewComposer({
         maxLength={2000}
         rows={3}
         placeholder="What did you think? Optional, but it helps others."
-        className="mt-4 w-full resize-y border border-on-band/20 bg-band px-3.5 py-2.5 text-[14px] leading-relaxed text-on-band placeholder:text-on-band-dim focus:border-on-band/45 focus:outline-none"
+        className="mt-3 w-full resize-y rounded-xl border border-[#e5e0e9] bg-[#fcfbfd] px-4 py-3 text-[13px] leading-6 text-[#30283b] placeholder:text-[#9a93a0] focus:border-[#a77be0] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#713bd1]/10"
       />
       <div className="mt-3 flex justify-end">
-        <Button size="sm" loading={busy} onClick={submit}>
+        <Button variant="accent" size="md" className="rounded-xl px-5 font-extrabold shadow-[0_5px_14px_rgba(113,59,209,0.18)] hover:-translate-y-0.5" loading={busy} onClick={submit}>
           Post review
         </Button>
       </div>

@@ -14,9 +14,6 @@ export default defineConfig({
     host: true,
     allowedHosts: true,
     proxy: {
-      // Let the SPA own the catalog index. Keep server-rendered course detail
-      // pages on Express, which are matched by the trailing-slash prefix.
-      '/courses/': 'http://localhost:4000',
       '/sitemap.xml': 'http://localhost:4000',
       '/robots.txt': 'http://localhost:4000',
     },
