@@ -44,6 +44,20 @@ jobs:
             npm ci
             npm run build
 
+            # Keep production routing in sync with the SPA routes. In particular,
+            # /courses must not be proxied to the legacy server-rendered page.
+            if [ "$(id -u)" -eq 0 ]; then
+              install -m 0644 ../ops/nginx/sawari-client.conf /etc/nginx/sites-available/sawari-client
+              ln -sfn /etc/nginx/sites-available/sawari-client /etc/nginx/sites-enabled/sawari-client
+              nginx -t
+              systemctl reload nginx
+            else
+              sudo install -m 0644 ../ops/nginx/sawari-client.conf /etc/nginx/sites-available/sawari-client
+              sudo ln -sfn /etc/nginx/sites-available/sawari-client /etc/nginx/sites-enabled/sawari-client
+              sudo nginx -t
+              sudo systemctl reload nginx
+            fi
+
             # The API refuses to boot on bad config; make that visible here.
             for i in $(seq 1 10); do
               if curl -fsS http://127.0.0.1:4000/api/v1/health >/dev/null 2>&1; then break; fi
