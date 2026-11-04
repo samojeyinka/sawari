@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { LuChevronDown } from 'react-icons/lu'
 import type {
   ExperienceLevel,
   GoalReason,
@@ -43,33 +44,31 @@ const stepHints = [
   'We work back from a finish date, and you can change your mind later.',
 ]
 
-/* Setup styles its own primitives rather than the shared kit, so the flow can
-   read like the public pages without restyling screens that have not been
-   reviewed yet. Square corners, hairline borders, no icons. */
-const monoNote = 'font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim'
+const monoNote = 'font-sans text-[11px] font-semibold text-on-band-dim'
 
 const setupInput =
-  'w-full border border-on-band/20 bg-band-soft px-4 py-3 text-[15px] text-on-band ' +
-  'placeholder:text-on-band-dim transition-colors duration-150 hover:border-on-band/35 ' +
-  'focus:border-accent-bright focus:outline-none focus:ring-2 focus:ring-accent-bright/20'
+  'w-full rounded-xl border border-line-strong bg-white px-4 py-3 text-[14px] text-on-band shadow-sm ' +
+  'placeholder:text-on-band-dim transition-[border-color,box-shadow] duration-150 hover:border-accent-bright/50 ' +
+  'focus:border-accent-bright focus:outline-none focus:ring-4 focus:ring-accent-bright/10'
 
 const setupPrimary =
-  'group relative inline-flex h-12 items-center justify-center overflow-hidden bg-on-band px-7 ' +
-  'text-[14.5px] font-medium text-band transition-colors disabled:pointer-events-none disabled:opacity-50'
+  'group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-full bg-[#51249c] px-7 ' +
+  'text-[13px] font-extrabold text-white shadow-[0_5px_14px_rgba(113,59,209,.2)] transition-[transform,box-shadow] ' +
+  'hover:-translate-y-px hover:shadow-[0_8px_20px_rgba(113,59,209,.25)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-bright/20 disabled:pointer-events-none disabled:opacity-50'
 
 const setupGhost =
-  'inline-flex h-12 items-center justify-center border border-on-band/20 px-6 text-[14.5px] ' +
-  'font-medium text-on-band transition-colors hover:border-on-band/45'
+  'inline-flex h-11 items-center justify-center rounded-full border border-line-strong bg-white px-5 text-[13px] ' +
+  'font-bold text-on-band-muted transition-colors hover:border-accent-bright/50 hover:text-accent-bright'
 
 const setupSecondary =
-  'group relative inline-flex h-11 items-center justify-center overflow-hidden border ' +
-  'border-on-band/20 px-6 text-[14px] font-medium text-on-band transition-colors ' +
-  'hover:border-on-band/45 disabled:pointer-events-none disabled:opacity-50'
+  'group relative inline-flex h-11 items-center justify-center overflow-hidden rounded-xl border ' +
+  'border-line-strong bg-white px-5 text-[13px] font-bold text-on-band transition-colors ' +
+  'hover:border-accent-bright/50 disabled:pointer-events-none disabled:opacity-50'
 
-const groupLabel = 'text-[14.5px] font-medium text-on-band'
-const groupHint = 'mt-1 text-[13px] leading-relaxed text-on-band-dim'
+const groupLabel = 'text-[14px] font-bold text-on-band'
+const groupHint = 'mt-1 text-[12px] leading-relaxed text-on-band-dim'
 
-/** Small square-cornered choice used for tags and day pickers. */
+/** Compact pill choice for topics and optional study days. */
 function Tag({
   selected,
   onClick,
@@ -87,10 +86,10 @@ function Tag({
       aria-pressed={selected}
       onClick={onClick}
       className={cx(
-        'border px-3.5 py-2 text-[13.5px] transition-colors',
+        'rounded-full border px-3.5 py-2 text-[12px] font-semibold transition-colors',
         selected
-          ? 'border-accent-bright bg-accent-bright/15 text-accent-bright'
-          : 'border-on-band/15 text-on-band-muted hover:border-on-band/35 hover:text-on-band',
+          ? 'border-accent-bright/40 bg-accent-bright/10 text-accent-bright'
+          : 'border-line bg-white text-on-band-muted hover:border-accent-bright/35 hover:text-accent-bright',
         className,
       )}
     >
@@ -416,48 +415,38 @@ export function SetupPage() {
   }
 
   return (
-    <div className="app-theme min-h-screen bg-band">
-      <header className="border-b border-on-band/10">
-        <div className="mx-auto flex h-[76px] max-w-[1060px] items-center justify-between gap-6 px-5 sm:px-8">
+    <div className="min-h-screen bg-band text-on-band-muted [--color-band:#faf9f7] [--color-band-soft:#f3f0f8] [--color-band-deep:#f3f2ee] [--color-panel:#fff] [--color-panel-soft:#fcfbfd] [--color-on-band:#211b2a] [--color-on-band-muted:#514a58] [--color-on-band-dim:#77717e] [--color-accent:#713bd1] [--color-accent-strong:#51249c] [--color-accent-soft:#f3f0f8] [--color-accent-bright:#713bd1] [--color-success:#157f5f] [--color-success-bright:#157f5f] [--color-danger-bright:#b42318] [--color-line:#e8e4ec] [--color-line-strong:#d7d0df]">
+      <header className="border-b border-line bg-white">
+        <div className="mx-auto flex h-[68px] max-w-[1160px] items-center justify-between gap-6 px-5 sm:h-[76px] sm:px-8">
           <Link to="/" aria-label="Sawari home">
             <Logo size="sm" />
           </Link>
-          <span className={monoNote}>
-            step {String(step + 1).padStart(2, '0')} / {String(steps.length).padStart(2, '0')}
-          </span>
-        </div>
-        <div className="h-[3px] w-full bg-on-band/10">
-          <div className="bar-fill h-full bg-accent-bright" style={{ width: `${progress}%` }} />
+          <Link to="/" className="text-[12px] font-bold text-on-band-muted transition-colors hover:text-accent-bright">
+            Exit setup
+          </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1060px] px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
+      <main className="mx-auto max-w-[850px] px-4 pb-12 pt-6 sm:px-8 sm:pb-16 sm:pt-10">
         <form onSubmit={next} key={step}>
-          <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-20">
-            <aside className="hidden lg:block">
-              <p className={monoNote}>your path</p>
-              <ol className="mt-5">
-                {steps.map((title, i) => (
-                  <li
-                    key={title}
-                    className={cx(
-                      'flex items-baseline gap-3 border-t border-on-band/10 py-2.5 text-[13px]',
-                      i === step ? 'text-on-band' : 'text-on-band-dim',
-                    )}
-                  >
-                    <span className={monoNote}>{String(i + 1).padStart(2, '0')}</span>
-                    {title}
-                  </li>
-                ))}
-              </ol>
-            </aside>
+          <div className="mb-5 flex items-center gap-4 px-1 sm:mb-6">
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 flex items-center justify-between gap-4">
+                <span className="text-[12px] font-bold text-on-band">Step {step + 1} <span className="font-medium text-on-band-dim">of {steps.length}</span></span>
+                <span className="truncate text-right text-[11px] font-semibold text-on-band-dim">{Math.round(progress)}% complete</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-band-deep" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100} aria-label={`Step ${step + 1} of ${steps.length}`}>
+                <div className="h-full rounded-full bg-accent-bright transition-[width] duration-300" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+          </div>
 
-            <div className="animate-rise">
-              <p className={monoNote}>step {String(step + 1).padStart(2, '0')}</p>
-              <h1 className="mt-3 max-w-[620px] font-display text-[28px] font-light leading-[1.15] tracking-[-0.025em] text-on-band sm:text-[34px]">
+          <div className="animate-rise rounded-[22px] border border-line bg-white p-5 shadow-[0_12px_44px_rgba(33,27,42,.055)] sm:rounded-[26px] sm:p-8 lg:p-10">
+              <p className={cx(monoNote, 'text-accent-bright')}>Build your learning plan</p>
+              <h1 className="mt-2 max-w-[620px] font-display text-[27px] font-extrabold leading-[1.08] tracking-[-0.045em] text-on-band sm:text-[34px]">
                 {steps[step]}
               </h1>
-              <p className="mt-4 max-w-[560px] text-[15px] leading-relaxed text-on-band-muted">
+              <p className="mt-3 max-w-[560px] text-[13px] leading-relaxed text-on-band-muted sm:text-[14px]">
                 {stepHints[step]}
               </p>
 
@@ -474,21 +463,21 @@ export function SetupPage() {
                         onClick={() => changeMode(option.id)}
                         aria-pressed={active}
                         className={cx(
-                          'border px-4 py-3.5 text-left transition-colors duration-150',
+                          'rounded-2xl border px-4 py-3.5 text-left transition-[border-color,background-color] duration-150',
                           active
-                            ? 'border-accent-bright bg-accent-bright/10'
-                            : 'border-on-band/15 hover:border-on-band/35',
+                            ? 'border-accent-bright/45 bg-accent-bright/[0.06]'
+                            : 'border-line hover:border-accent-bright/30 hover:bg-band-soft/60',
                         )}
                       >
                         <span
                           className={cx(
-                            'block text-[13.5px]',
+                            'block text-[13px] font-bold',
                             active ? 'text-accent-bright' : 'text-on-band',
                           )}
                         >
                           {option.label}
                         </span>
-                        <span className="mt-1 block truncate text-[11.5px] text-on-band-dim">
+                        <span className="mt-1 block truncate text-[11px] text-on-band-dim">
                           {option.hint}
                         </span>
                       </button>
@@ -515,9 +504,9 @@ export function SetupPage() {
                       />
                     </Field>
                     <div className="mt-6">
-                      <p className={cx(monoNote, 'mb-3')}>popular right now</p>
+                      <p className={cx(monoNote, 'mb-2')}>A few ideas</p>
                       <div className="flex flex-wrap gap-2">
-                        {subjects.map((subject) => (
+                        {subjects.slice(0, 6).map((subject) => (
                           <Tag
                             key={subject}
                             selected={setup.subject === subject}
@@ -602,7 +591,7 @@ export function SetupPage() {
                 )}
 
                 {extraction && mode !== 'topic' && (
-                  <div className="mt-6 animate-rise border border-accent-bright/40 bg-accent-bright/10 p-5">
+                  <div className="mt-6 animate-rise rounded-2xl border border-accent-bright/20 bg-band-soft p-4 sm:p-5">
                     <div className="flex items-center justify-between gap-3">
                       <p className={cx(monoNote, 'text-accent-bright')}>{extraction.note}</p>
                       {extraction.offline && (
@@ -617,7 +606,7 @@ export function SetupPage() {
                       {extraction.skills.map((skill) => (
                         <span
                           key={skill}
-                          className="border border-on-band/15 px-2.5 py-1 text-[12.5px] text-on-band-muted"
+                          className="rounded-full border border-line bg-white px-3 py-1 text-[11px] font-medium text-on-band-muted"
                         >
                           {skill}
                         </span>
@@ -687,7 +676,7 @@ export function SetupPage() {
 
             {/* step 3 */}
             {step === 3 && (
-              <div className="mt-8 space-y-8">
+              <div className="mt-7 space-y-5">
                 <div>
                   <div className="grid gap-2.5 sm:grid-cols-2">
                     {hours.map((option) => (
@@ -703,41 +692,47 @@ export function SetupPage() {
                   {error && <p className="mt-2 text-[13px] text-danger">{error}</p>}
                 </div>
 
-                <div>
-                  <p className={groupLabel}>Preferred days</p>
-                  <p className={groupHint}>
-                    Optional — pick the days you usually study. We schedule sessions for them.
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {weekdays.map((day) => (
-                      <Tag
-                        key={day.id}
-                        selected={setup.days.includes(day.id)}
-                        onClick={() => toggleDay(day.id)}
-                      >
-                        {day.label}
-                      </Tag>
-                    ))}
-                  </div>
-                </div>
+                <details className="group rounded-2xl border border-line bg-band-soft/60 p-4 sm:p-5">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[12px] font-bold text-on-band marker:hidden">
+                    <span>Set preferred study times <span className="font-medium text-on-band-dim">· optional</span></span>
+                    <span aria-hidden="true" className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-line bg-white text-on-band-muted transition-transform duration-300 ease-out group-open:rotate-180">
+                      <LuChevronDown className="h-4 w-4" strokeWidth={2} />
+                    </span>
+                  </summary>
+                  <div className="mt-5 space-y-5 border-t border-line pt-4">
+                    <div>
+                      <p className={groupLabel}>Days you usually study</p>
+                      <p className={groupHint}>We will put sessions on these days.</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {weekdays.map((day) => (
+                          <Tag
+                            key={day.id}
+                            selected={setup.days.includes(day.id)}
+                            onClick={() => toggleDay(day.id)}
+                          >
+                            {day.label}
+                          </Tag>
+                        ))}
+                      </div>
+                    </div>
 
-                <div>
-                  <p className={groupLabel}>Best time of day</p>
-                  <p className={groupHint}>
-                    We put your toughest material in your best hours. (Optional)
-                  </p>
-                  <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-                    {timeWindows.map((option) => (
-                      <ChoiceCard
-                        key={option.id}
-                        selected={setup.timeWindow === option.id}
-                        onClick={() => patchSetup({ timeWindow: option.id })}
-                        label={option.label}
-                        description={option.hint}
-                      />
-                    ))}
+                    <div>
+                      <p className={groupLabel}>Time of day</p>
+                      <p className={groupHint}>We will schedule harder lessons when you focus best.</p>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {timeWindows.map((option) => (
+                          <ChoiceCard
+                            key={option.id}
+                            selected={setup.timeWindow === option.id}
+                            onClick={() => patchSetup({ timeWindow: option.id })}
+                            label={option.label}
+                            description={option.hint}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </details>
               </div>
             )}
 
@@ -781,15 +776,15 @@ export function SetupPage() {
 
             {/* step 6 */}
             {step === 6 && (
-              <div className="mt-7 space-y-6">
-                <div className="border border-accent-bright/40 bg-accent-bright/10 px-5 py-4">
+              <div className="mt-7 space-y-5">
+                <div className="rounded-2xl border border-line bg-band-soft/70 px-4 py-4 sm:px-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className={cx(monoNote, 'text-accent-bright')}>ai recommended timeline</p>
+                    <p className={cx(monoNote, 'text-accent-bright')}>Suggested timeline</p>
                     {loadingTimeline && (
-                      <span className={monoNote}>analyzing {setup.subject}…</span>
+                      <span className={cx(monoNote, 'animate-pulse')}>Estimating…</span>
                     )}
                   </div>
-                  <p className="mt-3 text-[14.5px] leading-relaxed text-on-band-muted">
+                  <p className="mt-2 text-[13px] leading-relaxed text-on-band-muted">
                     {aiTimeline?.reason ? (
                       aiTimeline.reason
                     ) : (
@@ -828,17 +823,17 @@ export function SetupPage() {
 
                 <div>
                   <p className={groupLabel}>How long do you want to give it?</p>
-                  <p className={cx(groupHint, 'mb-4')}>
-                    Pick a pace, we will set your finish date for you.
+                  <p className={cx(groupHint, 'mb-3')}>
+                    Choose a pace. We will estimate the finish date.
                   </p>
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     {durationOptions.map((option) => (
                       <ChoiceCard
                         key={option.months}
                         selected={durationMonths === option.months}
                         onClick={() => chooseDuration(option.months)}
-                        label={`${monthLabel(option.months)} · ${option.tag}`}
-                        description={`${option.hint} · finish ${finishDate(startISO, option.months)}`}
+                        label={<span className="flex items-center justify-between gap-3">{option.tag}<span className="font-semibold text-on-band-muted">{monthLabel(option.months)}</span></span>}
+                        description={`Finish ${finishDate(startISO, option.months)} · ${option.hint.toLowerCase()}`}
                       />
                     ))}
                   </div>
@@ -856,9 +851,9 @@ export function SetupPage() {
                   )}
                 </div>
 
-                <div className="border border-on-band/15 px-5 py-4">
-                  <p className={monoNote}>quick look</p>
-                  <p className="mt-3 text-[14px] leading-relaxed text-on-band-muted">
+                <div className="rounded-xl bg-band-soft px-4 py-3">
+                  <p className="text-[11px] font-bold text-on-band">Your plan so far</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-on-band-muted">
                     <span className="text-on-band">{setup.subject}</span>
                     {setup.experience &&
                       ` · ${experiences.find((e) => e.id === setup.experience)?.label.toLowerCase()}`}
@@ -875,7 +870,7 @@ export function SetupPage() {
             )}
 
               {/* actions */}
-              <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-on-band/10 pt-6">
+              <div className="mt-9 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
                 <button type="button" onClick={back} className={setupGhost}>
                   {step === 0 ? 'Back home' : 'Back'}
                 </button>
@@ -886,7 +881,6 @@ export function SetupPage() {
                   </span>
                 </button>
               </div>
-            </div>
           </div>
         </form>
       </main>

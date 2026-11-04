@@ -3,9 +3,8 @@ import type { SectionStatus } from '../../types'
 import { cx } from '../../lib/utils'
 
 /**
- * Selectable option used in the setup flow. Square-cornered with a hairline
- * border and a small cell as the selection mark — no glyphs, so it reads as
- * part of the same system as the public pages.
+ * Selectable option used in the setup flow. Soft corners and a quiet radio
+ * mark keep the choices clear without making each step feel like a dashboard.
  */
 export function ChoiceCard({
   selected,
@@ -27,24 +26,26 @@ export function ChoiceCard({
       disabled={disabled}
       aria-pressed={selected}
       className={cx(
-        'flex w-full items-start gap-4 border px-4 py-4 text-left transition-colors duration-150',
+        'flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition-[border-color,background-color,box-shadow] duration-150',
         'disabled:pointer-events-none disabled:opacity-60',
         selected
-          ? 'border-accent-bright bg-accent-bright/10'
-          : 'border-on-band/15 hover:border-on-band/35 hover:bg-on-band/[0.03]',
+          ? 'border-accent-bright/45 bg-accent-bright/[0.05] shadow-[0_0_0_2px_rgba(113,59,209,.04)]'
+          : 'border-line bg-white hover:border-accent-bright/30 hover:bg-band-soft/40',
       )}
     >
       <span
         aria-hidden="true"
         className={cx(
-          'mt-1 h-3.5 w-3.5 shrink-0 border transition-colors',
-          selected ? 'border-accent-bright bg-accent-bright' : 'border-on-band/30',
+          'mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border transition-colors',
+          selected ? 'border-accent-bright bg-accent-bright' : 'border-line-strong bg-white',
         )}
-      />
+      >
+        {selected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+      </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[14.5px] text-on-band">{label}</span>
+        <span className="block text-[13px] font-bold text-on-band">{label}</span>
         {description && (
-          <span className="mt-1 block text-[13px] leading-relaxed text-on-band-dim">
+          <span className="mt-0.5 block text-[11.5px] leading-relaxed text-on-band-dim">
             {description}
           </span>
         )}
