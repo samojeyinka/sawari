@@ -58,15 +58,15 @@ async function handleBuildPath(payload: BuildPathJobPayload, job: { attempts: nu
           : undefined,
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
+    const publicMessage = 'We could not finish building this path. Please try again shortly.'
     if (job.attempts >= job.maxAttempts || error instanceof AiUnavailableError) {
       path.generationStatus = 'failed'
-      path.generationError = message
+      path.generationError = publicMessage
       path.generationFinishedAt = new Date()
       await path.save()
     } else {
       path.generationStatus = 'queued'
-      path.generationError = message
+      path.generationError = publicMessage
       await path.save()
     }
     throw error

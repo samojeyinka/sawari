@@ -104,12 +104,11 @@ export function PathPage() {
     return (
       <PathBuildFailed
         subject={activePath.subject}
-        error={activePath.generationError}
         retrying={retrying}
         onRetry={() => {
           setRetrying(true)
           retryPathBuild(activePath.id)
-            .catch((err: unknown) => toast(err instanceof Error ? err.message : 'Retry failed.'))
+            .catch(() => toast('We could not restart the build. Please try again shortly.'))
             .finally(() => setRetrying(false))
         }}
       />

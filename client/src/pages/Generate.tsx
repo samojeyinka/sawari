@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import {
   LuArrowRight,
-  LuBell,
   LuCheck,
   LuLoaderCircle,
   LuRefreshCw,
@@ -12,8 +11,6 @@ import {
 import { useApp } from '../state/store'
 import {
   aiApi,
-  apiErrorMessage,
-  apiErrorTitle,
   billingApi,
   learningPathsApi,
   mapApiLearningPath,
@@ -30,13 +27,6 @@ const PHASES = [
   'Designing your path',
   'Ready',
 ]
-
-/** Inline failure text: keeps the API error's code/details visible. */
-function failureText(error: unknown, fallback: string): string {
-  const title = apiErrorTitle(error)
-  const message = apiErrorMessage(error, fallback)
-  return title ? `${title}: ${message}` : message
-}
 
 export function GeneratePage() {
   const { state, createPath, retryPathBuild } = useApp()
@@ -63,7 +53,7 @@ export function GeneratePage() {
       const health = await aiApi.health()
       if (!health.available) {
         setPreflightStatus('unavailable')
-        setPreflightError(health.error || 'AI generation service is currently unreachable.')
+        setPreflightError('The path-building service is temporarily unavailable. Please try again shortly.')
         return
       }
 
@@ -84,9 +74,10 @@ export function GeneratePage() {
       if (path.generationStatus === 'ready' && path.sections.length > 0) {
         navigate('/app/path', { replace: true })
       }
-    } catch (err) {
+    } catch {
       setPreflightStatus('unavailable')
-      setPreflightError(failureText(err, 'Could not contact the AI service.'))
+      console.warn('[generate] Unable to start path generation.')
+      setPreflightError('We could not start path generation. Please try again shortly.')
     }
   }, [createPath, navigate, setup])
 
@@ -112,7 +103,7 @@ export function GeneratePage() {
         setPathStatus(updated.generationStatus ?? 'ready')
 
         if (updated.generationStatus === 'failed') {
-          setPathError(updated.generationError || 'Failed to design your path.')
+          setPathError('We could not finish building this path. Please try again shortly.')
         }
       } catch {
         // Transient network failure during polling; keep waiting
@@ -138,8 +129,9 @@ export function GeneratePage() {
     try {
       const path = await retryPathBuild(activePathId)
       setPathStatus(path.generationStatus ?? 'queued')
-    } catch (err) {
-      setPathError(failureText(err, 'Retry failed.'))
+    } catch {
+      console.warn('[generate] Unable to retry path generation.')
+      setPathError('We could not restart the build. Please try again shortly.')
     } finally {
       setIsRetrying(false)
     }
@@ -176,205 +168,187 @@ export function GeneratePage() {
   }
 
   return (
-    <div className="app-theme flex min-h-screen flex-col bg-band">
-      <header className="border-b border-line">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4 sm:px-8">
+    <div className="flex min-h-screen flex-col bg-band text-on-band-muted [--color-band:#faf9f7] [--color-band-soft:#f3f0f8] [--color-band-deep:#f3f2ee] [--color-panel:#fff] [--color-panel-soft:#fcfbfd] [--color-ink:#211b2a] [--color-ink-soft:#514a58] [--color-body:#514a58] [--color-muted:#77717e] [--color-faint:#a5a0aa] [--color-line:#e8e4ec] [--color-line-strong:#d7d0df] [--color-canvas:#faf9f7] [--color-canvas-deep:#f3f2ee] [--color-accent:#713bd1] [--color-accent-strong:#51249c] [--color-accent-soft:#f3f0f8] [--color-accent-bright:#713bd1] [--color-success:#157f5f] [--color-success-soft:#e9f4ef] [--color-success-bright:#157f5f] [--color-danger:#b42318] [--color-danger-soft:#fbeceb] [--color-danger-bright:#b42318]">
+      <header className="border-b border-line bg-white">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
           <Link to="/" aria-label="Sawari home">
             <Logo size="sm" />
           </Link>
-          <span className="text-[13px] text-muted">Building your path</span>
+          <span className="rounded-full bg-band-soft px-3.5 py-2 text-[11px] font-bold text-on-band-muted">
+            Building your path
+          </span>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-12 sm:px-8 sm:py-16">
-        {limit ? (
-          <div className="animate-rise text-center">
-            <p className="font-mono text-sm uppercase tracking-wide text-accent-bright">
-              Path limit reached
-            </p>
-            <h1 className="mt-3 text-[28px] font-normal leading-[1.08] tracking-[-0.04em] text-on-band sm:text-[40px]">
-              You hold {limit.pathsUsed} of {limit.pathLimit}.
-            </h1>
-            <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-on-band-muted">
-              {limit.plan === 'free' && !limit.hasOwnKey
-                ? 'Free accounts hold one learning path. Go Pro ($6 once) or connect your own DeepSeek key for up to 5.'
-                : 'Delete a path you no longer need, then build this one.'}
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              {limit.plan === 'free' && !limit.hasOwnKey ? (
-                <>
-                  <Button size="lg" onClick={() => navigate('/app/settings')}>
-                    See options
+      <main className="mx-auto flex w-full max-w-3xl flex-1 items-center px-4 py-8 sm:px-8 sm:py-12">
+        <section className="w-full rounded-[24px] border border-line bg-white p-5 shadow-[0_16px_54px_rgba(33,27,42,.07)] sm:rounded-[28px] sm:p-8 lg:p-10">
+          {limit ? (
+            <div className="animate-rise mx-auto max-w-xl text-center">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-accent-bright">Path limit reached</p>
+              <h1 className="mt-3 text-[28px] font-extrabold leading-[1.08] tracking-[-0.045em] text-ink sm:text-[38px]">
+                You hold {limit.pathsUsed} of {limit.pathLimit} paths.
+              </h1>
+              <p className="mx-auto mt-3 max-w-md text-[14px] leading-relaxed text-body">
+                {limit.plan === 'free' && !limit.hasOwnKey
+                  ? 'Free accounts hold one learning path. See your options or connect your own AI key to create more.'
+                  : 'Delete a path you no longer need, then build this one.'}
+              </p>
+              <div className="mt-7 flex flex-wrap justify-center gap-3">
+                {limit.plan === 'free' && !limit.hasOwnKey ? (
+                  <>
+                    <Button variant="accent" size="lg" className="!rounded-full !bg-[#51249c] !text-white hover:!bg-[#6130ae]" onClick={() => navigate('/app/settings')}>
+                      See options
+                    </Button>
+                    <Button variant="secondary" size="lg" className="!rounded-full !border-line-strong !bg-white !text-on-band hover:!border-accent-bright/50" onClick={() => navigate('/app/path')}>
+                      View paths
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="accent" size="lg" className="!rounded-full !bg-[#51249c] !text-white hover:!bg-[#6130ae]" onClick={() => navigate('/app/path')}>
+                    Open my paths
                   </Button>
-                  <Button variant="secondary" size="lg" onClick={() => navigate('/app/path')}>
-                    View paths
-                  </Button>
-                </>
-              ) : (
-                <Button size="lg" onClick={() => navigate('/app/path')}>
-                  Open my paths
-                </Button>
+                )}
+              </div>
+            </div>
+          ) : preflightStatus === 'unavailable' ? (
+            <div className="animate-rise mx-auto max-w-xl text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-danger-soft text-danger">
+                <LuTriangleAlert className="h-5 w-5" />
+              </div>
+              <h1 className="mt-4 text-[25px] font-extrabold tracking-[-0.04em] text-ink sm:text-[32px]">AI is unavailable right now</h1>
+              <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-body">
+                We cannot reach the path-building service at the moment. Your answers are saved, so you can try again shortly.
+              </p>
+              {preflightError && (
+                <p className="mx-auto mt-4 max-w-md rounded-xl border border-line bg-canvas px-4 py-3 text-left text-[12px] leading-relaxed text-muted">
+                  {preflightError}
+                </p>
               )}
+
+              <div className="mt-7 flex flex-wrap justify-center gap-3">
+                <Button variant="accent" size="lg" className="!rounded-full !bg-[#51249c] !text-white hover:!bg-[#6130ae]" onClick={handleRetryPreflight}>
+                  <LuRefreshCw className="mr-2 h-4 w-4" />
+                  Retry
+                </Button>
+                <Button variant="secondary" size="lg" className="!rounded-full !border-line-strong !bg-white !text-on-band hover:!border-accent-bright/50" onClick={() => navigate('/setup')}>
+                  Change answers
+                </Button>
+              </div>
             </div>
-          </div>
-        ) : preflightStatus === 'unavailable' ? (
-          <div className="animate-rise text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <LuTriangleAlert className="h-7 w-7" />
-            </div>
-            <h1 className="mt-5 text-2xl font-semibold text-ink">AI is unavailable right now</h1>
-            <p className="mx-auto mt-2 max-w-md text-[15px] leading-relaxed text-muted">
-              Sawari builds tailored paths using DeepSeek AI. The service cannot be reached at the moment.
-            </p>
-            {preflightError && (
-              <p className="mx-auto mt-3 max-w-md rounded-lg border border-line bg-canvas/60 px-4 py-2.5 text-xs text-muted">
-                {preflightError}
+          ) : pathStatus === 'failed' ? (
+            <div className="animate-rise mx-auto max-w-xl text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-danger-soft text-danger">
+                <LuTriangleAlert className="h-5 w-5" />
+              </div>
+              <h1 className="mt-4 text-[25px] font-extrabold tracking-[-0.04em] text-ink sm:text-[32px]">Could not finish your path</h1>
+              <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-body">
+                We hit a problem while building the sections for {setup.subject}. Your brief is still saved.
               </p>
-            )}
+              {pathError && (
+                <p className="mx-auto mt-4 max-w-md rounded-xl border border-line bg-canvas px-4 py-3 text-left text-[12px] leading-relaxed text-muted">
+                  {pathError}
+                </p>
+              )}
 
-            <div className="mt-8 flex justify-center gap-3">
-              <Button size="lg" onClick={handleRetryPreflight}>
-                <LuRefreshCw className="mr-2 h-4 w-4" />
-                Retry connection
-              </Button>
+              <div className="mt-7 flex flex-wrap justify-center gap-3">
+                <Button variant="accent" size="lg" className="!rounded-full !bg-[#51249c] !text-white hover:!bg-[#6130ae]" onClick={handleRetryPathBuild} loading={isRetrying}>
+                  <LuRefreshCw className="mr-2 h-4 w-4" />
+                  Try again
+                </Button>
+                <Button variant="secondary" size="lg" className="!rounded-full !border-line-strong !bg-white !text-on-band hover:!border-accent-bright/50" onClick={() => navigate('/setup')}>
+                  Change answers
+                </Button>
+              </div>
             </div>
-            <Link
-              to="/setup"
-              className="mt-4 inline-block text-sm font-medium text-muted transition-colors hover:text-ink"
-            >
-              Change my answers
-            </Link>
-          </div>
-        ) : pathStatus === 'failed' ? (
-          <div className="animate-rise text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-danger-soft text-danger">
-              <LuTriangleAlert className="h-7 w-7" />
-            </div>
-            <h1 className="mt-5 text-2xl font-semibold text-ink">Could not design your path</h1>
-            <p className="mx-auto mt-2 max-w-md text-[15px] leading-relaxed text-muted">
-              We encountered an issue while generating topic-specific sections for {setup.subject}.
-            </p>
-            {pathError && (
-              <p className="mx-auto mt-3 max-w-md rounded-lg border border-line bg-canvas/60 px-4 py-2.5 text-xs text-muted">
-                {pathError}
+          ) : pathStatus === 'ready' ? (
+            <div className="animate-rise mx-auto max-w-xl text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success-soft text-success">
+                <LuCheck className="h-5 w-5" strokeWidth={3} />
+              </div>
+              <p className="mt-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-success">Ready to go</p>
+              <h1 className="mt-2 text-[27px] font-extrabold tracking-[-0.045em] text-ink sm:text-[36px]">Your {setup.subject} path is ready.</h1>
+              <p className="mx-auto mt-3 max-w-md text-[14px] leading-relaxed text-body">
+                Your lessons, examples, exercises, and resources are organized into a plan that fits your time.
               </p>
-            )}
 
-            <div className="mt-8 flex justify-center gap-3">
-              <Button size="lg" onClick={handleRetryPathBuild} loading={isRetrying}>
-                <LuRefreshCw className="mr-2 h-4 w-4" />
-                Try again
-              </Button>
+              <div className="mt-7 flex flex-wrap justify-center gap-3">
+                <Button variant="accent" size="lg" className="!rounded-full !bg-[#51249c] !text-white hover:!bg-[#6130ae]" onClick={() => navigate('/app/path')}>
+                  Open learning path
+                  <LuArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <Button variant="secondary" size="lg" className="!rounded-full !border-line-strong !bg-white !text-on-band hover:!border-accent-bright/50" onClick={() => navigate('/app/today')}>
+                  Go to today
+                </Button>
+              </div>
             </div>
-            <Link
-              to="/setup"
-              className="mt-4 inline-block text-sm font-medium text-muted transition-colors hover:text-ink"
-            >
-              Change my answers
-            </Link>
-          </div>
-        ) : pathStatus === 'ready' ? (
-          <div className="animate-rise text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success-soft text-success shadow-[0_0_24px_rgba(34,197,94,0.18)]">
-              <LuCheck className="h-7 w-7" strokeWidth={3} />
-            </div>
-            <h1 className="mt-5 text-2xl font-semibold text-ink">Your path is ready!</h1>
-            <p className="mx-auto mt-2 max-w-md text-[15px] leading-relaxed text-muted">
-              DeepSeek AI has tailored a complete curriculum for{' '}
-              <span className="font-semibold text-ink">{setup.subject}</span> with domain-specific lessons,
-              worked examples, exercises, and curated resources.
-            </p>
+          ) : (
+            <div className="animate-rise">
+              <div className="flex items-center gap-2 text-accent-bright">
+                <LuSparkles className="h-4 w-4" />
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.12em]">Building your path</span>
+              </div>
 
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Button size="lg" onClick={() => navigate('/app/path')}>
-                Open Learning Path
-                <LuArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button variant="secondary" size="lg" onClick={() => navigate('/app/today')}>
-                Go to Today
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="animate-rise">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent-soft/40 px-3 py-1 text-xs font-medium text-accent-strong">
-                <LuSparkles className="h-3.5 w-3.5" />
-                AI Curriculum Engine
-              </span>
-            </div>
+              <h1 className="mt-3 text-[26px] font-extrabold tracking-[-0.045em] text-ink sm:text-[34px]">Your {setup.subject} plan is taking shape.</h1>
+              <p className="mt-2 text-[13px] leading-relaxed text-body sm:text-[14px]">
+                Tailored to {weekly} hours a week and a {setup.intensity ?? 'balanced'} pace.
+              </p>
 
-            <h1 className="mt-3 text-2xl font-semibold text-ink">Designing {setup.subject}…</h1>
-            <p className="mt-1.5 text-[15px] text-muted">
-              Shaping it around {weekly} hours a week and a {setup.intensity ?? 'balanced'} pace.
-            </p>
+              <ProgressBar value={progressPercent} className="mt-7 h-2 rounded-full" />
 
-            <ProgressBar value={progressPercent} className="mt-7" />
+              <ol className="mt-7 space-y-2.5">
+                {PHASES.map((label, i) => {
+                  const done = i < activePhaseIndex
+                  const active = i === activePhaseIndex
+                  return (
+                    <li key={label} className={cx('flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors', active && 'bg-band-soft')}>
+                      <span
+                        className={cx(
+                          'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all duration-300',
+                          done && 'border-success bg-success text-white',
+                          active && 'border-accent-bright bg-white text-accent-bright',
+                          !done && !active && 'border-line bg-white text-faint',
+                        )}
+                      >
+                        {done ? (
+                          <LuCheck className="h-3.5 w-3.5" strokeWidth={3} />
+                        ) : active ? (
+                          <LuLoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <span className="h-1.5 w-1.5 rounded-full bg-line-strong" />
+                        )}
+                      </span>
+                      <span
+                        className={cx(
+                          'text-[13px] transition-colors',
+                          done && 'text-muted',
+                          active && 'font-bold text-ink',
+                          !done && !active && 'text-faint',
+                        )}
+                      >
+                        {label}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ol>
 
-            <ol className="mt-7 space-y-3.5">
-              {PHASES.map((label, i) => {
-                const done = i < activePhaseIndex
-                const active = i === activePhaseIndex
-                return (
-                  <li key={label} className="flex items-center gap-3">
-                    <span
-                      className={cx(
-                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all duration-300',
-                        done && 'border-success bg-success text-band',
-                        active && 'border-accent text-accent',
-                        !done && !active && 'border-line bg-panel text-faint',
-                      )}
-                    >
-                      {done ? (
-                        <LuCheck className="h-3.5 w-3.5" strokeWidth={3} />
-                      ) : active ? (
-                        <LuLoaderCircle className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <span className="h-1.5 w-1.5 rounded-full bg-line-strong" />
-                      )}
-                    </span>
-                    <span
-                      className={cx(
-                        'text-[15px] transition-colors',
-                        done && 'text-muted',
-                        active && 'font-medium text-ink',
-                        !done && !active && 'text-faint',
-                      )}
-                    >
-                      {label}
-                    </span>
-                  </li>
-                )
-              })}
-            </ol>
-
-            {/* Background notification and multitasking notice */}
-            <div className="mt-8 rounded-xl border border-line bg-canvas/70 p-4.5 sm:p-5">
-              <div className="flex items-start gap-3.5">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent">
-                  <LuBell className="h-5 w-5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold text-ink">Building in the background</h3>
-                  <p className="mt-1 text-[13.5px] leading-relaxed text-muted">
-                    DeepSeek AI is generating topic-specific sections tailored to your chosen formats. You will receive an in-app notification the moment your path is ready.
-                  </p>
-                  <p className="mt-2 text-[13px] text-muted">
-                    You can stay on this page to follow progress, or feel free to explore your dashboard — your path will continue building in the background.
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2.5">
-                    <Button variant="secondary" size="sm" onClick={() => navigate('/app/today')}>
-                      Browse Dashboard
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={() => navigate('/app/path')}>
-                      View Path Overview
-                    </Button>
-                  </div>
+              <div className="mt-6 rounded-2xl border border-line bg-band-soft/70 p-4 sm:p-5">
+                <h2 className="text-[13px] font-bold text-ink">You can keep using Sawari.</h2>
+                <p className="mt-1 text-[12px] leading-relaxed text-body">
+                  We will notify you when the path is ready. You can follow progress here or go to your dashboard.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button variant="secondary" size="sm" className="!rounded-full !border-line-strong !bg-white !text-on-band hover:!border-accent-bright/50" onClick={() => navigate('/app/today')}>
+                    Go to dashboard
+                  </Button>
+                  <Button variant="secondary" size="sm" className="!rounded-full !border-line-strong !bg-white !text-on-band hover:!border-accent-bright/50" onClick={() => navigate('/app/path')}>
+                    Path overview
+                  </Button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </section>
       </main>
     </div>
   )

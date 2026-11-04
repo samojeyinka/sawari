@@ -62,12 +62,14 @@ export async function checkAiHealth(options: { fresh?: boolean } = {}): Promise<
     const latencyMs = Date.now() - start
 
     if (!response.ok) {
-      const detail = await response.text().catch(() => '')
+      // Provider response bodies can contain billing or request details. Keep
+      // those out of the API response and learner-facing interface.
+      console.warn(`[ai] Health probe returned status ${response.status}.`)
       const result: AiHealthResult = {
         available: false,
         model: env.DEEPSEEK_MODEL,
         latencyMs,
-        error: `DeepSeek check failed (${response.status}): ${detail.slice(0, 160)}`.trim(),
+        error: 'The AI service is temporarily unavailable.',
       }
       cachedHealth = { result, expiresAt: Date.now() + CACHE_TTL_MS }
       return result
@@ -80,7 +82,7 @@ export async function checkAiHealth(options: { fresh?: boolean } = {}): Promise<
         available: false,
         model: env.DEEPSEEK_MODEL,
         latencyMs,
-        error: 'DeepSeek returned an empty response.',
+      error: 'The AI service returned an empty response.',
       }
       cachedHealth = { result, expiresAt: Date.now() + CACHE_TTL_MS }
       return result
@@ -93,7 +95,7 @@ export async function checkAiHealth(options: { fresh?: boolean } = {}): Promise<
         available: false,
         model: env.DEEPSEEK_MODEL,
         latencyMs,
-        error: 'DeepSeek returned invalid JSON during health probe.',
+      error: 'The AI service returned an invalid response.',
       }
       cachedHealth = { result, expiresAt: Date.now() + CACHE_TTL_MS }
       return result
@@ -108,18 +110,16 @@ export async function checkAiHealth(options: { fresh?: boolean } = {}): Promise<
     return result
   } catch (err) {
     const latencyMs = Date.now() - start
-    const message =
-      err instanceof DOMException && err.name === 'AbortError'
-        ? 'DeepSeek health check timed out.'
-        : err instanceof Error
-          ? err.message
-          : 'DeepSeek health check failed.'
+    const timedOut = err instanceof DOMException && err.name === 'AbortError'
+    console.warn(`[ai] Health probe ${timedOut ? 'timed out' : 'failed'}.`)
 
     const result: AiHealthResult = {
       available: false,
       model: env.DEEPSEEK_MODEL,
       latencyMs,
-      error: message,
+      error: timedOut
+        ? 'The AI service is taking too long to respond.'
+        : 'The AI service is temporarily unavailable.',
     }
     cachedHealth = { result, expiresAt: Date.now() + CACHE_TTL_MS }
     return result

@@ -44,12 +44,10 @@ export function PathBuilding({
 /** Full-page state for a path whose AI build failed, with a retry action. */
 export function PathBuildFailed({
   subject,
-  error,
   retrying,
   onRetry,
 }: {
   subject: string
-  error: string | null | undefined
   retrying: boolean
   onRetry: () => void
 }) {
@@ -63,11 +61,6 @@ export function PathBuildFailed({
         <p className="mx-auto mt-3 max-w-sm text-[14.5px] leading-relaxed text-on-band-muted">
           Something went wrong while generating your sections. Your answers are saved — try again.
         </p>
-        {error && (
-          <p className="mx-auto mt-5 max-w-md border border-on-band/15 bg-band-deep px-4 py-3 text-left font-mono text-[11px] leading-relaxed text-on-band-dim">
-            {error}
-          </p>
-        )}
         <button type="button" onClick={onRetry} disabled={retrying} className={cx(primaryBtn, 'mt-7')}>
           <Sweep />
           <span className="relative">{retrying ? 'Trying again…' : 'Try again'}</span>
