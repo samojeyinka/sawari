@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { LuX } from 'react-icons/lu'
 import { cx } from '../../lib/utils'
 
 interface DrawerProps {
@@ -29,29 +30,29 @@ export function Drawer({ open, onClose, side = 'right', title, children }: Drawe
 
   return createPortal(
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 animate-fade bg-band-deep/70" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 animate-fade bg-[#211b2a]/35" onClick={onClose} aria-hidden />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
         className={cx(
-          'app-theme absolute top-0 flex h-full w-[88%] max-w-sm flex-col bg-band-deep',
+          'absolute top-0 flex h-full w-[88%] max-w-sm flex-col bg-white text-body',
           side === 'right'
-            ? 'right-0 animate-slide-right border-l'
-            : 'left-0 animate-slide-left border-r',
-          'border-on-band/15',
+            ? 'right-0 animate-slide-right border-l border-line'
+            : 'left-0 animate-slide-left border-r border-line',
         )}
       >
-        <div className="flex items-center justify-between gap-4 border-b border-on-band/10 px-5 py-4">
-          <h2 className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim">
+        <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
+          <h2 className="text-[14px] font-extrabold text-on-band">
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim transition-colors hover:text-on-band"
+            aria-label="Close menu"
+            className="grid h-9 w-9 place-items-center rounded-full border border-line text-on-band-muted transition-colors hover:bg-band-soft hover:text-accent-bright"
           >
-            Close
+            <LuX aria-hidden="true" className="h-4 w-4" />
           </button>
         </div>
         <div className="thin-scroll flex-1 overflow-y-auto">{children}</div>

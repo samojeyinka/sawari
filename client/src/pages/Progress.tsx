@@ -33,12 +33,12 @@ export function ProgressPage() {
   if (!activePath) {
     return (
       <Page width="narrow">
-        <div className="border border-on-band/15 bg-panel px-6 py-16 text-center">
-          <p className={monoLabel}>nothing yet</p>
-          <h1 className="mt-4 font-display text-[28px] font-light tracking-[-0.025em] text-on-band">
+        <div className="rounded-[24px] border border-line bg-white px-6 py-16 text-center shadow-[0_14px_44px_rgba(33,27,42,.06)]">
+          <p className={cx(monoLabel, 'text-accent-bright')}>nothing yet</p>
+          <h1 className="mt-3 font-display text-[25px] font-extrabold tracking-[-0.04em] text-on-band sm:text-[30px]">
             Nothing to show yet
           </h1>
-          <p className="mx-auto mt-3 max-w-sm text-[14.5px] leading-relaxed text-on-band-muted">
+          <p className="mx-auto mt-3 max-w-sm text-[13px] leading-relaxed text-on-band-muted">
             Build a learning path and your sessions, projects and milestones land here.
           </p>
           <Link to="/setup" className="mt-7 inline-block">
@@ -77,7 +77,7 @@ export function ProgressPage() {
         ? 'Completed'
         : isCurrent
           ? `${progressPercent}% complete`
-          : `${section.minutes} min`,
+          : formatHours(section.minutes),
       state: isCompleted ? 'done' : isCurrent ? 'current' : 'next',
     }
   })
@@ -109,10 +109,10 @@ export function ProgressPage() {
       />
 
       {/* headline stats */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-6 border-y border-on-band/10 py-6 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-6 rounded-2xl border border-line bg-white px-5 py-6 shadow-[0_8px_28px_rgba(33,27,42,.04)] sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-5">
         {statsList.map((stat, i) => (
           <div key={stat.label} className={cx('animate-rise', `stagger-${Math.min(i + 1, 4)}`)}>
-            <p className="font-display text-[28px] font-light leading-none text-on-band">{stat.value}</p>
+            <p className="font-display text-[26px] font-extrabold leading-none tracking-[-0.04em] text-on-band">{stat.value}</p>
             <p className={cx(monoLabel, 'mt-2')}>{stat.label}</p>
           </div>
         ))}
@@ -125,7 +125,7 @@ export function ProgressPage() {
             <h2 className={monoLabel}>Milestones for {activePath.subject}</h2>
             <Link
               to="/app/path"
-              className="text-[13px] font-medium text-accent-bright transition-colors hover:text-on-band"
+              className="text-[12px] font-bold text-accent-bright transition-colors hover:text-on-band"
             >
               Open path outline
             </Link>
@@ -136,24 +136,24 @@ export function ProgressPage() {
               <li key={milestone.id} className="relative flex gap-4 pb-6 last:pb-0">
                 <span className="relative flex shrink-0 justify-center">
                   {milestone.state === 'done' && (
-                    <span aria-hidden="true" className="h-7 w-7 shrink-0 bg-success-bright" />
+                    <span aria-hidden="true" className="h-7 w-7 shrink-0 rounded-full bg-success" />
                   )}
                   {milestone.state === 'current' && (
                     <span
                       aria-hidden="true"
-                      className="flex h-7 w-7 shrink-0 items-center justify-center border border-accent-bright"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent-bright bg-accent-soft"
                     >
-                      <span className="h-2.5 w-2.5 bg-accent-bright" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-accent-bright" />
                     </span>
                   )}
                   {milestone.state === 'next' && (
                     <span
                       aria-hidden="true"
-                      className="h-7 w-7 shrink-0 border border-dashed border-on-band/20"
+                      className="h-7 w-7 shrink-0 rounded-full border border-dashed border-line-strong"
                     />
                   )}
                   {milestone.state !== 'next' && (
-                    <span aria-hidden="true" className="absolute top-8 h-full w-px bg-on-band/10" />
+                    <span aria-hidden="true" className="absolute top-8 h-full w-px bg-line" />
                   )}
                 </span>
 
@@ -161,7 +161,7 @@ export function ProgressPage() {
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                     <p
                       className={cx(
-                        'text-[15px] font-medium',
+                        'text-[13px] font-bold',
                         milestone.state === 'next' ? 'text-on-band-dim' : 'text-on-band',
                       )}
                     >
@@ -169,7 +169,7 @@ export function ProgressPage() {
                     </p>
                     <span className={monoLabel}>{milestone.date}</span>
                   </div>
-                  <p className="mt-1 text-sm leading-relaxed text-on-band-muted">{milestone.detail}</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-on-band-muted">{milestone.detail}</p>
 
                   {milestone.state === 'current' && milestone.sectionId && (
                     <div className="mt-3">
@@ -198,7 +198,7 @@ export function ProgressPage() {
 
         {/* right column */}
         <aside className="min-w-0 space-y-6">
-          <section className="border border-on-band/15 bg-panel p-5">
+          <section className="rounded-2xl border border-line bg-white p-5 shadow-[0_8px_28px_rgba(33,27,42,.04)]">
             <div className="flex items-center justify-between gap-3">
               <h2 className={monoLabel}>This week&apos;s focus</h2>
               <span className={monoLabel}>Target: {activePath.weeklyHours}h/wk</span>
@@ -212,11 +212,11 @@ export function ProgressPage() {
                     <div className="flex h-24 w-full items-end">
                       <div
                         className={cx(
-                          'w-full transition-all duration-500',
-                          minutes === 0 ? 'bg-on-band/10' : 'bg-accent-bright/80',
+                          'w-full rounded-t-md transition-all duration-500',
+                          minutes === 0 ? 'bg-canvas-deep' : 'bg-accent-bright/80',
                         )}
                         style={{ height: `${height}%` }}
-                        title={`${minutes} min`}
+                        title={formatHours(minutes)}
                       />
                     </div>
                     <span className={monoLabel}>{labels[i]}</span>
@@ -224,23 +224,23 @@ export function ProgressPage() {
                 )
               })}
             </div>
-            <p className="mt-4 border-t border-on-band/10 pt-3 text-[13px] leading-relaxed text-on-band-dim">
-              {stats.week.reduce((a, b) => a + b, 0)} min logged across{' '}
+            <p className="mt-4 border-t border-line pt-3 text-[11px] leading-relaxed text-on-band-dim">
+              {formatHours(stats.week.reduce((a, b) => a + b, 0))} logged across{' '}
               {stats.week.filter((m) => m > 0).length} active days. Pace is calibrated for{' '}
               {activePath.intensity} learning.
             </p>
           </section>
 
-          <section className="border border-on-band/15 bg-panel p-5">
+          <section className="rounded-2xl border border-line bg-white p-5 shadow-[0_8px_28px_rgba(33,27,42,.04)]">
             <h2 className={monoLabel}>Current focus</h2>
 
             <div className="mt-3">
-              <p className="text-sm font-medium text-on-band">
+              <p className="text-[13px] font-bold text-on-band">
                 {currentSection ? currentSection.title : 'Path complete'}
               </p>
-              <p className="mt-1 text-[13px] text-on-band-dim">
+              <p className="mt-1 text-[11px] text-on-band-dim">
                 {currentSection
-                  ? `Section ${currentSection.order} of ${activePath.sections.length} · ${currentSection.minutes} min`
+                  ? `Section ${currentSection.order} of ${activePath.sections.length} · ${formatHours(currentSection.minutes)}`
                   : 'Every section complete. Outstanding work!'}
               </p>
 
@@ -256,7 +256,7 @@ export function ProgressPage() {
                   />
                   <Link
                     to={`/app/session/${currentSection.id}`}
-                    className="mt-3 inline-block text-[13px] font-medium text-accent-bright transition-colors hover:text-on-band"
+                    className="mt-3 inline-block text-[12px] font-bold text-accent-bright transition-colors hover:text-on-band"
                   >
                     Open session
                   </Link>
@@ -265,15 +265,15 @@ export function ProgressPage() {
             </div>
 
             {activeProject && (
-              <div className="mt-4 border-t border-on-band/10 pt-4">
-                <p className="text-sm font-medium text-on-band">{activeProject.title}</p>
-                <p className="mt-1 text-[13px] text-on-band-dim">
+              <div className="mt-4 border-t border-line pt-4">
+                <p className="text-[13px] font-bold text-on-band">{activeProject.title}</p>
+                <p className="mt-1 text-[11px] text-on-band-dim">
                   {activeProject.completedTaskIds.length} of {activeProject.tasks.length} tasks
                   complete
                 </p>
                 <Link
                   to={`/app/projects/${activeProject.id}`}
-                  className="mt-2 inline-block text-[13px] font-medium text-accent-bright transition-colors hover:text-on-band"
+                  className="mt-2 inline-block text-[12px] font-bold text-accent-bright transition-colors hover:text-on-band"
                 >
                   Open project workspace
                 </Link>

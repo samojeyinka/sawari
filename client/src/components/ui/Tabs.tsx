@@ -20,17 +20,17 @@ export function Tabs({
 }) {
   if (variant === 'pill') {
     return (
-      <div className={cx('inline-flex border border-on-band/15 bg-panel p-1', className)}>
+      <div className={cx('inline-flex rounded-full border border-line bg-white p-1', className)}>
         {items.map((item) => (
           <button
             key={item.id}
             onClick={() => onChange(item.id)}
             aria-selected={active === item.id}
             className={cx(
-              'px-3.5 py-1.5 text-sm transition-colors duration-150',
+              'rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-colors duration-150',
               active === item.id
-                ? 'bg-on-band/[0.07] font-medium text-on-band'
-                : 'text-on-band-dim hover:text-on-band',
+                ? 'bg-accent-soft text-accent-strong'
+                : 'text-on-band-muted hover:text-on-band',
             )}
           >
             {item.label}
@@ -41,24 +41,24 @@ export function Tabs({
   }
 
   return (
-    <div className={cx('flex gap-1 overflow-x-auto border-b border-on-band/10', className)}>
+    <div className={cx('flex gap-1 overflow-x-auto border-b border-line', className)}>
       {items.map((item) => (
         <button
           key={item.id}
           onClick={() => onChange(item.id)}
           aria-selected={active === item.id}
           className={cx(
-            'relative whitespace-nowrap px-3 py-2.5 text-sm transition-colors duration-150',
+            'relative whitespace-nowrap rounded-t-xl px-3.5 py-2.5 text-[12.5px] font-bold transition-colors duration-150',
             active === item.id
-              ? 'font-medium text-on-band'
-              : 'text-on-band-dim hover:text-on-band',
+              ? 'text-on-band'
+              : 'text-on-band-muted hover:text-on-band',
           )}
         >
           {item.label}
           <span
             aria-hidden="true"
             className={cx(
-              'absolute inset-x-2 -bottom-px h-0.5 transition-colors duration-200',
+              'absolute inset-x-2 -bottom-px h-0.5 rounded-full transition-colors duration-200',
               active === item.id ? 'bg-accent-bright' : 'bg-transparent',
             )}
           />

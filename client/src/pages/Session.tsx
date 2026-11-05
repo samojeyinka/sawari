@@ -12,7 +12,7 @@ import { CheckView } from '../components/learn/CheckView'
 import { SessionPending } from '../components/learn/SessionPending'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { monoLabel } from '../components/layout/nav'
-import { cx } from '../lib/utils'
+import { cx, formatDuration } from '../lib/utils'
 
 const order: ActivityKind[] = ['learn', 'read', 'practice', 'check']
 
@@ -20,14 +20,15 @@ const isTabParam = (value: string | null): value is ActivityKind =>
   value === 'learn' || value === 'read' || value === 'practice' || value === 'check'
 
 const primaryBtn =
-  'group relative inline-flex h-12 items-center justify-center overflow-hidden bg-on-band px-7 ' +
-  'text-[14.5px] font-medium text-band transition-colors disabled:pointer-events-none disabled:opacity-50'
+  'group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-full bg-[#51249c] px-6 ' +
+  'text-[13px] font-extrabold text-white shadow-[0_5px_14px_rgba(113,59,209,.2)] transition-[transform,box-shadow] ' +
+  'hover:-translate-y-px hover:shadow-[0_8px_20px_rgba(113,59,209,.25)] disabled:pointer-events-none disabled:opacity-50'
 const ghostBtn =
-  'inline-flex h-12 items-center justify-center border border-on-band/20 px-6 text-[14.5px] ' +
-  'text-on-band transition-colors hover:border-on-band/45 disabled:pointer-events-none disabled:opacity-40'
+  'inline-flex h-12 items-center justify-center rounded-full border border-line-strong bg-white px-6 text-[13px] ' +
+  'font-bold text-on-band-muted transition-colors hover:border-accent-bright/50 hover:text-accent-bright disabled:pointer-events-none disabled:opacity-40'
 const smallGhost =
-  'inline-flex h-10 items-center justify-center border border-on-band/20 px-4 text-[13px] ' +
-  'text-on-band transition-colors hover:border-on-band/45 disabled:pointer-events-none disabled:opacity-40'
+  'inline-flex h-10 items-center justify-center rounded-full border border-line-strong bg-white px-4 text-[12px] ' +
+  'font-bold text-on-band-muted transition-colors hover:border-accent-bright/50 hover:text-accent-bright disabled:pointer-events-none disabled:opacity-40'
 
 export function SessionPage() {
   const { sectionId } = useParams()
@@ -110,12 +111,12 @@ export function SessionPage() {
   if (!section) {
     return (
       <div className="mx-auto max-w-3xl px-5 py-20 sm:px-8">
-        <div className="border border-on-band/15 bg-panel px-8 py-16 text-center">
-          <p className={monoLabel}>not found</p>
-          <h1 className="mt-4 font-display text-[28px] font-light tracking-[-0.025em] text-on-band">
+        <div className="rounded-[24px] border border-line bg-white px-8 py-16 text-center shadow-[0_14px_44px_rgba(33,27,42,.06)]">
+          <p className={cx(monoLabel, 'text-accent-bright')}>not found</p>
+          <h1 className="mt-3 font-display text-[25px] font-extrabold tracking-[-0.04em] text-on-band sm:text-[30px]">
             That session is not on this path.
           </h1>
-          <p className="mx-auto mt-3 max-w-sm text-[14.5px] leading-relaxed text-on-band-muted">
+          <p className="mx-auto mt-3 max-w-sm text-[13px] leading-relaxed text-on-band-muted">
             The section you are looking for does not exist, or it was removed.
           </p>
           <Link to="/app/path" className={cx(ghostBtn, 'mt-7')}>
@@ -129,13 +130,13 @@ export function SessionPage() {
   if (error && !content) {
     return (
       <div className="mx-auto max-w-3xl animate-rise px-5 py-20 sm:px-8">
-        <div className="border border-danger-bright/40 bg-panel px-8 py-16 text-center">
+        <div className="rounded-[24px] border border-danger/20 bg-white px-8 py-16 text-center shadow-[0_14px_44px_rgba(33,27,42,.06)]">
           <p className={cx(monoLabel, 'text-danger-bright')}>could not load</p>
-          <h1 className="mt-4 font-display text-[28px] font-light tracking-[-0.025em] text-on-band">
+          <h1 className="mt-3 font-display text-[25px] font-extrabold tracking-[-0.04em] text-on-band sm:text-[30px]">
             This session did not load.
           </h1>
-          <p className="mx-auto mt-3 max-w-sm text-[14.5px] leading-relaxed text-on-band-muted">
-            {error}
+          <p className="mx-auto mt-3 max-w-sm text-[13px] leading-relaxed text-on-band-muted">
+            We couldn’t prepare this session right now. Please try again shortly.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <button
@@ -183,7 +184,7 @@ export function SessionPage() {
   return (
     <div>
       {preview && (
-        <div className="border-b border-on-band/10 bg-band-deep">
+        <div className="border-b border-line bg-band-soft/60">
           <div className="mx-auto max-w-3xl px-5 py-4 sm:px-8">
             <p className={cx(monoLabel, 'text-on-band-muted')}>preview</p>
             <p className="mt-2 text-[13.5px] leading-relaxed text-on-band-dim">
@@ -199,7 +200,7 @@ export function SessionPage() {
       )}
 
       {/* session header */}
-      <header className="border-b border-on-band/10 bg-panel">
+      <header className="border-b border-line bg-white">
         <div className="mx-auto max-w-3xl px-5 pt-6 sm:px-8">
           <Link
             to="/app/path"
@@ -210,11 +211,11 @@ export function SessionPage() {
 
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="font-display text-[28px] font-light leading-[1.15] tracking-[-0.025em] text-on-band sm:text-[34px]">
+              <h1 className="font-display text-[28px] font-extrabold leading-[1.06] tracking-[-0.045em] text-on-band sm:text-[34px]">
                 {section.title}
               </h1>
               <p className={cx(monoLabel, 'mt-3')}>
-                {sessionMinutes} min · {doneCount} of {activities.length} complete
+                {formatDuration(sessionMinutes)} · {doneCount} of {activities.length} complete
               </p>
             </div>
             <div className="hidden w-44 sm:block">
@@ -235,15 +236,15 @@ export function SessionPage() {
                     setActiveTab(activity.kind)
                   }}
                   className={cx(
-                    'flex shrink-0 items-center gap-3 border-b-2 px-4 py-3.5 text-[13.5px] transition-colors duration-150',
+                    'flex shrink-0 items-center gap-3 border-b-2 px-4 py-3.5 text-[12px] font-bold transition-colors duration-150',
                     isActive
                       ? 'border-accent-bright text-on-band'
-                      : 'border-transparent text-on-band-dim hover:text-on-band',
+                      : 'border-transparent text-on-band-muted hover:text-on-band',
                   )}
                 >
                   <span
                     className={cx(
-                      'font-mono text-[10.5px]',
+                      'text-[10px] font-extrabold',
                       done
                         ? 'text-success-bright'
                         : isActive
@@ -259,7 +260,7 @@ export function SessionPage() {
                   {activity.kind === 'read' && content && contentIsAllVideo(content)
                     ? 'Watch'
                     : kindLabels[activity.kind]}
-                  <span className={cx(monoLabel, 'hidden sm:inline')}>{activity.minutes} min</span>
+                    <span className={cx(monoLabel, 'hidden sm:inline')}>{formatDuration(activity.minutes)}</span>
                 </button>
               )
             })}
@@ -316,7 +317,7 @@ export function SessionPage() {
             )}
 
             {/* mobile pager */}
-            <div className="mx-auto mt-10 flex max-w-3xl items-center justify-between gap-3 border-t border-on-band/10 pt-6">
+            <div className="mx-auto mt-10 flex max-w-3xl items-center justify-between gap-3 border-t border-line pt-6">
               <button
                 type="button"
                 onClick={() => {
@@ -365,31 +366,31 @@ function SessionComplete({
   const stats: [string, string][] = [
     [String(sessions), 'sessions'],
     [`${percent}%`, 'path done'],
-    [`${minutes}m`, 'learned today'],
+        [formatDuration(minutes), 'learned today'],
   ]
 
   return (
     <div className="mx-auto max-w-xl animate-rise py-6 text-center">
       <p className={cx(monoLabel, 'text-accent-bright')}>session complete</p>
-      <h2 className="mt-4 font-display text-[30px] font-light tracking-[-0.025em] text-on-band">
+      <h2 className="mt-3 font-display text-[30px] font-extrabold tracking-[-0.045em] text-on-band">
         That is today done.
       </h2>
-      <p className="mt-3 text-[14.5px] text-on-band-muted">{minutes} minutes completed.</p>
+      <p className="mt-3 text-[13px] text-on-band-muted">{formatDuration(minutes)} completed.</p>
 
-      <div className="mt-8 grid border border-on-band/15 bg-panel sm:grid-cols-3">
+      <div className="mt-8 grid overflow-hidden rounded-2xl border border-line bg-white shadow-[0_8px_28px_rgba(33,27,42,.04)] sm:grid-cols-3">
         {stats.map(([value, label]) => (
           <div
             key={label}
-            className="border-b border-on-band/10 px-4 py-5 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
+            className="border-b border-line px-4 py-5 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
           >
-            <p className="font-display text-[24px] font-light text-on-band">{value}</p>
+            <p className="font-display text-[22px] font-extrabold tracking-[-0.03em] text-on-band">{value}</p>
             <p className={cx(monoLabel, 'mt-2')}>{label}</p>
           </div>
         ))}
       </div>
 
       {adaptationNote && (
-        <p className="mt-6 border-l-2 border-accent-bright/50 bg-band-deep px-5 py-4 text-left text-[14px] leading-relaxed text-on-band-muted">
+        <p className="mt-6 rounded-xl border-l-2 border-accent-bright/50 bg-band-soft px-5 py-4 text-left text-[12px] leading-relaxed text-on-band-muted">
           {adaptationNote}
         </p>
       )}

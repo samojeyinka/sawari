@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Footer, Header } from '../components/landing'
 import { catalogApi, type ApiCatalogPathDetail, type ApiCatalogReview } from '../lib/api'
+import { formatDuration } from '../lib/utils'
 import './CourseDetail.css'
 
 const levelLabel: Record<string, string> = {
@@ -137,7 +138,7 @@ export function CourseDetailPage() {
                     <span className="course-detail-rating"><span aria-hidden="true">★</span> {course.reviewsCount ? course.reviewsAvg.toFixed(1) : 'New'}</span>
                     {course.reviewsCount > 0 && <span>{course.reviewsCount.toLocaleString()} reviews</span>}
                     <span>{course.enrollments.toLocaleString()} learners</span>
-                    <span>{course.expectedHours ? `${course.expectedHours} hours` : totalMinutes ? `${Math.round(totalMinutes / 60)} hours` : 'Self-paced'}</span>
+                    <span>{course.expectedHours ? `${course.expectedHours} hours` : totalMinutes ? formatDuration(totalMinutes) : 'Self-paced'}</span>
                     <span>{course.level ? levelLabel[course.level] ?? course.level : 'All levels'}</span>
                   </div>
                 </header>
@@ -164,7 +165,7 @@ export function CourseDetailPage() {
 
               <aside className="course-detail-outline" aria-label="Course content">
                 <div className="course-detail-outline-heading"><div><span>YOUR LEARNING PLAN</span><h2>Course content</h2></div><span className="course-detail-module-count">{orderedSections.length}</span></div>
-                <p className="course-detail-outline-meta">{orderedSections.length} modules <span>·</span> {totalMinutes ? `${Math.round(totalMinutes / 60)} hours total` : 'Self-paced'}</p>
+                <p className="course-detail-outline-meta">{orderedSections.length} modules <span>·</span> {totalMinutes ? `${formatDuration(totalMinutes)} total` : 'Self-paced'}</p>
                 <div className="course-detail-facts">
                   <div><span>Level</span><strong>{course.level ? levelLabel[course.level] ?? course.level : 'All levels'}</strong></div>
                   <div><span>Category</span><strong>{course.category || 'General'}</strong></div>
@@ -175,11 +176,11 @@ export function CourseDetailPage() {
                   {orderedSections.length ? orderedSections.map((section, index) => {
                     const resources = section.content.resources ?? (section.content.resource ? [section.content.resource] : [])
                     return <details className="course-detail-module" key={section.id} open={index === 0}>
-                      <summary><span className="course-detail-module-number">{String(index + 1).padStart(2, '0')}</span><span className="course-detail-module-title">{section.title}</span><span className="course-detail-module-duration">{section.minutes ? `${section.minutes} min` : ''}</span><svg aria-hidden="true" viewBox="0 0 20 20"><path d="m5 7 5 5 5-5" /></svg></summary>
+                      <summary><span className="course-detail-module-number">{String(index + 1).padStart(2, '0')}</span><span className="course-detail-module-title">{section.title}</span><span className="course-detail-module-duration">{section.minutes ? formatDuration(section.minutes) : ''}</span><svg aria-hidden="true" viewBox="0 0 20 20"><path d="m5 7 5 5 5-5" /></svg></summary>
                       <div className="course-detail-module-body"><strong>{section.content.lesson?.title || section.title}</strong>{section.description && <p>{section.description}</p>}{section.content.lesson?.intro && <p>{section.content.lesson.intro}</p>}
                         {resources.map((resource) => safeResourceUrl(resource.url)
-                          ? <a className="course-detail-resource" key={resource.id} href={safeResourceUrl(resource.url)!} target="_blank" rel="noreferrer"><span><span className="course-detail-resource-kind">{resource.kind}</span>{resource.title}</span><small>{resource.minutes} min ↗</small></a>
-                          : <div className="course-detail-resource" key={resource.id}><span><span className="course-detail-resource-kind">{resource.kind}</span>{resource.title}</span><small>{resource.minutes} min</small></div>)}
+                          ? <a className="course-detail-resource" key={resource.id} href={safeResourceUrl(resource.url)!} target="_blank" rel="noreferrer"><span><span className="course-detail-resource-kind">{resource.kind}</span>{resource.title}</span><small>{formatDuration(resource.minutes)} ↗</small></a>
+                          : <div className="course-detail-resource" key={resource.id}><span><span className="course-detail-resource-kind">{resource.kind}</span>{resource.title}</span><small>{formatDuration(resource.minutes)}</small></div>)}
                       </div>
                     </details>
                   }) : <div className="course-detail-no-modules">Course content is being prepared.</div>}

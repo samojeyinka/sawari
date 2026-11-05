@@ -415,7 +415,7 @@ export function SetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-band text-on-band-muted [--color-band:#faf9f7] [--color-band-soft:#f3f0f8] [--color-band-deep:#f3f2ee] [--color-panel:#fff] [--color-panel-soft:#fcfbfd] [--color-on-band:#211b2a] [--color-on-band-muted:#514a58] [--color-on-band-dim:#77717e] [--color-accent:#713bd1] [--color-accent-strong:#51249c] [--color-accent-soft:#f3f0f8] [--color-accent-bright:#713bd1] [--color-success:#157f5f] [--color-success-bright:#157f5f] [--color-danger-bright:#b42318] [--color-line:#e8e4ec] [--color-line-strong:#d7d0df]">
+    <div className="min-h-screen bg-band text-on-band-muted">
       <header className="border-b border-line bg-white">
         <div className="mx-auto flex h-[68px] max-w-[1160px] items-center justify-between gap-6 px-5 sm:h-[76px] sm:px-8">
           <Link to="/" aria-label="Sawari home">

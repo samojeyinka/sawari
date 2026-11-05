@@ -4,6 +4,7 @@ import { useApp } from '../../state/store'
 import { pathPercent } from '../../data'
 import { monoLabel } from './nav'
 import { cx } from '../../lib/utils'
+import { LuChevronDown, LuPlus } from 'react-icons/lu'
 
 export function PathSwitcher({ onNavigate }: { onNavigate?: () => void }) {
   const { state, activePath, activatePath } = useApp()
@@ -41,25 +42,17 @@ export function PathSwitcher({ onNavigate }: { onNavigate?: () => void }) {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-haspopup="listbox"
-          className="group w-full border border-on-band/15 bg-panel px-3.5 py-3 text-left transition-colors hover:border-on-band/35"
+          className="group w-full rounded-2xl border border-line bg-band-soft/70 p-3.5 text-left transition-colors hover:border-accent-bright/30 hover:bg-band-soft"
         >
-          <span className="flex items-baseline justify-between gap-3">
-            <span className={monoLabel}>active path</span>
-            <span
-              className={cx(
-                monoLabel,
-                'transition-colors',
-                open ? 'text-accent-bright' : 'text-on-band-dim group-hover:text-on-band',
-              )}
-            >
-              {open ? 'close' : 'switch'}
-            </span>
+          <span className="flex items-center justify-between gap-3">
+            <span className={cx(monoLabel, 'text-[10px]')}>Your learning path</span>
+            <LuChevronDown aria-hidden="true" className={cx('h-4 w-4 text-on-band-dim transition-transform duration-300', open && 'rotate-180')} />
           </span>
-          <span className="mt-1.5 block truncate text-[13.5px] text-on-band">
+          <span className="mt-2 block truncate text-[13px] font-bold text-on-band">
             {activePath ? activePath.subject : 'No paths yet'}
           </span>
-          <span className={cx(monoLabel, 'mt-1 block')}>
-            {activePath ? `${pathPercent(activePath)}% complete` : 'create one to start'}
+          <span className="mt-1 block text-[11px] font-medium text-on-band-dim">
+            {activePath ? `${pathPercent(activePath)}% complete` : 'Create a path to start learning'}
           </span>
         </button>
 
@@ -67,7 +60,7 @@ export function PathSwitcher({ onNavigate }: { onNavigate?: () => void }) {
           <div
             role="listbox"
             aria-label="Learning paths"
-            className="absolute left-0 right-0 top-full z-40 mt-1.5 animate-rise border border-on-band/20 bg-panel"
+            className="absolute left-0 right-0 top-full z-40 mt-2 animate-rise overflow-hidden rounded-2xl border border-line bg-white shadow-[0_14px_36px_rgba(33,27,42,.14)]"
           >
             {state.paths.map((path) => {
               const pct = pathPercent(path)
@@ -80,14 +73,14 @@ export function PathSwitcher({ onNavigate }: { onNavigate?: () => void }) {
                   aria-selected={isActive}
                   onClick={() => pick(path.id)}
                   className={cx(
-                    'w-full border-b border-on-band/10 px-3.5 py-3 text-left transition-colors last:border-b-0',
-                    isActive ? 'bg-on-band/[0.05]' : 'hover:bg-on-band/[0.03]',
+                    'w-full border-b border-line px-3.5 py-3 text-left transition-colors last:border-b-0',
+                    isActive ? 'bg-band-soft' : 'hover:bg-band-soft/70',
                   )}
                 >
                   <span className="flex items-baseline justify-between gap-3">
                     <span
                       className={cx(
-                        'truncate text-[13.5px]',
+                        'truncate text-[12px] font-bold',
                         isActive ? 'text-accent-bright' : 'text-on-band',
                       )}
                     >
@@ -95,9 +88,9 @@ export function PathSwitcher({ onNavigate }: { onNavigate?: () => void }) {
                     </span>
                     <span className={cx(monoLabel, 'shrink-0')}>{pct}%</span>
                   </span>
-                  <span className="mt-2 block h-[3px] w-full bg-on-band/10">
+                  <span className="mt-2 block h-1.5 w-full overflow-hidden rounded-full bg-line">
                     <span
-                      className="block h-full bg-accent-bright transition-all duration-500"
+                      className="block h-full rounded-full bg-accent-bright transition-all duration-500"
                       style={{ width: `${pct}%` }}
                     />
                   </span>
@@ -111,11 +104,9 @@ export function PathSwitcher({ onNavigate }: { onNavigate?: () => void }) {
       <button
         type="button"
         onClick={createPath}
-        className="mt-2 w-full border border-dashed border-on-band/25 px-3.5 py-3 text-left text-[13.5px] text-on-band-dim transition-colors hover:border-accent-bright/60 hover:text-on-band"
+        className="mt-2 flex w-full items-center gap-2 rounded-xl border border-dashed border-line-strong bg-white px-3.5 py-2.5 text-left text-[12px] font-bold text-on-band-muted transition-colors hover:border-accent-bright/50 hover:bg-band-soft hover:text-accent-bright"
       >
-        <span aria-hidden="true" className="mr-2 font-mono text-accent-bright">
-          +
-        </span>
+        <LuPlus aria-hidden="true" className="h-4 w-4 text-accent-bright" />
         New learning path
       </button>
     </div>

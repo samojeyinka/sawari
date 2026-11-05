@@ -3,14 +3,15 @@ import { monoLabel } from '../layout/nav'
 import { formatPacingTime, useActivityPacing } from '../../hooks/useActivityPacing'
 import { DigestionTracker } from './DigestionTracker'
 import { PreviewNotice } from './PreviewNotice'
-import { cx } from '../../lib/utils'
+import { cx, formatDuration } from '../../lib/utils'
 
 const primaryBtn =
-  'group relative inline-flex h-12 items-center justify-center overflow-hidden bg-on-band px-7 ' +
-  'text-[14.5px] font-medium text-band transition-colors'
+  'group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-full bg-[#51249c] px-6 ' +
+  'text-[13px] font-extrabold text-white shadow-[0_5px_14px_rgba(113,59,209,.2)] transition-[transform,box-shadow] ' +
+  'hover:-translate-y-px hover:shadow-[0_8px_20px_rgba(113,59,209,.25)]'
 const quietBtn =
-  'inline-flex h-11 items-center justify-center border border-on-band/20 px-5 text-[13.5px] ' +
-  'text-on-band-dim transition-colors hover:border-on-band/45 hover:text-on-band'
+  'inline-flex h-11 items-center justify-center rounded-full border border-line-strong bg-white px-5 text-[12px] ' +
+  'font-bold text-on-band-muted transition-colors hover:border-accent-bright/50 hover:text-accent-bright'
 
 export function LessonView({
   activityId,
@@ -34,11 +35,11 @@ export function LessonView({
 
   return (
     <article className="mx-auto max-w-3xl animate-rise">
-      <p className={monoLabel}>learn · {lesson.minutes} min base</p>
-      <h2 className="mt-3 font-display text-[26px] font-light leading-[1.15] tracking-[-0.025em] text-on-band sm:text-[32px]">
+      <p className={monoLabel}>learn · {formatDuration(lesson.minutes)} base</p>
+      <h2 className="mt-3 font-display text-[26px] font-extrabold leading-[1.1] tracking-[-0.04em] text-on-band sm:text-[32px]">
         {lesson.title}
       </h2>
-      <p className="mt-5 border-l-2 border-accent-bright/50 pl-5 text-[16.5px] leading-relaxed text-on-band-muted">
+      <p className="mt-5 border-l-2 border-accent-bright/50 pl-5 text-[14px] leading-relaxed text-on-band-muted">
         {lesson.intro}
       </p>
 
@@ -50,7 +51,7 @@ export function LessonView({
         ))}
       </div>
 
-      <div className="mt-10 flex flex-wrap items-center gap-4 border-t border-on-band/10 pt-6">
+        <div className="mt-10 flex flex-wrap items-center gap-4 border-t border-line pt-6">
         {done ? (
           <span className={cx(monoLabel, 'text-success-bright')}>lesson complete</span>
         ) : preview ? (
@@ -77,11 +78,11 @@ export function LessonView({
 function Block({ block }: { block: LessonBlock }) {
   switch (block.type) {
     case 'p':
-      return <p className="mb-5 text-[15.5px] leading-[1.75] text-on-band-muted">{block.text}</p>
+      return <p className="mb-5 text-[14px] leading-[1.75] text-on-band-muted">{block.text}</p>
 
     case 'h':
       return (
-        <h3 className="mb-3 mt-9 font-display text-[19px] font-light tracking-[-0.015em] text-on-band">
+        <h3 className="mb-3 mt-9 font-display text-[18px] font-extrabold tracking-[-0.03em] text-on-band">
           {block.text}
         </h3>
       )
@@ -90,10 +91,10 @@ function Block({ block }: { block: LessonBlock }) {
       return (
         <ul className="mb-6 space-y-3">
           {block.items.map((item, i) => (
-            <li key={i} className="flex gap-3.5 text-[15.5px] leading-[1.75] text-on-band-muted">
+            <li key={i} className="flex gap-3.5 text-[14px] leading-[1.75] text-on-band-muted">
               <span
                 aria-hidden="true"
-                className="mt-2.5 h-1.5 w-1.5 shrink-0 bg-accent-bright/70"
+                className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-bright/70"
               />
               <span>{item}</span>
             </li>
@@ -105,8 +106,8 @@ function Block({ block }: { block: LessonBlock }) {
       return (
         <ol className="mb-6 space-y-3.5">
           {block.items.map((item, i) => (
-            <li key={i} className="flex gap-4 text-[15.5px] leading-[1.75] text-on-band-muted">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center border border-on-band/20 font-mono text-[11px] text-on-band-dim">
+            <li key={i} className="flex gap-4 text-[14px] leading-[1.75] text-on-band-muted">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-line-strong bg-white text-[10px] font-extrabold text-on-band-dim">
                 {String(i + 1).padStart(2, '0')}
               </span>
               <span>{item}</span>
@@ -117,9 +118,9 @@ function Block({ block }: { block: LessonBlock }) {
 
     case 'note':
       return (
-        <aside className="mb-7 border-l-2 border-accent-bright/50 bg-band-deep px-5 py-4">
+        <aside className="mb-7 rounded-xl border-l-2 border-accent-bright/50 bg-band-soft px-5 py-4">
           <p className={cx(monoLabel, 'text-accent-bright')}>{block.title}</p>
-          <p className="mt-2 text-[15px] leading-relaxed text-on-band-muted">{block.text}</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-on-band-muted">{block.text}</p>
         </aside>
       )
   }

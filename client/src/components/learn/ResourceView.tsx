@@ -40,7 +40,7 @@ export function ResourceView({
       {!preview && <DigestionTracker pacing={pacing} baseMinutes={totalMinutes} />}
 
       {/* Action / Completion bar */}
-      <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-on-band/10 pt-6">
+      <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-line pt-6">
         {done ? (
           <span className={cx(monoLabel, 'text-success-bright')}>
             {allVideo ? 'marked as watched' : 'marked as read'}

@@ -1,51 +1,48 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Manrope gives the product a cleaner, more approachable learning-marketplace voice. */
+  /* Manrope is the shared product typeface, including labels and metadata. */
   --font-sans: 'Manrope', system-ui, sans-serif;
   --font-display: 'Manrope', system-ui, sans-serif;
-  --font-mono:
-    'PPNeueMontrealMono', 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-mono: 'Manrope', system-ui, sans-serif;
 
-  /* neutrals: warm grays */
-  --color-ink: #17181c;
-  --color-ink-soft: #33353b;
-  --color-body: #55575e;
-  --color-muted: #83858d;
+  /* warm paper, dark plum ink, and a clear violet accent */
+  --color-ink: #211b2a;
+  --color-ink-soft: #30283b;
+  --color-body: #514a58;
+  --color-muted: #77717e;
   --color-faint: #a5a7ae;
-  --color-line: #e8e6e1;
-  --color-line-strong: #d7d5cf;
+  --color-line: #e8e4ec;
+  --color-line-strong: #d7d0df;
   --color-canvas: #faf9f7;
   --color-canvas-deep: #f3f2ee;
 
-  /* accent: calm teal, used sparingly */
-  --color-accent: #0f766e;
-  --color-accent-strong: #0b5f59;
-  --color-accent-soft: #e7f2f0;
-  --color-success: #157f5f;
-  --color-success-soft: #e9f4ef;
+  --color-accent: #713bd1;
+  --color-accent-strong: #51249c;
+  --color-accent-soft: #f3f0f8;
+  --color-success: #713bd1;
+  --color-success-soft: #f3f0f8;
   --color-danger: #b42318;
   --color-danger-soft: #fbeceb;
   --color-warn: #b45309;
   --color-warn-soft: #fdf3e7;
 
-  /* cool navy bands + cards: shared by the public pages and the app shell */
-  --color-band: #001e2b;
-  --color-band-soft: #072736;
-  --color-band-deep: #001521;
-  --color-band-teal: #06283a;
-  --color-panel: #0b2a3a;
-  --color-panel-soft: #133b4e;
+  --color-band: #faf9f7;
+  --color-band-soft: #f3f0f8;
+  --color-band-deep: #f3f2ee;
+  --color-band-teal: #f1efec;
+  --color-panel: #fff;
+  --color-panel-soft: #fcfbfd;
   --color-cream: #f4efe6;
   --color-cream-deep: #eae3d5;
-  --color-on-band: #f2f5f7;
-  --color-on-band-muted: #cdd8de;
-  --color-on-band-dim: #93a7b1;
-  --color-accent-bright: #35b3a3;
-  --color-success-bright: #3fca96;
-  --color-warn-bright: #e8a15c;
-  --color-danger-bright: #f4978e;
-  --color-blue-bright: #5aaad2;
+  --color-on-band: #211b2a;
+  --color-on-band-muted: #514a58;
+  --color-on-band-dim: #77717e;
+  --color-accent-bright: #713bd1;
+  --color-success-bright: #713bd1;
+  --color-warn-bright: #b45309;
+  --color-danger-bright: #b42318;
+  --color-blue-bright: #4e91b1;
 }
 
 /* Public landing: warm paper, dark ink, and a confident violet accent. */
@@ -251,15 +248,15 @@
 .landing-time-image { position: relative; min-height: 390px; overflow: hidden; border-radius: 14px; background: #d9d4de; }
 .landing-time-image > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .landing-time-note { position: absolute; right: 18px; bottom: 18px; display: flex; min-width: 220px; flex-direction: column; border: 1px solid rgba(255,255,255,.7); border-radius: 12px; background: rgba(255,255,255,.88); padding: 15px 17px; box-shadow: 0 12px 35px rgba(33,27,42,.14); backdrop-filter: blur(12px); }
-.landing-time-note span { color: #713bd1; font: 700 9px 'DM Mono', monospace; letter-spacing: .1em; }
+.landing-time-note span { color: #713bd1; font: 700 9px 'Manrope', sans-serif; letter-spacing: .1em; }
 .landing-time-note strong { margin-top: 7px; color: #211b2a; font-size: 15px; }
 .landing-time-note small { margin-top: 3px; color: #77717e; font-size: 11px; }
 .landing-time-points { display: grid; gap: 0; margin-top: 21px; border-top: 1px solid #eeeaf0; }
 .landing-time-points p { display: flex; align-items: center; gap: 13px; border-bottom: 1px solid #eeeaf0; padding: 11px 0; color: #514a58; font-size: 12px; font-weight: 700; }
-.landing-time-points span { color: #713bd1; font: 700 10px 'DM Mono', monospace; }
+.landing-time-points span { color: #713bd1; font: 700 10px 'Manrope', sans-serif; }
 .landing-steps-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 34px; }
 .landing-step-card { min-height: 196px; border: 1px solid #e9e5ed; border-radius: 12px; background: #faf9f7; padding: 22px; }
-.landing-step-card > span { color: #713bd1; font: 700 11px 'DM Mono', monospace; }
+.landing-step-card > span { color: #713bd1; font: 700 11px 'Manrope', sans-serif; }
 .landing-step-card h3 { margin-top: 24px; color: #211b2a; font-size: 18px; font-weight: 800; }
 .landing-step-card p { margin-top: 8px; color: #77717e; font-size: 13px; line-height: 1.55; }
 .landing-closing { background: radial-gradient(ellipse at 80% 0%, #7a36c7, transparent 46%), #211b2a; }
@@ -399,39 +396,8 @@
   }
 }
 
-/* ---------- app dark band theme ----------
-   The signed-in app shares the landing's dark "band" aesthetic. We remap the
-   semantic tokens inside this wrapper so the existing utility classes in the
-   pages/components resolve to dark values without touching each file. */
+/* Compatibility wrapper for older screens; shared tokens now use the universal light palette. */
 .app-theme {
-  /* cool navy surfaces instead of the warm brown "band":
-     sidebar #112733, main content #001E2B, cards/panels a step above */
-  --color-band: #011721;
-  --color-band-soft: #072736;
-  --color-band-deep: #001521;
-  --color-panel: #0b2a3a;
-  --color-panel-soft: #133b4e;
-
-  --color-ink: #f2f5f7;
-  --color-ink-soft: #dde5ea;
-  --color-body: #cdd8de;
-  --color-muted: #b5c4cc;
-  --color-faint: #93a7b1;
-  --color-line: rgba(203, 225, 235, 0.14);
-  --color-line-strong: rgba(203, 225, 235, 0.26);
-  --color-canvas: #0f222d;
-  --color-canvas-deep: #0a3243;
-
-  --color-accent: #35b3a3;
-  --color-accent-strong: #7fd8cb;
-  --color-accent-soft: rgba(53, 179, 163, 0.14);
-  --color-success: #3fca96;
-  --color-success-soft: rgba(63, 202, 150, 0.14);
-  --color-danger: #f4978e;
-  --color-danger-soft: rgba(244, 151, 142, 0.14);
-  --color-warn: #e8a15c;
-  --color-warn-soft: rgba(232, 161, 92, 0.14);
-
   color: var(--color-body);
 }
 
@@ -629,35 +595,6 @@
   justify-content: center;
 }
 
-/* the twin label: drawn from data-label so the DOM text stays single */
-.kinetic-ghost::before {
-  content: attr(data-label);
-}
-
-/* ---------- hero backdrop: teal dusk wash + cool blue glow ---------- */
-.hero-wash {
-  background:
-    radial-gradient(60% 55% at 78% 18%, rgba(53, 179, 163, 0.16), transparent 65%),
-    radial-gradient(45% 40% at 12% 85%, rgba(90, 170, 210, 0.1), transparent 70%),
-    radial-gradient(80% 90% at 50% -10%, #0a2b3a, transparent 75%),
-    var(--color-band);
-}
-
-/* faint ruled grid, like squared paper; anchored right so the coloured
-   HeroGrid cells in the same 56px lattice line up with the lines */
-.hero-grid::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(203, 225, 235, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(203, 225, 235, 0.05) 1px, transparent 1px);
-  background-size: 56px 56px;
-  background-position: right top;
-  mask-image: radial-gradient(75% 75% at 50% 35%, black, transparent 100%);
-  pointer-events: none;
-}
-
 /* expanding section rows */
 .reveal {
   display: grid;
@@ -691,9 +628,7 @@
   border-radius: 3px;
 }
 
-/* ---------- date picker (react-day-picker) ----------
-   The package ships its own stylesheet; we only remap its CSS variables to the
-   app's dark band theme and soften a few defaults. */
+/* ---------- date picker (react-day-picker) ---------- */
 .app-theme .rdp-root {
   --rdp-accent-color: var(--color-accent);
   --rdp-accent-background-color: var(--color-accent-soft);
@@ -704,7 +639,7 @@
   --rdp-day_button-height: 34px;
   --rdp-day_button-width: 34px;
   --rdp-day_button-border: 0;
-  --rdp-day_button-border-radius: 0;
+  --rdp-day_button-border-radius: 999px;
   --rdp-selected-border: 0;
 
   --rdp-nav_button-height: 2rem;
@@ -725,7 +660,7 @@
 }
 
 .app-theme .rdp-root .rdp-nav button {
-  border-radius: 0;
+  border-radius: 999px;
   transition: background-color 0.12s ease;
 }
 
@@ -761,7 +696,7 @@
 
 .app-theme .rdp-root .rdp-selected .rdp-day_button {
   background-color: var(--color-accent);
-  color: #08231f;
+  color: #fff;
   font-weight: 600;
 }
 

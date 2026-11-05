@@ -14,17 +14,21 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<Variant, string> = {
-  primary: 'group relative overflow-hidden bg-on-band text-band hover:bg-white',
-  secondary: 'border border-on-band/20 text-on-band hover:border-on-band/45',
-  ghost: 'text-on-band-dim hover:text-on-band',
-  accent: 'bg-accent-bright text-band hover:bg-accent-bright/85',
-  danger: 'border border-danger-bright/40 text-danger-bright hover:bg-danger-bright/10',
+  primary:
+    'group relative overflow-hidden rounded-full bg-[#51249c] text-white shadow-[0_5px_14px_rgba(113,59,209,.2)] ' +
+    'transition-[transform,box-shadow] hover:-translate-y-px hover:shadow-[0_8px_20px_rgba(113,59,209,.25)]',
+  secondary: 'rounded-full border border-line-strong bg-white text-on-band-muted hover:border-accent-bright/50 hover:text-accent-bright',
+  ghost: 'rounded-full text-on-band-muted hover:bg-band-soft hover:text-on-band',
+  accent:
+    'rounded-full bg-[#51249c] text-white shadow-[0_5px_14px_rgba(113,59,209,.2)] ' +
+    'transition-[transform,box-shadow] hover:-translate-y-px hover:bg-[#6130ae] hover:shadow-[0_8px_20px_rgba(113,59,209,.25)]',
+  danger: 'rounded-full border border-danger/25 bg-white text-danger hover:bg-danger-soft',
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'h-9 px-3.5 text-[13px] gap-1.5',
-  md: 'h-11 px-5 text-[14px] gap-2',
-  lg: 'h-12 px-6 text-[14.5px] gap-2',
+  sm: 'h-9 px-4 text-[12px] gap-1.5',
+  md: 'h-11 px-5 text-[13px] gap-2',
+  lg: 'h-12 px-6 text-[13px] gap-2',
 }
 
 export function Button({
@@ -39,7 +43,7 @@ export function Button({
   return (
     <button
       className={cx(
-        'inline-flex items-center justify-center font-medium transition-colors duration-150',
+        'inline-flex items-center justify-center font-extrabold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-bright/20',
         'disabled:pointer-events-none disabled:opacity-50',
         variants[variant],
         sizes[size],

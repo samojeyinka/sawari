@@ -5,7 +5,7 @@ import { Button } from '../ui/Button'
 import { inputClass } from '../ui/ProgressBar'
 import { monoLabel } from '../layout/nav'
 import { PreviewNotice } from './PreviewNotice'
-import { cx } from '../../lib/utils'
+import { cx, formatDuration } from '../../lib/utils'
 
 const reviewTone: Record<
   PracticeReviewResult['status'],
@@ -103,7 +103,7 @@ export function PracticeView({
   return (
     <div className="mx-auto max-w-3xl animate-rise">
       <div className="flex items-start justify-between gap-3">
-        <p className={monoLabel}>practice · {practice.minutes} min</p>
+        <p className={monoLabel}>practice · {formatDuration(practice.minutes)}</p>
         {practice.kind === 'classify' && !done && (
           <p className={monoLabel}>
             {answered} of {items.length} answered
@@ -111,10 +111,10 @@ export function PracticeView({
         )}
       </div>
 
-      <h2 className="mt-3 font-display text-[26px] font-light leading-[1.15] tracking-[-0.025em] text-on-band sm:text-[32px]">
+      <h2 className="mt-3 font-display text-[26px] font-extrabold leading-[1.1] tracking-[-0.04em] text-on-band sm:text-[32px]">
         {practice.title}
       </h2>
-      <p className="mt-3 text-[15.5px] leading-relaxed text-on-band-muted">{practice.brief}</p>
+      <p className="mt-3 text-[14px] leading-relaxed text-on-band-muted">{practice.brief}</p>
 
       {practice.kind === 'classify' ? (
         <div className="mt-6 space-y-4">
@@ -124,9 +124,9 @@ export function PracticeView({
             const choiceIsRight = hasAnswer && picked === item.correctIndex
 
             return (
-              <div key={item.id} className="border border-on-band/15 bg-panel p-4 sm:p-5">
-                <p className="text-[15px] font-medium text-on-band">{item.label}</p>
-                {item.detail && <p className="mt-0.5 text-sm text-on-band-dim">{item.detail}</p>}
+              <div key={item.id} className="rounded-2xl border border-line bg-white p-4 shadow-[0_8px_28px_rgba(33,27,42,.04)] sm:p-5">
+                <p className="text-[13px] font-bold text-on-band">{item.label}</p>
+                {item.detail && <p className="mt-0.5 text-[11px] text-on-band-dim">{item.detail}</p>}
 
                 <div className="mt-3.5 grid gap-2 sm:grid-cols-2">
                   {item.options.map((option, index) => {
@@ -139,12 +139,12 @@ export function PracticeView({
                         disabled={hasAnswer || preview}
                         onClick={() => answer(item.id, index)}
                         className={cx(
-                          'flex items-center justify-between gap-2 border px-3.5 py-2.5 text-left text-sm transition-colors duration-150',
+                          'flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-left text-[12px] font-semibold transition-colors duration-150',
                           !hasAnswer &&
-                            'border-on-band/20 text-on-band hover:border-on-band/45 hover:bg-on-band/[0.03]',
-                          correct && 'border-success-bright/40 bg-success-bright/10 font-medium text-success-bright',
-                          chosen && !correct && 'border-danger-bright/40 bg-danger-bright/10 text-danger-bright',
-                          hasAnswer && !correct && !chosen && 'border-on-band/10 text-on-band-dim',
+                            'border-line-strong bg-white text-on-band hover:border-accent-bright/50 hover:bg-band-soft/40',
+                          correct && 'border-success/25 bg-success-soft font-bold text-success',
+                          chosen && !correct && 'border-danger/25 bg-danger-soft text-danger',
+                          hasAnswer && !correct && !chosen && 'border-line bg-white text-on-band-dim',
                         )}
                       >
                         <span>{option}</span>
@@ -162,10 +162,10 @@ export function PracticeView({
                 {hasAnswer && (
                   <div
                     className={cx(
-                      'mt-3 border px-3.5 py-3',
+                      'mt-3 rounded-xl border px-3.5 py-3',
                       choiceIsRight
-                        ? 'border-success-bright/40 bg-success-bright/10'
-                        : 'border-warn-bright/40 bg-warn-bright/10',
+                        ? 'border-success/25 bg-success-soft'
+                        : 'border-warn/25 bg-warn-soft',
                     )}
                   >
                     <p
@@ -176,10 +176,10 @@ export function PracticeView({
                     >
                       {choiceIsRight ? 'correct' : 'not quite'}
                     </p>
-                    <p className="mt-1 text-sm leading-relaxed text-on-band-muted">{item.feedback}</p>
+                    <p className="mt-1 text-[12px] leading-relaxed text-on-band-muted">{item.feedback}</p>
                     {!choiceIsRight && (
-                      <p className="mt-1.5 text-[13px] text-on-band-dim">
-                        Best answer: <span className="font-medium text-on-band">{item.options[item.correctIndex]}</span>
+                      <p className="mt-1.5 text-[11px] text-on-band-dim">
+                        Best answer: <span className="font-bold text-on-band">{item.options[item.correctIndex]}</span>
                       </p>
                     )}
                   </div>
@@ -190,7 +190,7 @@ export function PracticeView({
         </div>
       ) : (
         <div className="mt-6">
-          <label htmlFor="practice-answer" className="mb-2 block text-sm font-medium text-on-band">
+          <label htmlFor="practice-answer" className="mb-2 block text-[12px] font-bold text-on-band">
             {practice.prompt}
           </label>
           <textarea
@@ -234,7 +234,7 @@ export function PracticeView({
 
           {/* AI Review feedback card */}
           {review && (
-            <div className={cx('mt-5 border p-4 sm:p-5', reviewTone[review.status].box)}>
+            <div className={cx('mt-5 rounded-2xl border p-4 sm:p-5', reviewTone[review.status].box)}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className={cx(monoLabel, reviewTone[review.status].text)}>
                   {reviewTone[review.status].label}
@@ -242,13 +242,13 @@ export function PracticeView({
                 <p className={monoLabel}>accuracy score {review.score}/100</p>
               </div>
 
-              <div className="mt-3 space-y-2.5 text-sm leading-relaxed">
+              <div className="mt-3 space-y-2.5 text-[12px] leading-relaxed">
                 <div>
                   <p className={cx(monoLabel, 'text-on-band-dim')}>what you got right</p>
                   <p className="mt-1 text-on-band">{review.feedback}</p>
                 </div>
 
-                <div className="border-t border-on-band/10 pt-2.5">
+                <div className="border-t border-line pt-2.5">
                   <p className={cx(monoLabel, 'text-on-band-dim')}>how it can be better</p>
                   <p className="mt-1 text-on-band-muted">{review.improvements}</p>
                 </div>
@@ -257,9 +257,9 @@ export function PracticeView({
           )}
 
           {revealed && practice.modelAnswer && (
-            <div className="mt-5 border border-on-band/15 bg-band-deep px-5 py-4">
+            <div className="mt-5 rounded-xl border border-line bg-band-soft px-5 py-4">
               <p className={monoLabel}>exemplar / model answer</p>
-              <p className="mt-2 text-[15px] leading-relaxed text-on-band-muted">
+              <p className="mt-2 text-[13px] leading-relaxed text-on-band-muted">
                 {practice.modelAnswer}
               </p>
             </div>
@@ -267,7 +267,7 @@ export function PracticeView({
         </div>
       )}
 
-      <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-on-band/10 pt-6">
+      <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-line pt-6">
         {done ? (
           <span className={cx(monoLabel, 'text-success-bright')}>practice complete</span>
         ) : preview ? (
@@ -295,7 +295,7 @@ export function PracticeView({
               </span>
             )}
             {practice.kind === 'written' && review && !review.acceptable && !revealed && (
-              <span className="text-[13px] font-medium text-warn-bright">
+              <span className="text-[12px] font-bold text-warn-bright">
                 Improve your answer above based on feedback, or reveal example answer.
               </span>
             )}

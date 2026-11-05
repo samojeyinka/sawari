@@ -1,4 +1,5 @@
 import type { LearningPath, PathSection, Resource, SessionActivity, SessionContent } from '../types'
+import { formatDuration } from '../lib/utils'
 
 export { mockUser, mockNotifications, mockSettings } from './user'
 export { mockProjects } from './projects'
@@ -86,9 +87,5 @@ export function pathMinutesLeft(path: LearningPath): number {
 }
 
 export function formatHours(minutes: number): string {
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  if (h === 0) return `${m} min`
-  if (m === 0) return `${h} hours`
-  return `${h}h ${m}m`
+  return formatDuration(minutes)
 }

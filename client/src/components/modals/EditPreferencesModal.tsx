@@ -83,7 +83,7 @@ export function EditPreferencesModal({
     >
       <div className="space-y-7">
         <div>
-          <p className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.09em] text-on-band-dim">
             Time each week
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -101,7 +101,7 @@ export function EditPreferencesModal({
         </div>
 
         <div>
-          <p className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.09em] text-on-band-dim">
             Intensity
           </p>
           <div className="mt-3 space-y-2">
@@ -133,7 +133,7 @@ export function EditPreferencesModal({
         </div>
 
         <div>
-          <p className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.09em] text-on-band-dim">
             Formats
           </p>
           <div className="mt-3 flex flex-wrap gap-2">

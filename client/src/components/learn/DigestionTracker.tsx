@@ -1,7 +1,7 @@
 import { ProgressBar } from '../ui/ProgressBar'
 import { monoLabel } from '../layout/nav'
 import { formatPacingTime, type PacingState } from '../../hooks/useActivityPacing'
-import { cx } from '../../lib/utils'
+import { cx, formatDuration } from '../../lib/utils'
 
 /**
  * Pacing readout for a lesson. It reports the same thing the old version did —
@@ -31,8 +31,8 @@ export function DigestionTracker({
           : { text: 'pacing complete', tone: 'text-success-bright' }
 
   return (
-    <section className="my-8 border border-on-band/15 bg-panel">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-on-band/10 px-5 py-4">
+    <section className="my-8 overflow-hidden rounded-2xl border border-line bg-white shadow-[0_8px_28px_rgba(33,27,42,.04)]">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line px-5 py-4">
         <div className="min-w-0">
           <p className={cx(monoLabel, isUnlocked ? 'text-success-bright' : 'text-accent-bright')}>
             {isUnlocked ? 'digestion complete' : 'deep absorption pacing'}
@@ -40,7 +40,7 @@ export function DigestionTracker({
           <p className="mt-2 text-[13.5px] leading-relaxed text-on-band-muted">
             {isUnlocked
               ? 'You invested the focus time required for deep comprehension.'
-              : `Base estimate ${baseMinutes} min · required digestion ${targetMinutes} min`}
+              : `Base estimate ${formatDuration(baseMinutes)} · required digestion ${formatDuration(targetMinutes)}`}
           </p>
         </div>
 
@@ -51,7 +51,7 @@ export function DigestionTracker({
               type="button"
               onClick={fastForward}
               title="Fast-forward timer (dev only)"
-              className="border border-on-band/20 px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim transition-colors hover:border-on-band/45 hover:text-on-band"
+              className="rounded-full border border-line-strong bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-on-band-dim transition-colors hover:border-accent-bright/50 hover:text-accent-bright"
             >
               dev skip
             </button>
@@ -68,8 +68,8 @@ export function DigestionTracker({
       </div>
 
       {!isUnlocked && (
-        <div className="border-t border-on-band/10 bg-band-deep px-5 py-4">
-          <p className="text-[13px] leading-relaxed text-on-band-dim">
+        <div className="border-t border-line bg-band-soft px-5 py-4">
+          <p className="text-[11px] leading-relaxed text-on-band-dim">
             <span className="text-on-band-muted">Why pacing is enforced. </span>
             Sawari prioritises retention over speed-reading. Giving a lesson twice its base time
             leaves room to re-read the difficult paragraphs and take notes before moving on.

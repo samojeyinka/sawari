@@ -21,21 +21,23 @@ import { ConfirmModal } from '../components/modals/ConfirmModal'
 import { cx } from '../lib/utils'
 
 const primaryBtn =
-  'group relative inline-flex h-12 items-center justify-center overflow-hidden bg-on-band px-7 ' +
-  'text-[14.5px] font-medium text-band transition-colors'
+  'group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-full bg-[#51249c] px-6 ' +
+  'text-[13px] font-extrabold text-white shadow-[0_5px_14px_rgba(113,59,209,.2)] transition-[transform,box-shadow] ' +
+  'hover:-translate-y-px hover:shadow-[0_8px_20px_rgba(113,59,209,.25)]'
 const primaryBtnSm =
-  'group relative inline-flex h-11 items-center justify-center overflow-hidden bg-on-band px-5 ' +
-  'text-[13.5px] font-medium text-band transition-colors'
+  'group relative inline-flex h-11 items-center justify-center overflow-hidden rounded-full bg-[#51249c] px-5 ' +
+  'text-[12px] font-extrabold text-white shadow-[0_5px_14px_rgba(113,59,209,.18)] transition-[transform,box-shadow] ' +
+  'hover:-translate-y-px hover:shadow-[0_8px_20px_rgba(113,59,209,.24)]'
 const ghostBtnSm =
-  'inline-flex h-11 items-center justify-center border border-on-band/20 px-4 text-[13.5px] ' +
-  'text-on-band transition-colors hover:border-on-band/45'
+  'inline-flex h-11 items-center justify-center rounded-full border border-line-strong bg-white px-4 text-[12px] ' +
+  'font-bold text-on-band-muted transition-colors hover:border-accent-bright/50 hover:text-accent-bright'
 
 /** The number cell that stands in for a status icon. */
 const markerStyles = {
-  completed: 'border-success-bright/40 bg-success-bright/10 text-success-bright',
-  current: 'border-accent-bright bg-accent-bright text-band',
-  upcoming: 'border-on-band/20 text-on-band-dim',
-  locked: 'border-on-band/12 text-on-band-dim/70',
+  completed: 'border-success/15 bg-success-soft text-success',
+  current: 'border-accent-bright bg-accent-bright text-white',
+  upcoming: 'border-line-strong bg-white text-on-band-dim',
+  locked: 'border-line bg-canvas-deep text-on-band-dim',
 }
 
 export function PathPage() {
@@ -61,12 +63,12 @@ export function PathPage() {
   if (!activePath) {
     return (
       <Page width="narrow">
-        <div className="border border-on-band/15 bg-panel px-8 py-16 text-center">
-          <p className={monoLabel}>no paths</p>
-          <h1 className="mt-4 font-display text-[28px] font-light tracking-[-0.025em] text-on-band">
+        <div className="animate-rise rounded-[24px] border border-line bg-white px-6 py-12 text-center shadow-[0_14px_44px_rgba(33,27,42,.06)] sm:px-8 sm:py-14">
+          <p className={cx(monoLabel, 'text-accent-bright')}>no paths</p>
+          <h1 className="mt-3 font-display text-[25px] font-extrabold tracking-[-0.04em] text-on-band sm:text-[30px]">
             You have no paths left.
           </h1>
-          <p className="mx-auto mt-3 max-w-sm text-[14.5px] leading-relaxed text-on-band-muted">
+          <p className="mx-auto mt-3 max-w-sm text-[13px] leading-relaxed text-on-band-muted">
             You have removed every path. Build a new one and we will pick up with a fresh plan.
           </p>
           <Link to="/setup" className={cx(primaryBtn, 'mt-7')}>
@@ -125,12 +127,12 @@ export function PathPage() {
               <img
                 src={activePath.thumbnailUrl}
                 alt=""
-                className="h-20 w-28 shrink-0 object-cover sm:h-24 sm:w-36"
+                className="h-20 w-28 shrink-0 rounded-2xl object-cover sm:h-24 sm:w-36"
               />
             )}
             <div className="min-w-0">
-              <p className={monoLabel}>{activePath.category || 'learning path'}</p>
-              <h1 className="mt-3 font-display text-[30px] font-light leading-[1.12] tracking-[-0.025em] text-on-band sm:text-[38px]">
+              <p className={cx(monoLabel, 'text-accent-bright uppercase tracking-[0.1em]')}>{activePath.category || 'learning path'}</p>
+              <h1 className="mt-2 font-display text-[30px] font-extrabold leading-[1.06] tracking-[-0.045em] text-on-band sm:text-[38px]">
                 {activePath.subject}
               </h1>
             </div>
@@ -148,19 +150,19 @@ export function PathPage() {
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
                 aria-expanded={menuOpen}
-                className={cx(ghostBtnSm, 'font-mono text-[10.5px] uppercase tracking-[0.08em]')}
+                className={cx(ghostBtnSm, 'uppercase tracking-[0.08em]')}
               >
                 Options
               </button>
               {menuOpen && (
-                <div className="absolute right-0 top-full z-30 mt-1.5 w-52 animate-rise border border-on-band/20 bg-panel">
+                <div className="absolute right-0 top-full z-30 mt-1.5 w-52 animate-rise overflow-hidden rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(33,27,42,.14)]">
                   <button
                     type="button"
                     onClick={() => {
                       setMenuOpen(false)
                       setEditOpen(true)
                     }}
-                    className="w-full border-b border-on-band/10 px-4 py-3 text-left text-[13.5px] text-on-band-muted transition-colors hover:bg-on-band/[0.04] hover:text-on-band"
+                    className="w-full border-b border-line px-4 py-3 text-left text-[12px] font-bold text-on-band-muted transition-colors hover:bg-band-soft hover:text-on-band"
                   >
                     Edit preferences
                   </button>
@@ -170,7 +172,7 @@ export function PathPage() {
                       setMenuOpen(false)
                       setDeleteOpen(true)
                     }}
-                    className="w-full px-4 py-3 text-left text-[13.5px] text-danger-bright transition-colors hover:bg-danger-bright/10"
+                    className="w-full px-4 py-3 text-left text-[12px] font-bold text-danger-bright transition-colors hover:bg-danger-soft"
                   >
                     Delete path
                   </button>
@@ -180,14 +182,14 @@ export function PathPage() {
           </div>
         </div>
 
-        <div className="mt-7 border border-on-band/15 bg-panel px-5 py-4">
+        <div className="mt-7 rounded-2xl border border-line bg-white px-5 py-4 shadow-[0_8px_28px_rgba(33,27,42,.04)]">
           <p className={monoLabel}>your goal</p>
-          <p className="mt-2 text-[14.5px] leading-relaxed text-on-band-muted">{activePath.goal}</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-on-band-muted">{activePath.goal}</p>
         </div>
       </header>
 
       {/* stats */}
-      <div className="mb-8 grid border border-on-band/15 bg-panel lg:grid-cols-4">
+      <div className="mb-8 grid overflow-hidden rounded-2xl border border-line bg-white shadow-[0_8px_28px_rgba(33,27,42,.04)] lg:grid-cols-4">
         <Stat label="progress" value={`${percent}%`}>
           <ProgressBar value={percent} size="sm" className="mt-3" />
         </Stat>
@@ -200,7 +202,7 @@ export function PathPage() {
       </div>
 
       {/* sections */}
-      <div className="border-t border-on-band/15">
+      <div className="space-y-3">
         {activePath.sections.map((section, index) => {
           const content = sessionContentFor(section.id)
           const activities = content ? getSessionActivities(activePath.id, section.id, content) : []
@@ -217,20 +219,22 @@ export function PathPage() {
             <article
               key={section.id}
               className={cx(
-                'border-b border-on-band/15 transition-colors',
-                section.status === 'current' ? 'border-l-2 border-l-accent-bright' : 'border-l-2 border-l-transparent',
-                locked ? 'bg-band-deep/60' : 'bg-panel',
+                'overflow-hidden rounded-2xl border bg-white transition-colors',
+                section.status === 'current'
+                  ? 'border-accent-bright/40 shadow-[0_10px_30px_rgba(113,59,209,.08)]'
+                  : 'border-line shadow-[0_8px_28px_rgba(33,27,42,.04)]',
+                locked && 'bg-canvas-deep/40',
               )}
             >
               <button
                 type="button"
                 onClick={() => toggle(section.id)}
                 aria-expanded={open}
-                className="flex w-full items-center gap-4 px-4 py-4 text-left transition-colors hover:bg-on-band/[0.03] sm:gap-5 sm:px-5"
+                className="flex w-full items-center gap-4 px-4 py-4 text-left transition-colors hover:bg-band-soft/50 sm:gap-5 sm:px-5"
               >
                 <span
                   className={cx(
-                    'flex h-9 w-9 shrink-0 items-center justify-center border font-mono text-[11px]',
+                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-[11px] font-extrabold',
                     markerStyles[section.status],
                   )}
                 >
@@ -241,7 +245,7 @@ export function PathPage() {
                   <span className="flex flex-wrap items-center gap-3">
                     <span
                       className={cx(
-                        'text-[15px]',
+                        'text-[13px] font-bold sm:text-[14px]',
                         locked ? 'text-on-band-dim' : 'text-on-band',
                       )}
                     >
@@ -251,7 +255,7 @@ export function PathPage() {
                   </span>
                   <span
                     className={cx(
-                      'mt-1.5 line-clamp-1 block text-[13.5px] leading-relaxed',
+                      'mt-1 line-clamp-1 block text-[11px] leading-relaxed',
                       locked ? 'text-on-band-dim' : 'text-on-band-muted',
                     )}
                   >
@@ -262,15 +266,15 @@ export function PathPage() {
                 <span className={cx(monoLabel, 'hidden shrink-0 sm:block')}>
                   {formatHours(section.minutes)}
                 </span>
-                <span className={cx(monoLabel, 'w-12 shrink-0 text-right')}>
+                <span className={cx(monoLabel, 'w-12 shrink-0 text-right font-bold text-accent-bright')}>
                   {open ? 'Close' : 'Open'}
                 </span>
               </button>
 
               <div className={cx('reveal', open && 'open')}>
                 <div>
-                  <div className="border-t border-on-band/10 bg-band-deep/40 px-4 py-6 sm:px-5">
-                    <p className="max-w-3xl text-[14px] leading-relaxed text-on-band-muted">
+                  <div className="border-t border-line bg-band-soft/40 px-4 py-6 sm:px-5">
+                    <p className="max-w-3xl text-[13px] leading-relaxed text-on-band-muted">
                       {section.description}
                     </p>
 
@@ -300,26 +304,26 @@ export function PathPage() {
                               return (
                                 <li
                                   key={a.id}
-                                  className="flex items-center gap-4 border border-on-band/12 px-3.5 py-3"
+                                  className="flex items-center gap-4 rounded-xl border border-line bg-white px-3.5 py-3"
                                 >
                                   <span
                                     aria-hidden="true"
                                     className={cx(
-                                      'h-2.5 w-2.5 shrink-0 border',
+                                      'h-2.5 w-2.5 shrink-0 rounded-full border',
                                       done
-                                        ? 'border-success-bright bg-success-bright'
-                                        : 'border-on-band/30',
+                                        ? 'border-success bg-success'
+                                        : 'border-line-strong',
                                     )}
                                   />
                                   <span className="min-w-0 flex-1">
                                     <span className={cx(monoLabel, 'block')}>
                                       {kindLabels[a.kind]}
                                     </span>
-                                    <span className="mt-0.5 block truncate text-[13.5px] text-on-band">
+                                    <span className="mt-0.5 block truncate text-[12.5px] font-bold text-on-band">
                                       {a.title}
                                     </span>
                                   </span>
-                                  <span className={cx(monoLabel, 'shrink-0')}>{a.minutes} min</span>
+                                  <span className={cx(monoLabel, 'shrink-0')}>{formatHours(a.minutes)}</span>
                                 </li>
                               )
                             })}
@@ -335,13 +339,13 @@ export function PathPage() {
                                   key={resource.id}
                                   type="button"
                                   onClick={() => setPreview(resource)}
-                                  className="block w-full border border-on-band/12 px-3.5 py-3 text-left transition-colors hover:border-on-band/35"
+                                  className="block w-full rounded-xl border border-line bg-white px-3.5 py-3 text-left transition-colors hover:border-accent-bright/40 hover:bg-band-soft/40"
                                 >
-                                  <span className="block truncate text-[13.5px] text-on-band">
+                                  <span className="block truncate text-[12.5px] font-bold text-on-band">
                                     {resource.title}
                                   </span>
                                   <span className={cx(monoLabel, 'mt-1 block')}>
-                                    {resource.kind} · {resource.minutes} min
+                                    {resource.kind} · {formatHours(resource.minutes)}
                                   </span>
                                 </button>
                               ))}
@@ -350,9 +354,9 @@ export function PathPage() {
 
                           <div>
                             <h4 className={cx(monoLabel, 'mb-3')}>practice</h4>
-                            <div className="border border-on-band/12 px-3.5 py-3">
-                              <p className="text-[13.5px] text-on-band">{content.practice.title}</p>
-                              <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-on-band-dim">
+                            <div className="rounded-xl border border-line bg-white px-3.5 py-3">
+                              <p className="text-[12.5px] font-bold text-on-band">{content.practice.title}</p>
+                              <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-on-band-dim">
                                 {content.practice.brief}
                               </p>
                             </div>
@@ -360,11 +364,11 @@ export function PathPage() {
 
                           <div>
                             <h4 className={cx(monoLabel, 'mb-3')}>assessment</h4>
-                            <div className="border border-on-band/12 px-3.5 py-3">
-                              <p className="text-[13.5px] text-on-band">
+                            <div className="rounded-xl border border-line bg-white px-3.5 py-3">
+                              <p className="text-[12.5px] font-bold text-on-band">
                                 {content.assessment.questions.length} questions
                               </p>
-                              <p className="mt-1.5 text-[13px] leading-relaxed text-on-band-dim">
+                              <p className="mt-1.5 text-[11px] leading-relaxed text-on-band-dim">
                                 {content.assessment.intro}
                               </p>
                             </div>
@@ -372,8 +376,8 @@ export function PathPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-6 border border-dashed border-on-band/20 px-4 py-5">
-                        <p className="text-[13.5px] leading-relaxed text-on-band-dim">
+                      <div className="mt-6 rounded-xl border border-dashed border-line-strong bg-white/60 px-4 py-5">
+                        <p className="text-[12px] leading-relaxed text-on-band-dim">
                           {locked
                             ? 'Open the session preview to see the full lesson, resources and practice. Activities unlock once the previous sections are complete.'
                             : (section.note ??
@@ -443,7 +447,7 @@ export function PathPage() {
         })}
       </div>
 
-      <p className="mt-6 text-[13px] leading-relaxed text-on-band-dim">
+      <p className="mt-6 text-[12px] leading-relaxed text-on-band-dim">
         Your path adapts as you go. Finishing a check updates what comes next.
       </p>
 
@@ -488,12 +492,12 @@ function Stat({
   return (
     <div
       className={cx(
-        'border-b border-on-band/10 px-5 py-5',
+        'border-b border-line px-5 py-5',
         'last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0',
       )}
     >
       <p className={monoLabel}>{label}</p>
-      <p className="mt-2 font-display text-[24px] font-light text-on-band">{value}</p>
+      <p className="mt-2 font-display text-[22px] font-extrabold tracking-[-0.03em] text-on-band">{value}</p>
       {children}
     </div>
   )
@@ -503,7 +507,7 @@ function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <dt className={monoLabel}>{label}</dt>
-      <dd className="mt-1.5 text-[13.5px] text-on-band">{value}</dd>
+      <dd className="mt-1.5 text-[12.5px] font-bold text-on-band">{value}</dd>
     </div>
   )
 }

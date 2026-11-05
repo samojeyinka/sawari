@@ -1,27 +1,31 @@
+import type { IconType } from 'react-icons'
+import { LuBookmark, LuCalendarDays, LuChartNoAxesCombined, LuFolderKanban, LuRoute } from 'react-icons/lu'
+
 export interface NavItem {
   to: string
   label: string
   /** Short label for the mobile bottom bar. */
   short: string
+  icon: IconType
 }
 
 export const navItems: NavItem[] = [
-  { to: '/app/today', label: 'Today', short: 'Today' },
-  { to: '/app/path', label: 'Learning path', short: 'Path' },
-  { to: '/app/saved', label: 'Saved', short: 'Saved' },
-  { to: '/app/projects', label: 'Projects', short: 'Projects' },
-  { to: '/app/progress', label: 'Progress', short: 'Progress' },
+  { to: '/app/today', label: 'Today', short: 'Today', icon: LuCalendarDays },
+  { to: '/app/path', label: 'Learning path', short: 'Path', icon: LuRoute },
+  { to: '/app/saved', label: 'Saved', short: 'Saved', icon: LuBookmark },
+  { to: '/app/projects', label: 'Projects', short: 'Projects', icon: LuFolderKanban },
+  { to: '/app/progress', label: 'Progress', short: 'Progress', icon: LuChartNoAxesCombined },
 ]
 
-/** Mono micro-label used for every eyebrow, tag and meta line in the app. */
-export const monoLabel = 'font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim'
+/** Compact secondary label used by app navigation and page metadata. */
+export const monoLabel = 'font-sans text-[11px] font-semibold text-on-band-dim'
 
-/** A left accent rule marks the current page — no pills, no icons. */
+/** Shared active and hover treatment for app navigation links. */
 export function navClass(isActive: boolean): string {
   return [
-    'flex items-center justify-between border-l-2 px-5 py-2.5 text-[13.5px] transition-colors',
+    'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors',
     isActive
-      ? 'border-accent-bright text-on-band'
-      : 'border-transparent text-on-band-dim hover:text-on-band',
+      ? 'bg-accent-soft text-accent-strong'
+      : 'text-on-band-muted hover:bg-band-soft hover:text-on-band',
   ].join(' ')
 }

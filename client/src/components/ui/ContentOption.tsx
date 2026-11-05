@@ -23,10 +23,10 @@ export function ContentOption({
       aria-pressed={selected}
       onClick={onClick}
       className={cx(
-        'flex items-center border px-3.5 py-2.5 text-[13.5px] transition-colors',
+        'flex items-center rounded-xl border px-3.5 py-2.5 text-[12.5px] font-bold transition-colors',
         selected
-          ? 'border-accent-bright bg-accent-bright/10 text-on-band'
-          : 'border-on-band/15 text-on-band-muted hover:border-on-band/35 hover:text-on-band',
+          ? 'border-accent-bright/45 bg-accent-soft text-accent-strong'
+          : 'border-line-strong bg-white text-on-band-muted hover:border-accent-bright/50 hover:text-on-band',
         className,
       )}
     >

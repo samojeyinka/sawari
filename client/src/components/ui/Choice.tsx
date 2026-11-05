@@ -73,7 +73,7 @@ export function StatusBadge({ status, className }: { status: SectionStatus; clas
   return (
     <span
       className={cx(
-        'font-mono text-[10.5px] uppercase tracking-[0.08em]',
+        'text-[10px] font-extrabold uppercase tracking-[0.09em]',
         statusStyles[status],
         className,
       )}

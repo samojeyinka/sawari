@@ -5,10 +5,11 @@ import { Logo } from '../ui/Logo'
 import { Drawer } from '../ui/Drawer'
 import { PathSwitcher } from './PathSwitcher'
 import { Sidebar } from './Sidebar'
-import { monoLabel, navClass, navItems } from './nav'
+import { navClass, navItems } from './nav'
 import { NotificationsDrawer } from '../notifications/NotificationsDrawer'
 import { RouteFallback } from '../ui/RouteFallback'
 import { cx, initials } from '../../lib/utils'
+import { LuBell, LuLogOut, LuMenu, LuPlus, LuSettings2, LuShieldCheck } from 'react-icons/lu'
 
 export function AppShell() {
   const { state, unreadCount, signOut } = useApp()
@@ -22,19 +23,21 @@ export function AppShell() {
   }, [location.pathname])
 
   const user = state.user
+  const mobileNavItems = [...navItems, { to: '/app/settings', label: 'Settings', short: 'Settings', icon: LuSettings2 }]
 
   return (
-    <div className="app-theme min-h-screen bg-band lg:flex">
+    <div className="min-h-screen bg-band text-body lg:flex">
       <Sidebar onOpenNotifications={() => setNotifOpen(true)} />
 
       {/* mobile top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-on-band/10 bg-band-deep/95 px-4 py-3 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-line bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
         <button
           type="button"
           onClick={() => setNavOpen(true)}
-          className={cx(monoLabel, 'transition-colors hover:text-on-band')}
+          aria-label="Open menu"
+          className="grid h-10 w-10 place-items-center rounded-full border border-line bg-white text-on-band-muted transition-colors hover:bg-band-soft hover:text-accent-bright"
         >
-          Menu
+          <LuMenu aria-hidden="true" className="h-5 w-5" />
         </button>
         <Link to="/app/today" aria-label="Sawari home">
           <Logo size="sm" />
@@ -42,9 +45,11 @@ export function AppShell() {
         <button
           type="button"
           onClick={() => setNotifOpen(true)}
-          className={cx(monoLabel, 'transition-colors hover:text-on-band')}
+          aria-label={unreadCount ? `Open notifications, ${unreadCount} unread` : 'Open notifications'}
+          className="relative grid h-10 w-10 place-items-center rounded-full border border-line bg-white text-on-band-muted transition-colors hover:bg-band-soft hover:text-accent-bright"
         >
-          {unreadCount > 0 ? `Alerts ${unreadCount}` : 'Alerts'}
+          <LuBell aria-hidden="true" className="h-[18px] w-[18px]" />
+          {unreadCount > 0 && <span className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent-bright px-1 text-[9px] font-extrabold text-white">{unreadCount}</span>}
         </button>
       </header>
 
@@ -59,24 +64,25 @@ export function AppShell() {
 
       {/* mobile bottom nav */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-on-band/10 bg-band-deep/95 backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 backdrop-blur lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="grid grid-cols-6">
-          {[...navItems, { to: '/app/settings', label: 'Settings', short: 'Settings' }].map((item) => (
+        <div className="mx-auto grid max-w-xl grid-cols-6 px-1">
+          {mobileNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
                 cx(
-                  'border-t-2 py-3 text-center text-[11px] transition-colors',
+                  'flex min-w-0 flex-col items-center gap-1 py-2.5 text-[9px] font-semibold transition-colors',
                   isActive
-                    ? 'border-accent-bright text-on-band'
-                    : 'border-transparent text-on-band-dim',
+                    ? 'text-accent-bright'
+                    : 'text-on-band-dim',
                 )
               }
             >
-              {item.short}
+              <item.icon aria-hidden="true" className="h-[18px] w-[18px]" strokeWidth={1.9} />
+              <span className="truncate">{item.short}</span>
             </NavLink>
           ))}
         </div>
@@ -87,7 +93,7 @@ export function AppShell() {
         <div className="space-y-6 p-5">
           <PathSwitcher onNavigate={() => setNavOpen(false)} />
 
-          <nav>
+          <nav className="space-y-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -95,6 +101,7 @@ export function AppShell() {
                 onClick={() => setNavOpen(false)}
                 className={({ isActive }) => navClass(isActive)}
               >
+                <item.icon aria-hidden="true" className="h-[17px] w-[17px] shrink-0" />
                 {item.label}
               </NavLink>
             ))}
@@ -107,6 +114,7 @@ export function AppShell() {
                 onClick={() => setNavOpen(false)}
                 className={({ isActive }) => navClass(isActive)}
               >
+                <LuShieldCheck aria-hidden="true" className="h-[17px] w-[17px] shrink-0" />
                 Admin
               </NavLink>
             )}
@@ -115,9 +123,11 @@ export function AppShell() {
               onClick={() => setNavOpen(false)}
               className={({ isActive }) => navClass(isActive)}
             >
+              <LuSettings2 aria-hidden="true" className="h-[17px] w-[17px] shrink-0" />
               Settings
             </NavLink>
             <Link to="/setup" onClick={() => setNavOpen(false)} className={navClass(false)}>
+              <LuPlus aria-hidden="true" className="h-[17px] w-[17px] shrink-0" />
               New learning path
             </Link>
             <button
@@ -128,18 +138,19 @@ export function AppShell() {
               }}
               className={cx(navClass(false), 'w-full')}
             >
+              <LuLogOut aria-hidden="true" className="h-[17px] w-[17px] shrink-0" />
               Sign out
             </button>
           </div>
 
           {user && (
-            <div className="flex items-center gap-3 border-t border-on-band/10 pt-5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center bg-accent-bright font-mono text-[11px] uppercase text-band">
+            <div className="flex items-center gap-3 border-t border-line pt-5">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[12px] font-extrabold text-accent-strong">
                 {initials(user.name)}
               </span>
               <span className="min-w-0">
-                <span className="block truncate text-[13.5px] text-on-band">{user.name}</span>
-                <span className={cx(monoLabel, 'block truncate')}>{user.email}</span>
+                <span className="block truncate text-[12px] font-bold text-on-band">{user.name}</span>
+                <span className="mt-0.5 block truncate text-[10px] font-medium text-on-band-dim">{user.email}</span>
               </span>
             </div>
           )}

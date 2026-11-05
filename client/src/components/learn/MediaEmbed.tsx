@@ -10,7 +10,7 @@ export function MediaEmbed({ url, title }: { url: string; title: string }) {
 
   if (media.embedUrl) {
     return (
-      <figure className="mt-5 border border-on-band/15 bg-band-deep">
+      <figure className="mt-5 overflow-hidden rounded-2xl border border-line bg-white shadow-[0_8px_28px_rgba(33,27,42,.04)]">
         <div className="relative aspect-video w-full">
           <iframe
             src={media.embedUrl}
@@ -21,7 +21,7 @@ export function MediaEmbed({ url, title }: { url: string; title: string }) {
             className="absolute inset-0 h-full w-full"
           />
         </div>
-        <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-on-band/10 px-4 py-3">
+        <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3">
           <span className={monoLabel}>playing from {media.label}</span>
           <a
             href={media.watchUrl}
@@ -41,7 +41,7 @@ export function MediaEmbed({ url, title }: { url: string; title: string }) {
       href={media.watchUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-5 flex items-center justify-between gap-3 border border-on-band/20 px-5 py-4 transition-colors hover:border-on-band/45"
+      className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-line bg-white px-5 py-4 transition-colors hover:border-accent-bright/40 hover:bg-band-soft/40"
     >
       <span className="text-[14.5px] font-medium text-on-band">Open resource on {media.label}</span>
       <span className={cx(monoLabel, 'shrink-0 text-accent-bright')}>open</span>

@@ -66,17 +66,17 @@ export function SettingsPage() {
   const [active, setActive] = useState<SectionId>('profile')
 
   const nav = (
-    <nav className="flex gap-1 overflow-x-auto border-b border-on-band/10 lg:flex-col lg:gap-0.5 lg:border-b-0">
+    <nav className="flex gap-1 overflow-x-auto border-b border-line pb-2 lg:flex-col lg:gap-1 lg:border-b-0 lg:pb-0">
       {sections.map((section) => (
         <button
           key={section.id}
           onClick={() => setActive(section.id)}
           aria-current={active === section.id ? 'page' : undefined}
           className={cx(
-            'whitespace-nowrap border px-3.5 py-2.5 text-left text-sm transition-colors duration-150',
+            'whitespace-nowrap rounded-full px-3.5 py-2 text-left text-[12px] font-bold transition-colors duration-150',
             active === section.id
-              ? 'border-on-band/15 bg-on-band/[0.04] font-medium text-on-band'
-              : 'border-transparent text-on-band-dim hover:text-on-band',
+              ? 'bg-accent-soft text-accent-strong'
+              : 'text-on-band-muted hover:bg-band-soft hover:text-on-band',
           )}
         >
           {section.label}
@@ -106,7 +106,7 @@ export function SettingsPage() {
         </div>
       </div>
 
-      <p className="mt-10 border-t border-on-band/10 pt-5 text-[13px] text-on-band-dim">
+      <p className="mt-10 border-t border-line pt-5 text-[11px] text-on-band-dim">
         Every change here saves to your account straight away.
       </p>
     </Page>
@@ -187,12 +187,12 @@ function ProfileSection() {
       />
 
       <div className="flex items-center gap-4">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center bg-on-band text-lg font-medium text-band">
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-accent-soft text-lg font-extrabold text-accent-strong">
           {initials(name || user.name)}
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-on-band">{name || user.name}</p>
-          <p className="text-[13px] text-on-band-dim">{user.joined}</p>
+          <p className="text-[13px] font-bold text-on-band">{name || user.name}</p>
+          <p className="text-[11px] text-on-band-dim">{user.joined}</p>
         </div>
       </div>
 
@@ -236,9 +236,9 @@ function ProfileSection() {
       </div>
 
       {codeSentTo && (
-        <div className="border border-on-band/15 bg-panel p-4">
+        <div className="rounded-2xl border border-line bg-white p-4">
           <p className={cx(monoLabel, 'text-accent-bright')}>confirm new email</p>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-on-band-muted">
+          <p className="mt-1.5 text-[12px] leading-relaxed text-on-band-muted">
             We sent a 6-digit code to {codeSentTo}. Enter it below to move your account there.
           </p>
           <div className="mt-3 flex flex-col gap-2.5 sm:flex-row">
@@ -302,7 +302,7 @@ function PreferencesSection() {
       />
 
       <div>
-        <p className="mb-2.5 text-sm font-medium text-on-band">Time each week</p>
+        <p className="mb-2.5 text-[12px] font-bold text-on-band">Time each week</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {hoursOptions.map((option) => {
             const selected = weekly === option.id
@@ -312,10 +312,10 @@ function PreferencesSection() {
                 onClick={() => setWeekly(option.id)}
                 aria-pressed={selected}
                 className={cx(
-                  'border px-3 py-2.5 text-sm transition-colors',
+                  'rounded-full border px-3 py-2.5 text-[12px] font-bold transition-colors',
                   selected
-                    ? 'border-accent-bright/60 bg-accent-bright/10 font-medium text-on-band'
-                    : 'border-on-band/20 text-on-band-muted hover:border-on-band/45 hover:text-on-band',
+                    ? 'border-accent-bright/40 bg-accent-soft text-accent-strong'
+                    : 'border-line-strong bg-white text-on-band-muted hover:border-accent-bright/50 hover:text-on-band',
                 )}
               >
                 {option.label}
@@ -326,7 +326,7 @@ function PreferencesSection() {
       </div>
 
       <div>
-        <p className="mb-2.5 text-sm font-medium text-on-band">Intensity</p>
+        <p className="mb-2.5 text-[12px] font-bold text-on-band">Intensity</p>
         <div className="space-y-2">
           {intensityOptions.map((option) => {
             const selected = intensity === option.id
@@ -336,24 +336,24 @@ function PreferencesSection() {
                 onClick={() => setIntensity(option.id)}
                 aria-pressed={selected}
                 className={cx(
-                  'flex w-full items-center justify-between gap-3 border px-4 py-3 text-left transition-colors',
+                  'flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors',
                   selected
-                    ? 'border-accent-bright/60 bg-accent-bright/10'
-                    : 'border-on-band/20 hover:border-on-band/45 hover:bg-on-band/[0.03]',
+                    ? 'border-accent-bright/40 bg-accent-soft'
+                    : 'border-line-strong bg-white hover:border-accent-bright/40 hover:bg-band-soft/40',
                 )}
               >
                 <span className="min-w-0">
-                  <span className="block text-sm font-medium text-on-band">{option.label}</span>
-                  <span className="block text-[13px] text-on-band-dim">{option.hint}</span>
+                  <span className="block text-[12px] font-bold text-on-band">{option.label}</span>
+                  <span className="block text-[11px] text-on-band-dim">{option.hint}</span>
                 </span>
                 <span
                   aria-hidden="true"
                   className={cx(
-                    'flex h-4 w-4 shrink-0 items-center justify-center border transition-colors',
-                    selected ? 'border-accent-bright' : 'border-on-band/30',
+                    'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors',
+                    selected ? 'border-accent-bright' : 'border-line-strong',
                   )}
                 >
-                  {selected && <span className="h-2 w-2 bg-accent-bright" />}
+                  {selected && <span className="h-2 w-2 rounded-full bg-accent-bright" />}
                 </span>
               </button>
             )
@@ -362,7 +362,7 @@ function PreferencesSection() {
       </div>
 
       <div>
-        <p className="mb-2.5 text-sm font-medium text-on-band">Formats</p>
+        <p className="mb-2.5 text-[12px] font-bold text-on-band">Formats</p>
         <div className="flex flex-wrap gap-2">
           {formatOptions.map((format) => (
             <Chip
@@ -383,10 +383,10 @@ function PreferencesSection() {
           onChange={(e) => setSessionLength(Number(e.target.value))}
           className={inputClass}
         >
-          <option value={25}>25 minutes</option>
-          <option value={45}>45 minutes</option>
-          <option value={60}>60 minutes</option>
-          <option value={90}>90 minutes</option>
+          <option value={25}>25 min</option>
+          <option value={45}>45 min</option>
+          <option value={60}>1 hr</option>
+          <option value={90}>1 hr 30 min</option>
         </select>
       </Field>
 
@@ -418,7 +418,7 @@ function ScheduleSection() {
       />
 
       <div>
-        <p className="mb-2.5 text-sm font-medium text-on-band">Learning days</p>
+        <p className="mb-2.5 text-[12px] font-bold text-on-band">Learning days</p>
         <div className="flex flex-wrap gap-2">
           {days.map((day) => (
             <Chip
@@ -449,10 +449,10 @@ function ScheduleSection() {
         </select>
       </Field>
 
-      <div className="flex items-center justify-between gap-4 border border-on-band/15 px-4 py-3.5">
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-white px-4 py-3.5">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-on-band">Remind me on rest days</p>
-          <p className="text-[13px] text-on-band-dim">A nudge, never a guilt trip.</p>
+          <p className="text-[12px] font-bold text-on-band">Remind me on rest days</p>
+          <p className="text-[11px] text-on-band-dim">A nudge, never a guilt trip.</p>
         </div>
         <Toggle checked={restDay} onChange={setRestDay} label="Remind me on rest days" />
       </div>
@@ -514,15 +514,15 @@ function NotificationsSection() {
         description="Choose what earns a notification. Everything else waits for you."
       />
 
-      <div className="divide-y divide-on-band/10 border border-on-band/15">
+      <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
         {items.map((item) => (
           <div
             key={item.key}
-            className="flex items-center justify-between gap-4 bg-panel px-4 py-3.5"
+            className="flex items-center justify-between gap-4 px-4 py-3.5"
           >
             <div className="min-w-0">
-              <p className="text-sm font-medium text-on-band">{item.label}</p>
-              <p className="text-[13px] text-on-band-dim">{item.hint}</p>
+              <p className="text-[12px] font-bold text-on-band">{item.label}</p>
+              <p className="text-[11px] text-on-band-dim">{item.hint}</p>
             </div>
             <Toggle
               checked={settings[item.key]}
@@ -534,8 +534,8 @@ function NotificationsSection() {
       </div>
 
       {/* Resend outbound email testing */}
-      <section className="border border-on-band/15 bg-band-deep p-5">
-        <h3 className="text-sm font-medium text-on-band">Email delivery &amp; Resend testing</h3>
+      <section className="rounded-2xl border border-line bg-band-soft/60 p-5">
+        <h3 className="text-[12px] font-bold text-on-band">Email delivery &amp; Resend testing</h3>
         <p className={cx(monoLabel, 'mt-1')}>
           Verify that reminders and summaries reach your inbox
         </p>
@@ -661,7 +661,7 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
     <div className="max-w-xl space-y-6">
       <Heading title="Account" description="Your login, plan and the buttons that end things." />
 
-      <div className="divide-y divide-on-band/10 border border-on-band/15">
+      <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
         <Row label="Email" value={user.email} />
         <Row
           label="Plan"
@@ -669,7 +669,7 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
           action={
             <button
               onClick={onOpenAi}
-              className="text-[13px] font-medium text-accent-bright transition-colors hover:text-on-band"
+              className="text-[12px] font-bold text-accent-bright transition-colors hover:text-on-band"
             >
               Change
             </button>
@@ -763,18 +763,18 @@ function AccountSection({ onOpenAi }: { onOpenAi: () => void }) {
 function Heading({ title, description }: { title: string; description: string }) {
   return (
     <div>
-      <h2 className="font-display text-[20px] font-light tracking-[-0.015em] text-on-band">{title}</h2>
-      <p className="mt-1 text-sm leading-relaxed text-on-band-muted">{description}</p>
+      <h2 className="font-display text-[20px] font-extrabold tracking-[-0.03em] text-on-band">{title}</h2>
+      <p className="mt-1 text-[12px] leading-relaxed text-on-band-muted">{description}</p>
     </div>
   )
 }
 
 function Row({ label, value, action }: { label: string; value: string; action?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 bg-panel px-4 py-3.5">
-      <span className="text-sm text-on-band-dim">{label}</span>
+    <div className="flex items-center justify-between gap-4 bg-white px-4 py-3.5">
+      <span className="text-[12px] text-on-band-dim">{label}</span>
       <span className="flex min-w-0 items-center gap-3">
-        <span className="truncate text-sm font-medium text-on-band">{value}</span>
+        <span className="truncate text-[12px] font-bold text-on-band">{value}</span>
         {action}
       </span>
     </div>

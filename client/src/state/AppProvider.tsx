@@ -690,11 +690,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const content = await sessionsApi.getOrGenerate(path.id, sectionId, force)
         dispatchNext({ type: 'content/loaded', content: { [sectionId]: content } })
-      } catch (error) {
+      } catch {
         dispatchNext({
           type: 'content/error',
           sectionId,
-          error: apiErrorMessage(error, 'Could not generate session content.'),
+          error: 'We couldn’t prepare this session right now. Please try again shortly.',
         })
       } finally {
         contentInFlight.current.delete(sectionId)

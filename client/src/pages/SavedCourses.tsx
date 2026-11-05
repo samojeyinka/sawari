@@ -25,7 +25,7 @@ function SavedCard({ path, onRemove }: { path: ApiCatalogPath; onRemove: () => v
   }
 
   return (
-    <div className="flex min-w-0 flex-col border border-on-band/15 bg-panel p-5">
+    <div className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-white p-5 shadow-[0_8px_28px_rgba(33,27,42,.04)] transition-shadow hover:shadow-[0_14px_40px_rgba(33,27,42,.08)]">
       {path.thumbnailUrl && (
         <img src={path.thumbnailUrl} alt="" className="-mx-5 -mt-5 mb-4 h-40 object-cover" />
       )}
@@ -36,11 +36,11 @@ function SavedCard({ path, onRemove }: { path: ApiCatalogPath; onRemove: () => v
         <LevelTag level={path.level} />
       </div>
       <a href={`/courses/${encodeURIComponent(path.slug)}`} className="mt-3 group">
-        <h3 className="text-[17px] font-medium leading-snug text-on-band group-hover:text-accent-bright">
+        <h3 className="font-display text-[16px] font-extrabold leading-snug tracking-[-0.02em] text-on-band group-hover:text-accent-bright">
           {path.subject}
         </h3>
         {path.summary && (
-          <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-on-band-muted">
+          <p className="mt-1.5 line-clamp-3 text-[12px] leading-relaxed text-on-band-muted">
             {path.summary}
           </p>
         )}
@@ -50,14 +50,14 @@ function SavedCard({ path, onRemove }: { path: ApiCatalogPath; onRemove: () => v
           {path.tags.slice(0, 4).map((tag) => (
             <span
               key={tag}
-              className="border border-on-band/12 px-2 py-0.5 text-[11.5px] text-on-band-dim"
+              className="rounded-full border border-line px-2.5 py-0.5 text-[10px] font-semibold text-on-band-dim"
             >
               {tag}
             </span>
           ))}
         </div>
       )}
-      <div className="mt-5 flex items-center justify-between gap-3 border-t border-on-band/10 pt-4">
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-4">
         <RatingSummary avg={path.reviewsAvg} count={path.reviewsCount} />
         <Button size="sm" variant="secondary" loading={busy} onClick={remove}>
           Remove
@@ -98,14 +98,14 @@ export function SavedCoursesPage() {
       {loading && paths.length === 0 ? (
         <RouteFallback />
       ) : paths.length === 0 ? (
-        <div className="border border-dashed border-on-band/20 bg-panel px-6 py-14 text-center">
-          <p className={monoLabel}>nothing saved yet</p>
-          <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-on-band-dim">
+        <div className="rounded-[24px] border border-dashed border-line-strong bg-white px-6 py-14 text-center">
+          <p className={cx(monoLabel, 'text-accent-bright')}>nothing saved yet</p>
+          <p className="mx-auto mt-2 max-w-sm text-[12px] leading-relaxed text-on-band-dim">
             Nothing saved yet. Browse courses and save the ones you want to come back to.
           </p>
           <a
             href="/courses"
-            className="mt-6 inline-flex h-9 items-center justify-center border border-on-band/20 px-3.5 text-[13px] font-medium text-on-band transition-colors duration-150 hover:border-on-band/45"
+            className="mt-6 inline-flex h-10 items-center justify-center rounded-full border border-line-strong bg-white px-4 text-[12px] font-bold text-on-band-muted transition-colors duration-150 hover:border-accent-bright/50 hover:text-accent-bright"
           >
             Browse courses
           </a>

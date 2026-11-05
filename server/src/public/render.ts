@@ -23,6 +23,15 @@ export function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;')
 }
 
+function formatDuration(minutes: number): string {
+  const total = Math.max(0, Math.round(minutes))
+  if (total < 60) return `${total} min`
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  if (m === 0) return `${h} hr`
+  return `${h} hr ${m} min`
+}
+
 /** Top-level action URL the SPA owns; it gates behind login then acts. */
 function actionUrl(path: string): string {
   return `${SITE_BASE}${path}`
@@ -667,13 +676,13 @@ export async function renderCourseDetail(slug: string): Promise<string | null> {
     .map(({ section, content, resources }, index) => {
       const resourceRows = resources.map((resource) => {
         const href = safeHttpsUrl(resource.url)
-        const row = `<span>${escapeHtml(resource.title)}</span><small>${escapeHtml(resource.kind)} · ${resource.minutes} min</small>`
+        const row = `<span>${escapeHtml(resource.title)}</span><small>${escapeHtml(resource.kind)} · ${formatDuration(resource.minutes)}</small>`
         return href
           ? `<a class="outline-resource" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${row}</a>`
           : `<div class="outline-resource">${row}</div>`
       }).join('')
       return `<details class="outline-section"${index === 0 ? ' open' : ''}>
-<summary><span class="outline-number">${String(index + 1).padStart(2, '0')}</span><span class="outline-title">${escapeHtml(section.title)}</span><span class="outline-duration">${section.minutes ? `${section.minutes} min` : ''}</span></summary>
+<summary><span class="outline-number">${String(index + 1).padStart(2, '0')}</span><span class="outline-title">${escapeHtml(section.title)}</span><span class="outline-duration">${section.minutes ? formatDuration(section.minutes) : ''}</span></summary>
 <div class="outline-lesson"><strong>${escapeHtml(content.lesson?.title || section.title)}</strong>${section.description ? `<p>${escapeHtml(section.description)}</p>` : ''}${resourceRows}</div>
 </details>`
     })
@@ -725,7 +734,7 @@ ${reviews
   const detailFacts = [
     `<span class="course-detail-stat course-detail-rating">${path.reviewsCount ? `${starsHtml(path.reviewsAvg)} ${path.reviewsAvg.toFixed(1)}` : 'New course'}</span>${path.reviewsCount ? `<span class="course-detail-stat">${path.reviewsCount.toLocaleString()} reviews</span>` : ''}`,
     `<span class="course-detail-stat">${path.enrollments.toLocaleString()} learners</span>`,
-    `<span class="course-detail-stat">${path.expectedHours ? `${path.expectedHours} hours` : totalMinutes ? `${Math.round(totalMinutes / 60)} hours` : 'Self-paced'}</span>`,
+    `<span class="course-detail-stat">${path.expectedHours ? `${path.expectedHours} hours` : totalMinutes ? formatDuration(totalMinutes) : 'Self-paced'}</span>`,
     `<span class="course-detail-stat">${escapeHtml(path.level ? LEVEL_LABELS[path.level] ?? path.level : 'All levels')}</span>`,
   ].join('')
 
@@ -748,7 +757,7 @@ ${path.goal ? `<h2>What you'll be able to do</h2><p>${escapeHtml(path.goal)}</p>
 </section>
 </section>
 <aside class="course-outline" aria-label="Course content">
-<div class="course-outline-head"><h2>Course content</h2><p>${sections.length} modules · ${totalMinutes ? `${Math.round(totalMinutes / 60)} hours total` : 'Self-paced'}</p></div>
+<div class="course-outline-head"><h2>Course content</h2><p>${sections.length} modules · ${totalMinutes ? `${formatDuration(totalMinutes)} total` : 'Self-paced'}</p></div>
 <div class="course-outline-info"><div><span>Level</span><strong>${escapeHtml(path.level ? LEVEL_LABELS[path.level] ?? path.level : 'All levels')}</strong></div><div><span>Category</span><strong>${escapeHtml(path.category || 'General')}</strong></div><div><span>Time to finish</span><strong>${path.expectedWeeks ? `${path.expectedWeeks} weeks` : 'Self-paced'}</strong></div><div><span>Format</span><strong>${path.formats.map((format) => escapeHtml(format)).join(', ') || 'Self-paced'}</strong></div></div>
 ${outlineSections || '<div class="empty">Course content is being prepared.</div>'}
 </aside>

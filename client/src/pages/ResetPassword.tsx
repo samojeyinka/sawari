@@ -77,7 +77,7 @@ export function ResetPasswordPage() {
       <div className="w-full">
         <div>
           <p className={authEyebrow}>{token ? 'New password' : 'Invalid link'}</p>
-          <h1 className="mt-3 font-display text-[26px] font-light leading-[1.15] tracking-[-0.025em] text-on-band">
+          <h1 className="mt-3 font-display text-[26px] font-extrabold leading-[1.1] tracking-[-0.045em] text-on-band sm:text-[30px]">
             {token ? 'Choose your new password.' : 'We cannot use this link.'}
           </h1>
         </div>
@@ -164,7 +164,7 @@ export function ResetPasswordPage() {
             </button>
           </form>
         ) : (
-          <div className="mt-8 border border-on-band/15 bg-band-soft p-5">
+          <div className="mt-8 rounded-2xl border border-line bg-band-soft p-5">
             <p className={cx(monoNote, 'text-danger-bright')}>link expired</p>
             <p className="mt-2 text-[14.5px] leading-relaxed text-on-band-muted">
               Open the reset email again, or ask for a new link from the sign in page.

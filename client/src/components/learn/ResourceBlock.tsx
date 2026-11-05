@@ -2,7 +2,7 @@ import type { Resource } from '../../types'
 import { domainOf } from '../../lib/media'
 import { monoLabel } from '../layout/nav'
 import { MediaEmbed } from './MediaEmbed'
-import { cx } from '../../lib/utils'
+import { cx, formatDuration } from '../../lib/utils'
 
 const kindLabels: Record<Resource['kind'], string> = {
   article: 'Article',
@@ -49,23 +49,23 @@ export function ResourceBlock({
       : ''
 
   return (
-    <section className="mt-10 border-t border-on-band/10 pt-10 first:mt-0 first:border-t-0 first:pt-0">
+    <section className="mt-10 border-t border-line pt-10 first:mt-0 first:border-t-0 first:pt-0">
       {showHeader ? (
         <>
           <p className={monoLabel}>
-            {kindVerbs[resource.kind]} · {resource.minutes} min base{part}
+            {kindVerbs[resource.kind]} · {formatDuration(resource.minutes)} base{part}
           </p>
-          <h3 className="mt-3 font-display text-[22px] font-light leading-[1.2] tracking-[-0.015em] text-on-band">
+          <h3 className="mt-3 font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.03em] text-on-band">
             {resource.title}
           </h3>
           <p className={cx(monoLabel, 'mt-2')}>
-            {kindLabels[resource.kind]} · {resource.source} · {resource.minutes} min
+            {kindLabels[resource.kind]} · {resource.source} · {formatDuration(resource.minutes)}
           </p>
         </>
       ) : (
         <p className={monoLabel}>
           {kindLabels[resource.kind]} · {resource.source}
-          {domain && ` · ${domain}`} · {resource.minutes} min {isVideo ? 'watch' : 'read'}
+          {domain && ` · ${domain}`} · {formatDuration(resource.minutes)} {isVideo ? 'watch' : 'read'}
         </p>
       )}
 
@@ -77,10 +77,10 @@ export function ResourceBlock({
           href={resource.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-5 flex items-center justify-between gap-3 border border-on-band/20 px-5 py-4 transition-colors hover:border-on-band/45"
+          className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-line bg-white px-5 py-4 transition-colors hover:border-accent-bright/40 hover:bg-band-soft/40"
         >
           <span className="min-w-0">
-            <span className="block text-[14.5px] font-medium text-on-band">
+            <span className="block text-[13px] font-bold text-on-band">
               {ctaLabels[resource.kind]}
             </span>
             <span className={cx(monoLabel, 'mt-1 block')}>
@@ -113,9 +113,9 @@ export function ResourceBlock({
             {resource.body.map((item, i) => (
               <li
                 key={i}
-                className="flex items-start gap-3.5 border border-on-band/15 px-4 py-3.5 text-[14.5px] leading-relaxed text-on-band-muted"
+                className="flex items-start gap-3.5 rounded-xl border border-line bg-white px-4 py-3.5 text-[14.5px] leading-relaxed text-on-band-muted"
               >
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center border border-on-band/20 font-mono text-[11px] text-on-band-dim">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-line-strong bg-band-soft font-mono text-[11px] text-on-band-dim">
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <span className="min-w-0 flex-1">{item}</span>

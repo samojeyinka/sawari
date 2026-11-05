@@ -33,7 +33,7 @@ function FormHead({ label, title, sub }: { label: string; title: string; sub?: s
   return (
     <div>
       <p className={authEyebrow}>{label}</p>
-      <h1 className="mt-3 font-display text-[26px] font-light leading-[1.15] tracking-[-0.025em] text-on-band">
+      <h1 className="mt-3 font-display text-[26px] font-extrabold leading-[1.1] tracking-[-0.045em] text-on-band sm:text-[30px]">
         {title}
       </h1>
       {sub && <p className="mt-3 text-[14.5px] leading-relaxed text-on-band-muted">{sub}</p>}
@@ -258,7 +258,7 @@ export function LoginPage() {
       <div className="w-full">
         {/* Banner when a learner drafted a path as a guest */}
         {draftedSubject && !verificationPending && !isForgot && (
-          <div className="mb-8 border border-accent-bright/40 bg-accent-bright/10 p-4">
+          <div className="mb-7 rounded-2xl border border-accent-bright/20 bg-band-soft p-4 sm:p-5">
             <p className={cx(monoNote, 'text-accent-bright')}>path drafted</p>
             <p className="mt-2 text-[14.5px] font-medium text-on-band">
               Your path for “{draftedSubject}” is ready to build.
@@ -399,7 +399,7 @@ export function LoginPage() {
 
             <form onSubmit={submit} className="mt-8 space-y-5">
               {isSignup && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label htmlFor="login-first" className={authLabel}>
                       First name
@@ -505,7 +505,7 @@ export function LoginPage() {
                           <span
                             aria-hidden="true"
                             className={cx(
-                              'h-2.5 w-2.5 shrink-0 border transition-colors',
+                              'h-2.5 w-2.5 shrink-0 rounded-full border transition-colors',
                               met ? 'border-accent-bright bg-accent-bright' : 'border-on-band/25',
                             )}
                           />

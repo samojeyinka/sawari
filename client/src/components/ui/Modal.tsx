@@ -59,21 +59,21 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         className={cx(
-          'app-theme relative w-full bg-panel animate-pop',
+          'app-theme relative w-full animate-pop rounded-[24px] bg-panel',
           'max-h-[92vh] overflow-y-auto',
-          'border border-on-band/20',
+          'border border-line shadow-[0_24px_70px_rgba(29,19,40,.2)]',
           className,
           sizes[size],
         )}
       >
         {(title || !hideClose) && (
-          <div className="flex items-start justify-between gap-4 border-b border-on-band/10 px-5 py-4 sm:px-6">
+          <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
             <div>
               {title && (
-                <h2 className="text-[17px] font-medium tracking-[-0.01em] text-on-band">{title}</h2>
+                <h2 className="font-display text-[18px] font-extrabold tracking-[-0.03em] text-on-band">{title}</h2>
               )}
               {description && (
-                <p className="mt-1.5 text-[13.5px] leading-relaxed text-on-band-dim">
+                <p className="mt-1.5 text-[12px] leading-relaxed text-on-band-muted">
                   {description}
                 </p>
               )}
@@ -82,7 +82,7 @@ export function Modal({
               <button
                 type="button"
                 onClick={onClose}
-                className="shrink-0 font-mono text-[10.5px] uppercase tracking-[0.08em] text-on-band-dim transition-colors hover:text-on-band"
+                className="shrink-0 rounded-full border border-line-strong bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em] text-on-band-dim transition-colors hover:border-accent-bright/50 hover:text-accent-bright"
               >
                 Close
               </button>
@@ -91,7 +91,7 @@ export function Modal({
         )}
         <div className="px-5 py-5 sm:px-6">{children}</div>
         {footer && (
-          <div className="flex flex-col-reverse gap-2 border-t border-on-band/10 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+          <div className="flex flex-col-reverse gap-2 border-t border-line px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
             {footer}
           </div>
         )}
