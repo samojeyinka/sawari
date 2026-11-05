@@ -200,7 +200,15 @@ test('queued AI path building lifecycle (queued -> generating -> ready) and retr
   const failedPath = await LearningPath.findById(failPathId).lean()
   assert.ok(failedPath)
   assert.equal(failedPath!.generationStatus, 'failed')
-  assert.ok(failedPath!.generationError?.includes('500'))
+  // The learner-facing field is deliberately generic; provider detail lives on the job row.
+  assert.equal(
+    failedPath!.generationError,
+    'We could not finish building this path. Please try again shortly.',
+  )
+
+  const failedJob = await Job.findOne({ name: 'build-path', 'payload.pathId': failPathId }).lean()
+  assert.ok(failedJob, 'expected the build-path job to be recorded')
+  assert.ok(failedJob!.lastError?.includes('500'))
 
   // 5. Retry endpoint POST /:id/retry re-enqueues
   // Stub DeepSeek to succeed again

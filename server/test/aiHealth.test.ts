@@ -50,7 +50,10 @@ test('checkAiHealth handles non-2xx failure status from DeepSeek', async () => {
 
   const res = await checkAiHealth({ fresh: true })
   assert.equal(res.available, false)
-  assert.ok(res.error?.includes('429'))
+  // Learners get a plain availability message, never the provider's status or body.
+  assert.equal(res.error, 'The AI service is temporarily unavailable.')
+  assert.ok(!res.error?.includes('429'))
+  assert.ok(!res.error?.includes('Rate limit'))
 })
 
 test('checkAiHealth handles request timeout (AbortError)', async () => {
@@ -61,7 +64,8 @@ test('checkAiHealth handles request timeout (AbortError)', async () => {
 
   const res = await checkAiHealth({ fresh: true })
   assert.equal(res.available, false)
-  assert.equal(res.error, 'DeepSeek health check timed out.')
+  assert.equal(res.error, 'The AI service is taking too long to respond.')
+  assert.ok(!res.error?.includes('DeepSeek'))
 })
 
 test('checkAiHealth handles malformed JSON response', async () => {
@@ -77,5 +81,6 @@ test('checkAiHealth handles malformed JSON response', async () => {
 
   const res = await checkAiHealth({ fresh: true })
   assert.equal(res.available, false)
-  assert.match(res.error ?? '', /invalid JSON/i)
+  assert.equal(res.error, 'The AI service returned an invalid response.')
+  assert.ok(!res.error?.includes('not valid json'))
 })

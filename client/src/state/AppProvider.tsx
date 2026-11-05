@@ -18,7 +18,6 @@ import type { AlertVariant } from '../components/ui/Alert'
 import { findTemplateMatch } from '../data'
 import {
   ApiError,
-  apiErrorMessage,
   authApi,
   billingApi,
   learningPathsApi,
